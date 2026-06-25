@@ -1,5 +1,6 @@
 name: Build APK
-on: [push]
+on: [push, workflow_dispatch]
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,8 +13,10 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
-      - run: cd a1os_mobile && flutter pub get
-      - run: cd a1os_mobile && flutter build apk --release
+      - run: |
+          cd a1os_mobile
+          flutter pub get
+          flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
           name: a1os-apk
