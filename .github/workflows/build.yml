@@ -1,0 +1,29 @@
+ame: Build APK Auto
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'a1os_mobile/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+      
+      - run: cd a1os_mobile && flutter pub get
+      - run: cd a1os_mobile && flutter build apk --release
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a1os-mobile-app
+          path: a1os_mobile/build/app/outputs/flutter-apk/app-release.apk
