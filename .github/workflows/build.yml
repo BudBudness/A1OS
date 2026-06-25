@@ -13,9 +13,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
-      - run: |
+          channel: 'stable'
+      - name: Install dependencies
+        run: |
           cd a1os_mobile
           flutter pub get
+      - name: Build APK
+        run: |
+          cd a1os_mobile
           flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
