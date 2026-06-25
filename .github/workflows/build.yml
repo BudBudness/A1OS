@@ -1,7 +1,9 @@
-name: Build APK Auto
-on: 
+ame: Build APK Auto
+on:
   push:
     branches: [ main ]
+    paths:
+      - 'a1os_mobile/**'
 
 jobs:
   build:
@@ -18,10 +20,10 @@ jobs:
         with:
           flutter-version: '3.22.0'
       
-      - run: flutter pub get
-      - run: flutter build apk --release
+      - run: cd a1os_mobile && flutter pub get
+      - run: cd a1os_mobile && flutter build apk --release
       
       - uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: a1os-mobile-app
+          path: a1os_mobile/build/app/outputs/flutter-apk/app-release.apk
