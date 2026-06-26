@@ -4,10 +4,22 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, request, jsonify, Response
 from api.memory_routes import register_memory_routes
+from api.knowledge_routes import register_knowledge_routes
+from api.scheduler_routes import register_scheduler_routes
+from api.agents_routes import register_agents_routes
+from api.cluster_routes import register_cluster_routes
+from api.consensus_routes import register_consensus_routes
+from api.system_routes import register_system_routes
 from flask_cors import CORS
 
 app = Flask(__name__)
 register_memory_routes(app)
+register_knowledge_routes(app)
+register_scheduler_routes(app)
+register_agents_routes(app)
+register_cluster_routes(app)
+register_consensus_routes(app)
+register_system_routes(app)
 CORS(app)
 
 # ===== DATABASE =====

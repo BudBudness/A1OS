@@ -1,15 +1,15 @@
 nohup: ignoring input
- * Serving Flask app 'complete_system'
- * Debug mode: off
-[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:8086
- * Running on http://10.238.252.52:8086
-[33mPress CTRL+C to quit[0m
-127.0.0.1 - - [26/Jun/2026 19:06:08] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [26/Jun/2026 19:07:06] "POST /memory/store HTTP/1.1" 200 -
-127.0.0.1 - - [26/Jun/2026 19:07:06] "GET /memory/search?q=Memory HTTP/1.1" 200 -
-127.0.0.1 - - [26/Jun/2026 19:07:07] "GET /memory/stats HTTP/1.1" 200 -
-127.0.0.1 - - [26/Jun/2026 19:07:53] "POST /memory/retrieve HTTP/1.1" 200 -
-127.0.0.1 - - [26/Jun/2026 19:08:04] "GET /memory/search?q=test HTTP/1.1" 200 -
-127.0.0.1 - - [26/Jun/2026 19:08:13] "POST /memory/consolidate HTTP/1.1" 200 -
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/home/A1OS/complete_system.py", line 178, in <module>
+    @app.route("/agents", methods=["GET", "POST"])
+     ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/sansio/scaffold.py", line 362, in decorator
+    self.add_url_rule(rule, endpoint, f, **options)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/sansio/scaffold.py", line 47, in wrapper_func
+    return f(self, *args, **kwargs)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/sansio/app.py", line 657, in add_url_rule
+    raise AssertionError(
+    ...<2 lines>...
+    )
+AssertionError: View function mapping is overwriting an existing endpoint function: agents_endpoint
