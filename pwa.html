@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A1OS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+body{background:#0a0a0f;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;max-width:480px;margin:auto}
+.header{padding:16px 20px;background:#14141e;border-bottom:1px solid #2a2a44;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.status{font-size:12px;padding:4px 10px;border-radius:20px}
+.online{background:#00d2a0;color:#000}
+.offline{background:#ff6b6b;color:#000}
+.nav{display:flex;justify-content:space-around;padding:8px 0;background:#14141e;border-bottom:1px solid #2a2a44}
+.nav button{background:transparent;border:none;color:#888;font-size:14px;padding:8px 16px;cursor:pointer}
+.nav button.active{color:#6c5ce7;background:#1a1a2e;border-radius:8px}
+.content{flex:1;overflow-y:auto;padding:16px}
+.panel{display:none}
+.panel.active{display:block}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:#14141e;padding:16px;border-radius:12px;border:1px solid #2a2a44}
+.stat-value{font-size:24px;font-weight:700;display:block}
+.stat-label{font-size:12px;color:#888}
+.entry{padding:8px;border-bottom:1px solid #2a2a44;font-size:14px}
+.input-area{padding:12px 16px;background:#14141e;border-top:1px solid #2a2a44;display:flex;gap:10px}
+.input-area input{flex:1;padding:12px 16px;border-radius:24px;border:1px solid #2a2a44;background:#0f0f1a;color:#e0e0e0;outline:none}
+.input-area button{padding:12px 20px;border-radius:24px;border:none;background:#6c5ce7;color:#fff;font-weight:600;cursor:pointer}
+.quick{display:flex;gap:8px;padding:8px 16px;flex-wrap:wrap}
+.quick button{padding:6px 14px;border-radius:20px;border:1px solid #2a2a44;background:#14141e;color:#888;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header"><h1>⚡ A1OS</h1><span class="status offline" id="status">● Offline</span></div>
+<div class="nav">
+<button class="active" data-panel="dashboard">📊</button>
+<button data-panel="agents">🤖</button>
+<button data-panel="memory">🧠</button>
+<button data-panel="tasks">📋</button>
+<button data-panel="knowledge">📚</button>
+<button data-panel="events">📡</button>
+</div>
+<div class="content" id="content">
+<div class="panel active" id="panel-dashboard"><div class="stat-grid" id="stats"></div><div id="output"></div></div>
+<div class="panel" id="panel-agents"><div id="agentList"></div></div>
+<div class="panel" id="panel-memory"><div id="memoryList"></div></div>
+<div class="panel" id="panel-tasks"><div id="taskList"></div></div>
+<div class="panel" id="panel-knowledge"><div id="knowledgeList"></div></div>
+<div class="panel" id="panel-events"><div id="eventList"></div></div>
+</div>
+<div class="quick">
+<button onclick="sendCmd('show memory')">🧠 Memory</button>
+<button onclick="sendCmd('status')">📡 Status</button>
+<button onclick="sendCmd('help')">❓ Help</button>
+</div>
+<div class="input-area">
+<input id="input" placeholder="Ask or add: text">
+<button onclick="send()">Send</button>
+</div>
+<script>
+const API = 'http://localhost:8086';
+async function fetchJSON(url) {
+    try { const r = await fetch(url); return await r.json(); } catch { return null; }
+}
+async function updateStatus() {
+    try {
+        const r = await fetch(API + '/');
+        if (r.ok) {
+            document.getElementById('status').className = 'status online';
+            document.getElementById('status').textContent = '● Online';
+        } else { throw 0; }
+    } catch {
+        document.getElementById('status').className = 'status offline';
+        document.getElementById('status').textContent = '● Offline';
+    }
+}
+async function loadAll() {
+    const status = await fetchJSON(API + '/status');
+    if (status) {
+        document.getElementById('stats').innerHTML = 
+            '<div class="stat-card"><span class="stat-value">'+(status.memory||0)+'</span><span class="stat-label">Memory</span></div>'+
+            '<div class="stat-card"><span class="stat-value">'+(status.agents||0)+'</span><span class="stat-label">Agents</span></div>'+
+            '<div class="stat-card"><span class="stat-value">'+(status.tasks||0)+'</span><span class="stat-label">Tasks</span></div>'+
+            '<div class="stat-card"><span class="stat-value">'+(status.knowledge||0)+'</span><span class="stat-label">Knowledge</span></div>';
+    }
+    const mem = await fetchJSON(API + '/memory');
+    if (mem && Array.isArray(mem)) {
+        document.getElementById('memoryList').innerHTML = mem.length ? mem.map(m => '<div class="entry">'+m.text+'</div>').join('') : '<div style="color:#888;padding:16px;">Empty</div>';
+    }
+    const agents = await fetchJSON(API + '/agents');
+    if (agents) {
+        document.getElementById('agentList').innerHTML = Object.values(agents).length ? Object.values(agents).map(a => '<div class="entry">'+a.name+' ('+a.status+')</div>').join('') : '<div style="color:#888;padding:16px;">No agents</div>';
+    }
+    const tasks = await fetchJSON(API + '/tasks');
+    if (tasks && Array.isArray(tasks)) {
+        document.getElementById('taskList').innerHTML = tasks.length ? tasks.map(t => '<div class="entry">'+t.task+' ('+t.status+')</div>').join('') : '<div style="color:#888;padding:16px;">No tasks</div>';
+    }
+    const knowledge = await fetchJSON(API + '/knowledge');
+    if (knowledge) {
+        document.getElementById('knowledgeList').innerHTML = Object.entries(knowledge).length ? Object.entries(knowledge).map(([k,v]) => '<div class="entry"><strong>'+k+':</strong> '+v.value+'</div>').join('') : '<div style="color:#888;padding:16px;">No knowledge</div>';
+    }
+    const events = await fetchJSON(API + '/events');
+    if (events && events.events) {
+        document.getElementById('eventList').innerHTML = events.events.length ? events.events.slice().reverse().map(e => '<div style="padding:6px;border-bottom:1px solid #2a2a44;font-size:12px;">'+e.type+': '+JSON.stringify(e.data)+'</div>').join('') : '<div style="color:#888;padding:16px;">No events</div>';
+    }
+}
+async function sendCmd(cmd) {
+    const out = document.getElementById('output');
+    if (!cmd || !cmd.trim()) return;
+    out.innerHTML = '⏳ Processing...';
+    const c = cmd.toLowerCase().trim();
+    try {
+        if (c.includes('show memory') || c.includes('memory')) {
+            const m = await fetchJSON(API + '/memory');
+            if (m && m.length) { out.innerHTML = '🧠 '+m.length+' entries:<br>'+m.map(x=>'• '+x.text).join('<br>'); }
+            else { out.innerHTML = '📭 Empty'; }
+        } else if (c.includes('status')) {
+            const s = await fetchJSON(API + '/status');
+            if (s) { out.innerHTML = '📡 Memory: '+s.memory+' | Agents: '+s.agents+' | Tasks: '+s.tasks; }
+        } else if (c.includes('help')) {
+            out.innerHTML = '🤖 Commands: "show memory", "status", "add: text", or search anything';
+        } else if (c.startsWith('add:')) {
+            const text = c.slice(4).trim();
+            if (text) {
+                const r = await fetch(API+'/memory', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+                const d = await r.json();
+                if (d.ok) { out.innerHTML = '✅ Added: '+text; loadAll(); }
+                else { out.innerHTML = '❌ Error'; }
+            }
+        } else {
+            const r = await fetch(API+'/memory/search?q='+encodeURIComponent(cmd));
+            const d = await r.json();
+            if (d && d.length) { out.innerHTML = '🔍 '+d.map(x=>'• '+x.text).join('<br>'); }
+            else { out.innerHTML = '🤔 No results for "'+cmd+'"'; }
+        }
+    } catch { out.innerHTML = '❌ Error'; }
+    setTimeout(() => { out.innerHTML = ''; }, 8000);
+}
+document.querySelectorAll('.nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+    });
+});
+document.getElementById('input').addEventListener('keypress', e => { if (e.key === 'Enter') send(); });
+async function send() {
+    const input = document.getElementById('input');
+    const val = input.value;
+    input.value = '';
+    await sendCmd(val);
+}
+updateStatus();
+loadAll();
+setInterval(updateStatus, 30000);
+setInterval(loadAll, 60000);
+window.sendCmd = sendCmd;
+</script>
+</body>
+</html>

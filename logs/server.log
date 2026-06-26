@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/home/A1OS/api/server.py", line 2, in <module>
+    from memory.vector_store import search, add
+ModuleNotFoundError: No module named 'memory'
