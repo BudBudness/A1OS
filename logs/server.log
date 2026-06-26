@@ -1,15 +1,166 @@
 nohup: ignoring input
+ * Serving Flask app 'complete_system'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8086
+ * Running on http://10.238.252.52:8086
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [26/Jun/2026 19:17:11] "POST /consensus/propose HTTP/1.1" 200 -
+Exception in thread Thread-2 (_run):
 Traceback (most recent call last):
-  File "/data/data/com.termux/files/home/A1OS/complete_system.py", line 178, in <module>
-    @app.route("/agents", methods=["GET", "POST"])
-     ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/sansio/scaffold.py", line 362, in decorator
-    self.add_url_rule(rule, endpoint, f, **options)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/sansio/scaffold.py", line 47, in wrapper_func
-    return f(self, *args, **kwargs)
-  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/sansio/app.py", line 657, in add_url_rule
-    raise AssertionError(
-    ...<2 lines>...
+  File "/data/data/com.termux/files/usr/lib/python3.13/threading.py", line 1044, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/threading.py", line 995, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/A1OS/agents/engine.py", line 53, in _run
+    agents = self.get_all()
+  File "/data/data/com.termux/files/home/A1OS/agents/engine.py", line 42, in get_all
+    return [{"id": r[0], "name": r[1], "type": r[2], "status": r[3], "metadata": json.loads(r[4]), "created": r[5], "last_active": r[6]} for r in rows]
+                                                                                 ~~~~~~~~~~^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/decoder.py", line 348, in decode
+    raise JSONDecodeError("Extra data", s, end)
+json.decoder.JSONDecodeError: Extra data: line 1 column 5 (char 4)
+[2026-06-26 19:17:34,084] ERROR in app: Exception on /consensus/log [GET]
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask_cors/extension.py", line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/A1OS/api/consensus_routes.py", line 17, in consensus_log
+    return jsonify(consensus.get_log())
+                   ~~~~~~~~~~~~~~~~~^^
+  File "/data/data/com.termux/files/home/A1OS/consensus/engine.py", line 42, in get_log
+    return [{"id": r[0], "term": r[1], "proposal": r[2], "status": r[3], "metadata": json.loads(r[4]), "timestamp": r[5]} for r in rows]
+                                                                                     ~~~~~~~~~~^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/decoder.py", line 348, in decode
+    raise JSONDecodeError("Extra data", s, end)
+json.decoder.JSONDecodeError: Extra data: line 1 column 5 (char 4)
+127.0.0.1 - - [26/Jun/2026 19:17:34] "[35m[1mGET /consensus/log HTTP/1.1[0m" 500 -
+[2026-06-26 19:17:34,211] ERROR in app: Exception on /knowledge [POST]
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask_cors/extension.py", line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/A1OS/api/knowledge_routes.py", line 13, in knowledge_endpoint
+    knowledge.set(data['key'], data['value'], data.get('metadata'))
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/A1OS/knowledge/engine.py", line 25, in set
+    conn.execute(
+    ~~~~~~~~~~~~^
+        "INSERT OR REPLACE INTO knowledge (key, value, metadata, created, updated) VALUES (?, ?, ?, ?, ?)",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (key, json.dumps(value), json.dumps(metadata or {}), datetime.now().isoformat(), datetime.now().isoformat())
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     )
-AssertionError: View function mapping is overwriting an existing endpoint function: agents_endpoint
+    ^
+sqlite3.OperationalError: table knowledge has no column named metadata
+127.0.0.1 - - [26/Jun/2026 19:17:34] "[35m[1mPOST /knowledge HTTP/1.1[0m" 500 -
+[2026-06-26 19:17:34,282] ERROR in app: Exception on /knowledge [GET]
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask_cors/extension.py", line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/A1OS/api/knowledge_routes.py", line 15, in knowledge_endpoint
+    return jsonify(knowledge.get_all())
+                   ~~~~~~~~~~~~~~~~~^^
+  File "/data/data/com.termux/files/home/A1OS/knowledge/engine.py", line 41, in get_all
+    return [{"key": r[0], "value": json.loads(r[1]), "metadata": json.loads(r[2]), "created": r[3], "updated": r[4]} for r in rows]
+                                   ~~~~~~~~~~^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+127.0.0.1 - - [26/Jun/2026 19:17:34] "[35m[1mGET /knowledge HTTP/1.1[0m" 500 -
+[2026-06-26 19:17:34,382] ERROR in app: Exception on /agents [POST]
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask_cors/extension.py", line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/A1OS/api/agents_routes.py", line 13, in agents_endpoint
+    result = agents.create(data['name'], data.get('type', 'general'), data.get('metadata'))
+  File "/data/data/com.termux/files/home/A1OS/agents/engine.py", line 32, in create
+    cur = conn.execute(
+        "INSERT INTO agents (name, type, status, metadata, created, last_active) VALUES (?, ?, ?, ?, ?, ?)",
+        (name, agent_type, "idle", json.dumps(metadata or {}), datetime.now().isoformat(), datetime.now().isoformat())
+    )
+sqlite3.OperationalError: table agents has no column named metadata
+127.0.0.1 - - [26/Jun/2026 19:17:34] "[35m[1mPOST /agents HTTP/1.1[0m" 500 -
+[2026-06-26 19:17:34,438] ERROR in app: Exception on /agents [GET]
+Traceback (most recent call last):
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask_cors/extension.py", line 206, in wrapped_function
+    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
+                                                    ~^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/data/data/com.termux/files/usr/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/A1OS/api/agents_routes.py", line 15, in agents_endpoint
+    return jsonify(agents.get_all())
+                   ~~~~~~~~~~~~~~^^
+  File "/data/data/com.termux/files/home/A1OS/agents/engine.py", line 42, in get_all
+    return [{"id": r[0], "name": r[1], "type": r[2], "status": r[3], "metadata": json.loads(r[4]), "created": r[5], "last_active": r[6]} for r in rows]
+                                                                                 ~~~~~~~~~~^^^^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/data/data/com.termux/files/usr/lib/python3.13/json/decoder.py", line 348, in decode
+    raise JSONDecodeError("Extra data", s, end)
+json.decoder.JSONDecodeError: Extra data: line 1 column 5 (char 4)
+127.0.0.1 - - [26/Jun/2026 19:17:34] "[35m[1mGET /agents HTTP/1.1[0m" 500 -
+127.0.0.1 - - [26/Jun/2026 19:17:34] "POST /scheduler/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 19:17:34] "GET /scheduler/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 19:17:36] "GET /system/status HTTP/1.1" 200 -

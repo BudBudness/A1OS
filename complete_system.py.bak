@@ -1,0 +1,351 @@
+import sys; sys.path.insert(0, ".")
+import os, json, sqlite3, hashlib, secrets
+from datetime import datetime, timedelta
+from functools import wraps
+from flask import Flask, request, jsonify, Response
+from api.memory_routes import register_memory_routes
+from api.knowledge_routes import register_knowledge_routes
+from api.scheduler_routes import register_scheduler_routes
+from api.agents_routes import register_agents_routes
+from api.cluster_routes import register_cluster_routes
+from api.consensus_routes import register_consensus_routes
+from api.system_routes import register_system_routes
+from flask_cors import CORS
+
+app = Flask(__name__)
+register_memory_routes(app)
+register_knowledge_routes(app)
+register_scheduler_routes(app)
+register_agents_routes(app)
+register_cluster_routes(app)
+register_consensus_routes(app)
+register_system_routes(app)
+CORS(app)
+
+# ===== DATABASE =====
+def get_db():
+    conn = sqlite3.connect('data/a1os.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    with get_db() as conn:
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT, api_key TEXT, created TEXT
+            );
+            CREATE TABLE IF NOT EXISTS memory (id TEXT PRIMARY KEY, text TEXT, tags TEXT, created TEXT);
+            CREATE TABLE IF NOT EXISTS agents (id TEXT PRIMARY KEY, name TEXT, type TEXT, status TEXT, created TEXT);
+            CREATE TABLE IF NOT EXISTS agent_goals (id INTEGER PRIMARY KEY AUTOINCREMENT, agent_id TEXT, description TEXT, status TEXT, created TEXT);
+            CREATE TABLE IF NOT EXISTS agent_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, agent_id TEXT, log TEXT, created TEXT);
+            CREATE TABLE IF NOT EXISTS cluster_nodes (id TEXT PRIMARY KEY, address TEXT, status TEXT, joined TEXT, last_heartbeat TEXT);
+            CREATE TABLE IF NOT EXISTS consensus_log (id INTEGER PRIMARY KEY AUTOINCREMENT, term INTEGER, proposal TEXT, status TEXT, timestamp TEXT);
+            CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, task TEXT, schedule TEXT, status TEXT, created TEXT, completed_at TEXT);
+            CREATE TABLE IF NOT EXISTS knowledge (key TEXT PRIMARY KEY, value TEXT, updated TEXT);
+            CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT, data TEXT, time TEXT);
+        ''')
+init_db()
+
+# ===== AUTH =====
+def generate_api_key():
+    return secrets.token_hex(32)
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_api_key(api_key):
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE api_key = ?", (api_key,)).fetchone()
+        return user is not None
+
+def require_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        api_key = request.headers.get("X-API-Key")
+        if not api_key or not verify_api_key(api_key):
+            return jsonify({"error": "Invalid or missing API key"}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+# ===== INIT DEFAULT USER =====
+with get_db() as conn:
+    existing = conn.execute("SELECT * FROM users WHERE username = 'admin'").fetchone()
+    if not existing:
+        api_key = generate_api_key()
+        conn.execute("INSERT INTO users (id, username, password_hash, api_key, created) VALUES (?, ?, ?, ?, ?)",
+                     ("user_1", "admin", hash_password("admin123"), api_key, datetime.now().isoformat()))
+        conn.commit()
+        print(f"✅ Default user created. API Key: {api_key}")
+
+# ===== STATE =====
+memory = {}
+agents = {}
+agent_goals = {}
+agent_logs = {}
+cluster_nodes = {}
+cluster_leader = None
+consensus_log = []
+consensus_term = 0
+tasks = []
+task_id = 0
+knowledge = {}
+event_history = []
+
+def log_event(etype, data):
+    entry = {"time": datetime.now().isoformat(), "type": etype, "data": data}
+    event_history.append(entry)
+    if len(event_history) > 100: event_history.pop(0)
+    with get_db() as conn:
+        conn.execute("INSERT INTO events (type, data, time) VALUES (?, ?, ?)", (etype, json.dumps(data), entry["time"]))
+        conn.commit()
+
+def load_state():
+    global memory, agents, agent_goals, agent_logs, cluster_nodes, cluster_leader, consensus_log, consensus_term, tasks, task_id, knowledge
+    with get_db() as conn:
+        memory = {row["id"]: dict(row) for row in conn.execute("SELECT * FROM memory")}
+        agents = {row["id"]: dict(row) for row in conn.execute("SELECT * FROM agents")}
+        agent_goals = {}
+        for row in conn.execute("SELECT * FROM agent_goals"):
+            agent_goals.setdefault(row["agent_id"], []).append(dict(row))
+        agent_logs = {}
+        for row in conn.execute("SELECT * FROM agent_logs"):
+            agent_logs.setdefault(row["agent_id"], []).append(dict(row))
+        cluster_nodes = {row["id"]: dict(row) for row in conn.execute("SELECT * FROM cluster_nodes")}
+        consensus_log = [dict(row) for row in conn.execute("SELECT * FROM consensus_log")]
+        consensus_term = conn.execute("SELECT MAX(term) as term FROM consensus_log").fetchone()["term"] or 0
+        tasks = [dict(row) for row in conn.execute("SELECT * FROM tasks")]
+        task_id = conn.execute("SELECT MAX(id) as id FROM tasks").fetchone()["id"] or 0
+        knowledge = {row["key"]: dict(row) for row in conn.execute("SELECT * FROM knowledge")}
+        if cluster_nodes and not cluster_leader:
+            cluster_leader = list(cluster_nodes.keys())[0]
+
+load_state()
+
+# ===== ROUTES =====
+@app.route("/")
+def root():
+    return jsonify({"status": "online", "version": "A1OS v8.0", "modules": ["memory", "agents", "cluster", "consensus", "scheduler", "knowledge", "events", "system", "auth"]})
+
+@app.route("/auth/register", methods=["POST"])
+def register():
+    data = request.json
+    if not data or "username" not in data or "password" not in data:
+        return jsonify({"error": "Missing username or password"}), 400
+    with get_db() as conn:
+        existing = conn.execute("SELECT * FROM users WHERE username = ?", (data["username"],)).fetchone()
+        if existing:
+            return jsonify({"error": "Username already exists"}), 409
+        api_key = generate_api_key()
+        conn.execute("INSERT INTO users (id, username, password_hash, api_key, created) VALUES (?, ?, ?, ?, ?)",
+                     (f"user_{secrets.token_hex(8)}", data["username"], hash_password(data["password"]), api_key, datetime.now().isoformat()))
+        conn.commit()
+        return jsonify({"ok": True, "api_key": api_key})
+
+@app.route("/auth/login", methods=["POST"])
+def login():
+    data = request.json
+    if not data or "username" not in data or "password" not in data:
+        return jsonify({"error": "Missing username or password"}), 400
+    with get_db() as conn:
+        user = conn.execute("SELECT * FROM users WHERE username = ? AND password_hash = ?",
+                            (data["username"], hash_password(data["password"]))).fetchone()
+        if not user:
+            return jsonify({"error": "Invalid credentials"}), 401
+        return jsonify({"ok": True, "api_key": user["api_key"]})
+
+    if request.method == "POST":
+        data = request.json
+        if not data or "text" not in data: return jsonify({"error": "Missing text"}), 400
+        mid = hashlib.md5(data["text"].encode()).hexdigest()
+        memory[mid] = {"id": mid, "text": data["text"], "tags": json.dumps(data.get("tags", [])), "created": datetime.now().isoformat()}
+        with get_db() as conn:
+            conn.execute("INSERT OR REPLACE INTO memory (id, text, tags, created) VALUES (?, ?, ?, ?)",
+                         (mid, data["text"], json.dumps(data.get("tags", [])), memory[mid]["created"]))
+            conn.commit()
+        log_event("memory_add", {"id": mid})
+        return jsonify({"ok": True, "id": mid})
+    return jsonify(list(memory.values()))
+
+    q = request.args.get("q", "").lower()
+    if not q: return jsonify(list(memory.values()))
+    results = []
+    for m in memory.values():
+        score = sum(1 for w in q.split() if w in m["text"].lower())
+        if score: results.append({"doc": m, "score": score})
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return jsonify([r["doc"] for r in results[:20]])
+
+    if request.method == "POST":
+        data = request.json
+        if not data or "name" not in data: return jsonify({"error": "Missing name"}), 400
+        aid = f"agent_{len(agents)+1}"
+        agents[aid] = {"id": aid, "name": data["name"], "type": data.get("type", "general"), "status": "idle", "created": datetime.now().isoformat()}
+        with get_db() as conn:
+            conn.execute("INSERT INTO agents (id, name, type, status, created) VALUES (?, ?, ?, ?, ?)",
+                         (aid, data["name"], data.get("type", "general"), "idle", agents[aid]["created"]))
+            conn.commit()
+        log_event("agent_created", {"id": aid})
+        return jsonify({"ok": True, "id": aid})
+    return jsonify(agents)
+
+@app.route("/agents/<aid>/goal", methods=["POST"])
+@require_auth
+def set_goal(aid):
+    if aid not in agents: return jsonify({"error": "Agent not found"}), 404
+    data = request.json
+    if not data or "goal" not in data: return jsonify({"error": "Missing goal"}), 400
+    with get_db() as conn:
+        cur = conn.execute("INSERT INTO agent_goals (agent_id, description, status, created) VALUES (?, ?, ?, ?)",
+                           (aid, data["goal"], "pending", datetime.now().isoformat()))
+        goal = {"id": cur.lastrowid, "agent_id": aid, "description": data["goal"], "status": "pending", "created": datetime.now().isoformat()}
+        conn.commit()
+    agent_goals.setdefault(aid, []).append(goal)
+    agents[aid]["status"] = "working"
+    log_event("agent_goal_set", {"agent": aid})
+    return jsonify({"ok": True, "goal": goal})
+
+@app.route("/agents/<aid>/status")
+@require_auth
+def agent_status(aid):
+    if aid not in agents: return jsonify({"error": "Not found"}), 404
+    return jsonify({"agent": agents[aid], "goals": agent_goals.get(aid, []), "logs": agent_logs.get(aid, [])[-10:]})
+
+    global cluster_leader
+    if request.method == "POST":
+        data = request.json
+        if not data or "address" not in data: return jsonify({"error": "Missing address"}), 400
+        nid = f"node_{len(cluster_nodes)+1}"
+        cluster_nodes[nid] = {"id": nid, "address": data["address"], "status": "active", "joined": datetime.now().isoformat(), "last_heartbeat": datetime.now().isoformat()}
+        if not cluster_leader: cluster_leader = nid
+        with get_db() as conn:
+            conn.execute("INSERT INTO cluster_nodes (id, address, status, joined, last_heartbeat) VALUES (?, ?, ?, ?, ?)",
+                         (nid, data["address"], "active", cluster_nodes[nid]["joined"], cluster_nodes[nid]["last_heartbeat"]))
+            conn.commit()
+        log_event("node_joined", {"id": nid})
+        return jsonify({"ok": True, "id": nid})
+    return jsonify({"nodes": cluster_nodes, "leader": cluster_leader})
+
+@app.route("/cluster/heartbeat", methods=["POST"])
+@require_auth
+def heartbeat():
+    data = request.json
+    if not data or "node_id" not in data: return jsonify({"error": "Missing node_id"}), 400
+    nid = data["node_id"]
+    if nid in cluster_nodes:
+        cluster_nodes[nid]["last_heartbeat"] = datetime.now().isoformat()
+        cluster_nodes[nid]["status"] = "active"
+        with get_db() as conn:
+            conn.execute("UPDATE cluster_nodes SET last_heartbeat = ?, status = 'active' WHERE id = ?",
+                         (cluster_nodes[nid]["last_heartbeat"], nid))
+            conn.commit()
+        return jsonify({"ok": True})
+    return jsonify({"error": "Node not found"}), 404
+
+    global consensus_term, consensus_log
+    if request.method == "POST":
+        data = request.json
+        if not data or "proposal" not in data: return jsonify({"error": "Missing proposal"}), 400
+        consensus_term += 1
+        entry = {"term": consensus_term, "proposal": data["proposal"], "status": "proposed", "timestamp": datetime.now().isoformat()}
+        consensus_log.append(entry)
+        with get_db() as conn:
+            conn.execute("INSERT INTO consensus_log (term, proposal, status, timestamp) VALUES (?, ?, ?, ?)",
+                         (consensus_term, data["proposal"], "proposed", entry["timestamp"]))
+            conn.commit()
+        log_event("consensus_proposal", {"term": consensus_term})
+        return jsonify({"ok": True, "term": consensus_term})
+    return jsonify({"log": consensus_log, "term": consensus_term})
+
+@app.route("/consensus/vote", methods=["POST"])
+@require_auth
+def consensus_vote_endpoint():
+    data = request.json
+    if not data or "term" not in data or "vote" not in data:
+        return jsonify({"error": "Missing term or vote"}), 400
+    for entry in consensus_log:
+        if entry["term"] == data["term"]:
+            entry["status"] = "committed" if data["vote"] else "rejected"
+            with get_db() as conn:
+                conn.execute("UPDATE consensus_log SET status = ? WHERE term = ?", (entry["status"], data["term"]))
+                conn.commit()
+            log_event("consensus_vote", {"term": data["term"], "vote": data["vote"]})
+            return jsonify({"ok": True})
+    return jsonify({"error": "Term not found"}), 404
+
+    global task_id, tasks
+    if request.method == "POST":
+        data = request.json
+        if not data or "task" not in data: return jsonify({"error": "Missing task"}), 400
+        task_id += 1
+        t = {"id": task_id, "task": data["task"], "schedule": data.get("schedule", "once"), "status": "pending", "created": datetime.now().isoformat()}
+        tasks.append(t)
+        with get_db() as conn:
+            conn.execute("INSERT INTO tasks (id, task, schedule, status, created) VALUES (?, ?, ?, ?, ?)",
+                         (task_id, data["task"], data.get("schedule", "once"), "pending", t["created"]))
+            conn.commit()
+        log_event("task_scheduled", {"id": task_id})
+        return jsonify({"ok": True, "id": task_id})
+    return jsonify(tasks)
+
+@app.route("/scheduler/tasks/<int:tid>/run", methods=["POST"])
+@require_auth
+def run_task(tid):
+    for t in tasks:
+        if t["id"] == tid:
+            t["status"] = "running"
+            log_event("task_running", {"id": tid})
+            t["status"] = "completed"
+            t["completed_at"] = datetime.now().isoformat()
+            with get_db() as conn:
+                conn.execute("UPDATE tasks SET status = 'completed', completed_at = ? WHERE id = ?",
+                             (t["completed_at"], tid))
+                conn.commit()
+            return jsonify({"ok": True})
+    return jsonify({"error": "Not found"}), 404
+
+    if request.method == "POST":
+        data = request.json
+        if not data or "key" not in data or "value" not in data:
+            return jsonify({"error": "Missing key/value"}), 400
+        knowledge[data["key"]] = {"value": data["value"], "updated": datetime.now().isoformat()}
+        with get_db() as conn:
+            conn.execute("INSERT OR REPLACE INTO knowledge (key, value, updated) VALUES (?, ?, ?)",
+                         (data["key"], data["value"], knowledge[data["key"]]["updated"]))
+            conn.commit()
+        log_event("knowledge_updated", {"key": data["key"]})
+        return jsonify({"ok": True})
+    return jsonify(knowledge)
+
+@app.route("/events")
+@require_auth
+def events():
+    return jsonify({"events": event_history[-20:]})
+
+@app.route("/system/status")
+@require_auth
+def system_status():
+    return jsonify({
+        "status": "online",
+        "memory_count": len(memory),
+        "agent_count": len(agents),
+        "cluster_nodes": len(cluster_nodes),
+        "cluster_leader": cluster_leader,
+        "consensus_entries": len(consensus_log),
+        "consensus_term": consensus_term,
+        "tasks_pending": len([t for t in tasks if t["status"] == "pending"]),
+        "tasks_total": len(tasks),
+        "events_count": len(event_history),
+        "knowledge_entries": len(knowledge)
+    })
+
+@app.route("/system/recover", methods=["POST"])
+@require_auth
+def recover():
+    log_event("recovery_triggered", {})
+    for t in tasks:
+        if t["status"] == "running":
+            t["status"] = "pending"
+    return jsonify({"ok": True, "message": "Recovery initiated"})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8086, debug=False)
