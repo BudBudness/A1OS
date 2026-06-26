@@ -30,3 +30,9 @@ nohup: ignoring input
 127.0.0.1 - - [26/Jun/2026 17:52:16] "GET /memory/search?q=complete HTTP/1.1" 200 -
 127.0.0.1 - - [26/Jun/2026 17:52:16] "POST /memory/retrieve HTTP/1.1" 200 -
 127.0.0.1 - - [26/Jun/2026 17:52:18] "GET /memory/stats HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:53:29] "POST /memory/store HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:53:29] "POST /memory/store HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:53:29] "GET /memory/search?q=memory HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:53:29] "POST /memory/retrieve HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:53:29] "POST /memory/consolidate HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:53:31] "GET /memory/stats HTTP/1.1" 200 -
