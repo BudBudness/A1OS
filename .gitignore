@@ -3,3 +3,27 @@ data/a1os.db
 logs/
 __pycache__/
 .env
+
+# Python
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Build artifacts
+dist/
+build/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
