@@ -60,104 +60,119 @@ body{background:#0a0a0f;color:#e0e0e0;height:100vh;display:flex;flex-direction:c
 <button onclick="send()">Send</button>
 </div>
 <script>
-const API = 'http://10.238.252.52:8086';
-async function fetchJSON(url) {
-    try { const r = await fetch(url); return await r.json(); } catch { return null; }
-}
-async function updateStatus() {
+const API = 'http://localhost:8086';
+const API_KEY = 'e6d4f897ff9934ed5d61309bf1286436f96c0dd55a9c7b42b921c2936011267d';
+
+async function call(url, opts) {
     try {
-        const r = await fetch(API + '/');
-        if (r.ok) {
-            document.getElementById('status').className = 'status online';
-            document.getElementById('status').textContent = '● Online';
-        } else { throw 0; }
-    } catch {
+        const res = await fetch(url, {
+            ...opts,
+            headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json', ...(opts?.headers || {}) }
+        });
+        if (!res.ok) throw new Error(res.status);
+        return await res.json();
+    } catch(e) { console.error(e); return null; }
+}
+
+async function updateStatus() {
+    const data = await call(API + '/');
+    if (data && data.status === 'online') {
+        document.getElementById('status').className = 'status online';
+        document.getElementById('status').textContent = '● Online';
+    } else {
         document.getElementById('status').className = 'status offline';
         document.getElementById('status').textContent = '● Offline';
     }
 }
+
 async function loadAll() {
-    const status = await fetchJSON(API + '/status');
-    if (status) {
+    const s = await call(API + '/system/status');
+    if (s) {
         document.getElementById('stats').innerHTML =
-            '<div class="stat-card"><span class="stat-value">'+(status.memory||0)+'</span><span class="stat-label">Memory</span></div>'+
-            '<div class="stat-card"><span class="stat-value">'+(status.agents||0)+'</span><span class="stat-label">Agents</span></div>'+
-            '<div class="stat-card"><span class="stat-value">'+(status.tasks||0)+'</span><span class="stat-label">Tasks</span></div>'+
-            '<div class="stat-card"><span class="stat-value">'+(status.knowledge||0)+'</span><span class="stat-label">Knowledge</span></div>';
+            '<div class="stat-card"><span class="stat-value">'+(s.memory_count||0)+'</span><span class="stat-label">Memory</span></div>'+
+            '<div class="stat-card"><span class="stat-value">'+(s.agent_count||0)+'</span><span class="stat-label">Agents</span></div>'+
+            '<div class="stat-card"><span class="stat-value">'+(s.cluster_nodes||0)+'</span><span class="stat-label">Cluster</span></div>'+
+            '<div class="stat-card"><span class="stat-value">'+(s.tasks_pending||0)+'</span><span class="stat-label">Tasks</span></div>';
     }
-    const mem = await fetchJSON(API + '/memory');
-    if (mem && Array.isArray(mem)) {
-        document.getElementById('memoryList').innerHTML = mem.length ? mem.map(m => '<div class="entry">'+m.text+'</div>').join('') : '<div style="color:#888;padding:16px;">Empty</div>';
+    const m = await call(API + '/memory');
+    if (m && Array.isArray(m)) {
+        document.getElementById('memoryList').innerHTML = m.length ? m.map(x => '<div class="entry">'+x.text+'</div>').join('') : '<div style="color:#888;padding:16px;">Empty</div>';
     }
-    const agents = await fetchJSON(API + '/agents');
-    if (agents) {
-        document.getElementById('agentList').innerHTML = Object.values(agents).length ? Object.values(agents).map(a => '<div class="entry">'+a.name+' ('+a.status+')</div>').join('') : '<div style="color:#888;padding:16px;">No agents</div>';
+    const a = await call(API + '/agents');
+    if (a) {
+        document.getElementById('agentList').innerHTML = Object.values(a).length ? Object.values(a).map(x => '<div class="entry">'+x.name+' ('+x.status+')</div>').join('') : '<div style="color:#888;padding:16px;">No agents</div>';
     }
-    const tasks = await fetchJSON(API + '/tasks');
-    if (tasks && Array.isArray(tasks)) {
-        document.getElementById('taskList').innerHTML = tasks.length ? tasks.map(t => '<div class="entry">'+t.task+' ('+t.status+')</div>').join('') : '<div style="color:#888;padding:16px;">No tasks</div>';
+    const c = await call(API + '/cluster/nodes');
+    if (c) {
+        document.getElementById('clusterView').innerHTML = '<div class="entry">Leader: '+(c.leader||'None')+'</div>' + (Object.values(c.nodes||{}).length ? Object.values(c.nodes).map(n => '<div class="entry">'+n.address+' ('+n.status+')</div>').join('') : '<div style="color:#888;padding:16px;">No nodes</div>');
     }
-    const knowledge = await fetchJSON(API + '/knowledge');
-    if (knowledge) {
-        document.getElementById('knowledgeList').innerHTML = Object.entries(knowledge).length ? Object.entries(knowledge).map(([k,v]) => '<div class="entry"><strong>'+k+':</strong> '+v.value+'</div>').join('') : '<div style="color:#888;padding:16px;">No knowledge</div>';
+    const t = await call(API + '/scheduler/tasks');
+    if (t && Array.isArray(t)) {
+        document.getElementById('taskList').innerHTML = t.length ? t.map(x => '<div class="entry">'+x.task+' ('+x.status+')</div>').join('') : '<div style="color:#888;padding:16px;">No tasks</div>';
     }
-    const events = await fetchJSON(API + '/events');
-    if (events && events.events) {
-        document.getElementById('eventList').innerHTML = events.events.length ? events.events.slice().reverse().map(e => '<div style="padding:6px;border-bottom:1px solid #2a2a44;font-size:12px;">'+e.type+': '+JSON.stringify(e.data)+'</div>').join('') : '<div style="color:#888;padding:16px;">No events</div>';
+    const k = await call(API + '/knowledge');
+    if (k) {
+        document.getElementById('knowledgeList').innerHTML = Object.entries(k).length ? Object.entries(k).map(([k,v]) => '<div class="entry"><strong>'+k+':</strong> '+v.value+'</div>').join('') : '<div style="color:#888;padding:16px;">No knowledge</div>';
+    }
+    const e = await call(API + '/events');
+    if (e && e.events) {
+        document.getElementById('eventList').innerHTML = e.events.length ? e.events.slice().reverse().map(x => '<div style="padding:6px;border-bottom:1px solid #2a2a44;font-size:12px;">'+x.type+': '+JSON.stringify(x.data)+'</div>').join('') : '<div style="color:#888;padding:16px;">No events</div>';
     }
 }
+
 async function sendCmd(cmd) {
     const out = document.getElementById('output');
     if (!cmd || !cmd.trim()) return;
-    out.innerHTML = '⏳ Processing...';
+    out.innerHTML = '⏳...';
     const c = cmd.toLowerCase().trim();
     try {
         if (c.includes('show memory') || c.includes('memory')) {
-            const m = await fetchJSON(API + '/memory');
-            if (m && m.length) { out.innerHTML = '🧠 '+m.length+' entries:<br>'+m.map(x=>'• '+x.text).join('<br>'); }
-            else { out.innerHTML = '📭 Empty'; }
+            const m = await call(API + '/memory');
+            if (m && m.length) out.innerHTML = '🧠 '+m.length+' entries:<br>'+m.map(x=>'• '+x.text).join('<br>');
+            else out.innerHTML = '📭 Empty';
         } else if (c.includes('status')) {
-            const s = await fetchJSON(API + '/status');
-            if (s) { out.innerHTML = '📡 Memory: '+s.memory+' | Agents: '+s.agents+' | Tasks: '+s.tasks; }
+            const s = await call(API + '/system/status');
+            if (s) out.innerHTML = '📡 Memory: '+s.memory_count+' | Agents: '+s.agent_count+' | Tasks: '+s.tasks_pending;
         } else if (c.includes('help')) {
-            out.innerHTML = '🤖 Commands: "show memory", "status", "add: text", or search anything';
+            out.innerHTML = '🤖 Commands: "show memory", "status", "add: text", or search';
         } else if (c.startsWith('add:')) {
             const text = c.slice(4).trim();
             if (text) {
-                const r = await fetch(API+'/memory', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
-                const d = await r.json();
-                if (d.ok) { out.innerHTML = '✅ Added: '+text; loadAll(); }
-                else { out.innerHTML = '❌ Error'; }
+                const r = await call(API + '/memory', { method: 'POST', body: JSON.stringify({text}) });
+                if (r && r.ok) { out.innerHTML = '✅ Added: '+text; loadAll(); }
+                else out.innerHTML = '❌ Error';
             }
         } else {
-            const r = await fetch(API+'/memory/search?q='+encodeURIComponent(cmd));
-            const d = await r.json();
-            if (d && d.length) { out.innerHTML = '🔍 '+d.map(x=>'• '+x.text).join('<br>'); }
-            else { out.innerHTML = '🤔 No results for "'+cmd+'"'; }
+            const r = await call(API + '/memory/search?q=' + encodeURIComponent(cmd));
+            if (r && r.length) out.innerHTML = '🔍 '+r.map(x=>'• '+x.text).join('<br>');
+            else out.innerHTML = '🤔 No results';
         }
-    } catch { out.innerHTML = '❌ Error'; }
-    setTimeout(() => { out.innerHTML = ''; }, 8000);
+    } catch(e) { out.innerHTML = '❌ Error'; }
+    setTimeout(() => out.innerHTML = '', 5000);
 }
-document.querySelectorAll('.nav button').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+
+document.querySelectorAll('.nav button').forEach(b => {
+    b.addEventListener('click', () => {
+        document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+        document.getElementById('panel-'+b.dataset.panel).classList.add('active');
     });
 });
+
 document.getElementById('input').addEventListener('keypress', e => { if (e.key === 'Enter') send(); });
+
 async function send() {
     const input = document.getElementById('input');
     const val = input.value;
     input.value = '';
     await sendCmd(val);
 }
+
 updateStatus();
 loadAll();
 setInterval(updateStatus, 30000);
 setInterval(loadAll, 60000);
-window.sendCmd = sendCmd;
 </script>
 </body>
 </html>

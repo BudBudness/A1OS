@@ -1,3 +1,4 @@
+import sys; sys.path.insert(0, ".")
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import hashlib
@@ -31,3 +32,8 @@ def health_check():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8086)
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "healthy"})
+
