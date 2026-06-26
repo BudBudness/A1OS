@@ -41,7 +41,7 @@ class SchedulerEngine:
     def get_all(self) -> List[Dict]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute("SELECT * FROM scheduled_tasks").fetchall()
-            return [{"id": r[0], "name": r[1], "schedule": r[2], "action": r[3], "metadata": json.loads(r[4]), "status": r[5], "created": r[6], "last_run": r[7], "next_run": r[8]} for r in rows]
+            return [{"id": r[0], "name": r[1], "schedule": r[2], "action": r[3], "metadata": json.loads(r[4] or "{}"), "status": r[5], "created": r[6], "last_run": r[7], "next_run": r[8]} for r in rows]
 
     def run_task(self, task_id: int) -> Dict:
         with sqlite3.connect(self.db_path) as conn:

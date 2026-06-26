@@ -39,7 +39,7 @@ class AgentEngine:
     def get_all(self) -> List[Dict]:
         with sqlite3.connect(self.db_path) as conn:
             rows = conn.execute("SELECT * FROM agents").fetchall()
-            return [{"id": r[0], "name": r[1], "type": r[2], "status": r[3], "metadata": json.loads(r[4]), "created": r[5], "last_active": r[6]} for r in rows]
+            return [{"id": r[0], "name": r[1], "type": r[2], "status": r[3], "metadata": json.loads(r[4] or "{}"), "created": r[5], "last_active": r[6]} for r in rows]
 
     def update_status(self, agent_id: int, status: str):
         with sqlite3.connect(self.db_path) as conn:

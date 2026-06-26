@@ -1,3 +1,4 @@
+from security_fix import limiter, validate_input
 import sys
 sys.path.insert(0, ".")
 
@@ -16,9 +17,11 @@ from api.agents_routes import register_agents_routes
 from api.cluster_routes import register_cluster_routes
 from api.consensus_routes import register_consensus_routes
 from api.system_routes import register_system_routes
+from api.workflow_routes import register_workflow_routes
+from api.domain_routes import register_domain_routes
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:8000"])
 
 # ===== DATABASE =====
 def get_db():
@@ -60,6 +63,7 @@ def root():
         "timestamp": datetime.now().isoformat()
     })
 
+@limiter.limit("5 per minute")
 @app.route("/auth/register", methods=["POST"])
 def register():
     data = request.json
@@ -75,6 +79,7 @@ def register():
         conn.commit()
         return jsonify({"ok": True, "api_key": api_key})
 
+@limiter.limit("5 per minute")
 @app.route("/auth/login", methods=["POST"])
 def login():
     data = request.json
@@ -95,6 +100,8 @@ register_agents_routes(app)
 register_cluster_routes(app)
 register_consensus_routes(app)
 register_system_routes(app)
+register_workflow_routes(app)
+register_domain_routes(app)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8086, debug=False)
+    app.run(host="127.0.0.1", port=8086, debug=False)
