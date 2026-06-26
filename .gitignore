@@ -1,0 +1,4 @@
+data/a1os.db
+*.db
+logs/
+__pycache__/
