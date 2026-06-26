@@ -13,14 +13,14 @@ def test_memory():
     data = r.json()
     assert data["ok"] == True
 
-def test_health():
-    r = requests.get("http://localhost:8086/health")
+def test_search():
+    r = requests.get("http://localhost:8086/memory/search?q=test")
     assert r.status_code == 200
     data = r.json()
-    assert data["status"] == "healthy"
+    assert len(data) > 0
 
 if __name__ == "__main__":
     test_root()
     test_memory()
-    test_health()
+    test_search()
     print("✅ All tests passed!")
