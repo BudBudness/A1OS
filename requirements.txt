@@ -1,5 +1,2 @@
 flask
-redis
-numpy
-faiss-cpu
-sentence-transformers
+flask-cors
