@@ -1,8 +1,32 @@
- * Serving Flask app 'server'
+nohup: ignoring input
+ * Serving Flask app 'complete_system'
  * Debug mode: off
 [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on all addresses (0.0.0.0)
  * Running on http://127.0.0.1:8086
  * Running on http://10.238.252.52:8086
 [33mPress CTRL+C to quit[0m
-127.0.0.1 - - [26/Jun/2026 12:59:42] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:14] "GET /memory/stats HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "OPTIONS /system/status HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "OPTIONS / HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "GET /system/status HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "[33mOPTIONS /memory HTTP/1.1[0m" 404 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "OPTIONS /agents HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "GET /agents HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "OPTIONS /cluster/nodes HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "GET /cluster/nodes HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "OPTIONS /scheduler/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "GET /scheduler/tasks HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "OPTIONS /knowledge HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "GET /knowledge HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "OPTIONS /events HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:37] "GET /events HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:51] "[33mOPTIONS /memory HTTP/1.1[0m" 404 -
+127.0.0.1 - - [26/Jun/2026 17:51:52] "[33mOPTIONS /memory HTTP/1.1[0m" 404 -
+127.0.0.1 - - [26/Jun/2026 17:51:53] "OPTIONS /system/status HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:51:53] "GET /system/status HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:52:16] "POST /memory/store HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:52:16] "GET /memory/search?q=complete HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:52:16] "POST /memory/retrieve HTTP/1.1" 200 -
+127.0.0.1 - - [26/Jun/2026 17:52:18] "GET /memory/stats HTTP/1.1" 200 -

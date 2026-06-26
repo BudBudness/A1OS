@@ -3,9 +3,11 @@ import os, json, sqlite3, hashlib, secrets
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, request, jsonify, Response
+from api.memory_routes import register_memory_routes
 from flask_cors import CORS
 
 app = Flask(__name__)
+register_memory_routes(app)
 CORS(app)
 
 # ===== DATABASE =====
@@ -139,9 +141,6 @@ def login():
             return jsonify({"error": "Invalid credentials"}), 401
         return jsonify({"ok": True, "api_key": user["api_key"]})
 
-@app.route("/memory", methods=["GET", "POST"])
-@require_auth
-def memory_endpoint():
     if request.method == "POST":
         data = request.json
         if not data or "text" not in data: return jsonify({"error": "Missing text"}), 400
@@ -155,9 +154,6 @@ def memory_endpoint():
         return jsonify({"ok": True, "id": mid})
     return jsonify(list(memory.values()))
 
-@app.route("/memory/search")
-@require_auth
-def memory_search():
     q = request.args.get("q", "").lower()
     if not q: return jsonify(list(memory.values()))
     results = []
