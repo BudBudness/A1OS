@@ -1,3 +1,7 @@
+from workflows.triggers import WorkflowTriggers
+from agents.communication import AgentCommunication
+from agents.autonomy import AgentAutonomy
+from api.hardware_routes import register_hardware_routes
 from security_fix import limiter, validate_input
 import sys
 sys.path.insert(0, ".")
@@ -19,6 +23,7 @@ from api.consensus_routes import register_consensus_routes
 from api.system_routes import register_system_routes
 from api.workflow_routes import register_workflow_routes
 from api.domain_routes import register_domain_routes
+from api.hardware_routes import register_hardware_routes
 
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:8000"])
@@ -102,6 +107,7 @@ register_consensus_routes(app)
 register_system_routes(app)
 register_workflow_routes(app)
 register_domain_routes(app)
+register_hardware_routes(app)
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8086, debug=False)
