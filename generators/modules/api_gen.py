@@ -1,0 +1,122 @@
+import os
+from generators.core.base_gen import BaseGenerator
+
+class Generator(BaseGenerator):
+    def __init__(self, context):
+        super().__init__(context)
+        self.name = "api"
+        self.dependencies = []
+
+    def generate(self):
+        artifacts = []
+        router_src = """import http.server
+import json
+import urllib.parse
+import importlib
+import os
+import sys
+
+class SovereignAPIRouter(http.server.BaseHTTPRequestHandler):
+    routes = {}
+
+    @classmethod
+    def register_route(cls, path, method="GET"):
+        def decorator(handler_func):
+            if path not in cls.routes:
+                cls.routes[path] = {}
+            cls.routes[path][method.upper()] = handler_func
+            print(f"[✔] Dynamic Endpoint Bound: {method.upper()} {path}")
+            return handler_func
+        return decorator
+
+    @classmethod
+    def automatic_module_discovery(cls, src_root):
+        print("[*] API Gateway: Initiating automatic endpoint discovery loops...")
+        for root_dir, _, files in os.walk(src_root):
+            for file in files:
+                if file.endswith("_routes.py") or (file.endswith(".py") and "endpoint" in file):
+                    mod_name = file[:-3]
+                    try:
+                        if root_dir not in sys.path:
+                            sys.path.insert(0, root_dir)
+                        importlib.import_module(mod_name)
+                    except Exception as e:
+                        print(f"[✘] Failed to map configuration layout {file}: {str(e)}")
+
+    def do_GET(self): self._dispatch("GET")
+    def do_POST(self): self._dispatch("POST")
+
+    def _dispatch(self, method):
+        parsed_url = urllib.parse.urlparse(self.path)
+        path = parsed_url.path
+        if path in self.routes and method in self.routes[path]:
+            handler = self.routes[path][method]
+            try:
+                body = None
+                if method == "POST":
+                    content_length = int(self.headers.get('Content-Length', 0))
+                    if content_length > 0:
+                        body = json.loads(self.rfile.read(content_length).decode('utf-8'))
+                status_code, response_data = handler(body)
+                self._respond(status_code, response_data)
+            except Exception as e:
+                self._respond(500, {"status": "CRASHED", "error": str(e)})
+        else:
+            self._respond(404, {"status": "NOT_FOUND", "message": f"Route {method} {path} matches no active endpoints"})
+
+    def _respond(self, status_code, payload):
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(json.dumps(payload).encode('utf-8'))
+"""
+        gateway_src = """import socketserver
+import os
+from api.router import SovereignAPIRouter
+
+class SovereignAPIGateway:
+    def __init__(self, port=8030):
+        self.port = port
+
+    def start(self):
+        socketserver.TCPServer.allow_reuse_address = True
+        base_src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        SovereignAPIRouter.automatic_module_discovery(base_src)
+        print(f"[*] API Gateway bound. Spinning core single-process matrix on port {self.port}...")
+        with socketserver.TCPServer(("", self.port), SovereignAPIRouter) as httpd:
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                print("\\n[!] API Gateway shifting runlevel down gracefully.")
+"""
+        core_endpoints_src = """from api.router import SovereignAPIRouter
+
+@SovereignAPIRouter.register_route("/health", method="GET")
+def health_endpoint(body):
+    return 200, {"status": "HEALTHY", "gateway": "ALIVE"}
+
+@SovereignAPIRouter.register_route("/routes", method="GET")
+def routes_endpoint(body):
+    active_paths = sorted(list(SovereignAPIRouter.routes.keys()))
+    return 200, {"routes": active_paths}
+
+@SovereignAPIRouter.register_route("/system/status", method="GET")
+def status_endpoint(body):
+    return 200, {
+        "status": "OPERATIONAL",
+        "matrix_mode": "SINGLE_PROCESS_MICROKERNEL",
+        "subsystems_loaded": len(SovereignAPIRouter.routes)
+    }
+
+@SovereignAPIRouter.register_route("/openapi", method="GET")
+def openapi_endpoint(body):
+    schema = {"openapi": "3.0.0", "info": {"title": "A1OS Sovereign API", "version": "1.0.0"}, "paths": {}}
+    for path, methods in SovereignAPIRouter.routes.items():
+        schema["paths"][path] = {m.lower(): {"responses": {"200": {"description": "Success"}}} for m in methods}
+    return 200, schema
+"""
+        artifacts.append(self.emit_file("api", "router.py", router_src))
+        artifacts.append(self.emit_file("api", "gateway.py", gateway_src))
+        artifacts.append(self.emit_file("api", "core_endpoints.py", core_endpoints_src))
+        return artifacts
