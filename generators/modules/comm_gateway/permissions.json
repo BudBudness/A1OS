@@ -1,0 +1,6 @@
+{
+    "allowed_apis": [
+        "network_post",
+        "database_read"
+    ]
+}

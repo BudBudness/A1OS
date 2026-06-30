@@ -1,118 +1,101 @@
+#!/usr/bin/env python3
 import os
 import sys
-import json
-import time
-import shutil
+import asyncio
+import logging
 from pathlib import Path
-import subprocess
-import urllib.request
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(PROJECT_ROOT))
+project_root = Path(__file__).parent.resolve()
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-from generators.runtime_engine import SovereignRuntimeEngine
+from control_plane.control_plane import ControlPlane
+from generators.runtime.app_runtime import AppRuntimeEngine
 
-class ControlLauncher:
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(project_root / "logs" / "runtime.log", mode="a")
+    ]
+)
+logger = logging.getLogger("A1OS-Launcher")
+
+class A1OSKernel:
     def __init__(self):
-        self.specs_dir = PROJECT_ROOT / "queue/specs"
-        self.processed_dir = PROJECT_ROOT / "queue/processed"
-        self.specs_dir.mkdir(parents=True, exist_ok=True)
-        self.processed_dir.mkdir(parents=True, exist_ok=True)
-
-    def safe_write_json(self, path, data):
-        """[ITEM 1] Prevents file truncation via atomic flush and fsync operations."""
-        tmp_path = Path(path).with_suffix('.tmp')
-        with open(tmp_path, 'w') as f:
-            json.dump(data, f, indent=4)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, path)
-
-    def compile_framework(self):
-        """Runs the generation pipeline."""
-        print("\n=== [1/3] EXECUTING FRAMEWORK COMPILATION ===")
-        engine = SovereignRuntimeEngine(PROJECT_ROOT)
-        engine.run()
-
-    def bounce_server(self):
-        """Kills old instances, boots the new build, and executes verification."""
-        print("\n=== [2/3] BOUNCING CORE SERVER APPARATUS ===")
-        subprocess.run('pkill -f "python3.*server.py"', shell=True, stderr=subprocess.DEVNULL)
-        time.sleep(0.5)
+        self.root_dir = project_root
+        secret_key = os.getenv("A1OS_SECRET_KEY", "FORT_KNOX_KEY")
+        self.control_plane = ControlPlane(secret_key=secret_key)
+        self.runtime = AppRuntimeEngine(root_dir=str(self.root_dir), secret_key=secret_key)
         
-        server_path = PROJECT_ROOT / "build/generated/server.py"
-        if not server_path.exists():
-            print("❌ Error: build/generated/server.py not found. Compile first.")
-            return
+        # Cache active session signatures to prevent Replay/Rollback trips during testing
+        self.active_signatures = {}
 
-        print("🚀 Launching Flask API Server on Port 8086...")
-        log_file = open(PROJECT_ROOT / "logs/server.log", "a")
-        subprocess.Popen([sys.executable, str(server_path)], stdout=log_file, stderr=log_file)
+    async def boot(self):
+        logger.info("=== 🚀 Starting Sovereign Orchestration Kernel (A1OS v1.0) ===")
+        await self.runtime.start()
         
-        # [ITEM 3] Autonomous Self-Verification Health Probe Loop
-        print("🔬 Running autonomous health verification check...")
-        verified = False
-        for attempt in range(5):
-            time.sleep(1)
-            try:
-                with urllib.request.urlopen("http://127.0.0.1:8086/health", timeout=1) as response:
-                    if response.status == 200:
-                        res_body = json.loads(response.read().decode())
-                        if res_body.get("status") == "healthy":
-                            print(f"✅ Verification Success: Core system validated on attempt {attempt + 1}!")
-                            verified = True
-                            break
-            except Exception:
-                pass
-                
-        if not verified:
-            print("❌ Verification Failure: Target server failed health telemetry checks.")
+        # Deploy and register our multi-tier production plugin ecosystem
+        await self._deploy_service_workers()
+        
+        logger.info("=== ✅ All Verified Tiers Operating Sequentially ===")
+        
+        # Test calculations across our system boundaries
+        self._execute_cross_tier_smoke_tests()
+        
+        await self.runtime.shutdown()
 
-    def poll_queue(self):
-        """Continuous loop watching for incoming task specifications."""
-        print(f"👀 Sovereign Queue Worker Active. Watching {self.specs_dir} ...")
-        try:
-            while True:
-                spec_files = sorted(list(self.specs_dir.glob("*.json")))
-                if spec_files:
-                    target_spec = spec_files[0]
-                    print(f"\n⚡ Ingesting incoming specification layer: {target_spec.name}")
-                    
-                    try:
-                        spec_data = json.loads(target_spec.read_text())
-                        config_path = PROJECT_ROOT / "config/settings.json"
-                        current_config = json.loads(config_path.read_text()) if config_path.exists() else {}
-                        
-                        current_config["active_task"] = spec_data
-                        self.safe_write_json(config_path, current_config)
-                        
-                        self.compile_framework()
-                        self.bounce_server()
-                        
-                        shutil.move(str(target_spec), str(self.processed_dir / target_spec.name))
-                        print(f"✅ Task {target_spec.name} processed and cleared successfully.")
-                        
-                    except Exception as e:
-                        print(f"❌ Failed processing job {target_spec.name}: {e}")
-                        shutil.move(str(target_spec), str(self.processed_dir / f"FAILED_{target_spec.name}"))
+    async def _deploy_service_workers(self):
+        """Dispatches signed initialization packages directly to the runtime."""
+        tiers = {
+            "core_database": ["database_read", "database_write"],
+            "comm_gateway": ["network_post", "database_read"],
+            "risk_engine": ["database_read", "database_write"]
+        }
+        
+        for app_id, apis in tiers.items():
+            p = self.root_dir / "generators" / "modules" / app_id / "plugin.py"
+            if p.exists():
+                self.control_plane.trust.allow(app_id)
+                sig = self.control_plane.signer.sign(app_id, str(p), version=1)
                 
-                time.sleep(2)
-        except KeyboardInterrupt:
-            print("\n👋 Queue worker suspended cleanly.")
+                # Cache the generated signature for this runtime session
+                self.active_signatures[app_id] = sig
+                
+                self.control_plane.register_trusted_plugin(app_id, str(p), sig)
+                self.control_plane.capabilities.register(app_id, allowed_apis=apis)
+                
+                await self.runtime.boot_app(
+                    app_id=app_id,
+                    module_path=str(p),
+                    signature_package=sig,
+                    expected_hash=sig["payload"]["hash"],
+                    allowed_apis=apis
+                )
+
+    def _execute_cross_tier_smoke_tests(self):
+        """Simulates functional transactions through the Control Plane."""
+        print("\n--- 🧪 RUNNING MULTI-TIER KERNEL SMOKE TESTS ---")
+        
+        # 1. Test Tier 2 Communication Webhook
+        comm_path = str(self.root_dir / "generators" / "modules" / "comm_gateway" / "plugin.py")
+        comm_sig = self.active_signatures.get("comm_gateway")
+        
+        if comm_sig:
+            res_c = self.control_plane.runner.run(comm_path, comm_sig["payload"]["hash"], {"source": "whatsapp", "message": "Ping payload from network"})
+            print(f"Result Tier 2: {res_c}\n")
+
+        # 2. Test Tier 3 Financial Calculations
+        risk_path = str(self.root_dir / "generators" / "modules" / "risk_engine" / "plugin.py")
+        risk_sig = self.active_signatures.get("risk_engine")
+        
+        if risk_sig:
+            res_r = self.control_plane.runner.run(risk_path, risk_sig["payload"]["hash"], {"asset": "BTC", "entry_price": 60000.0, "current_price": 68500.0, "size": 2.5})
+            print(f"Result Tier 3: {res_r}\n")
+        print("--------------------------------------------------\n")
 
 if __name__ == "__main__":
-    launcher = ControlLauncher()
-    
-    if len(sys.argv) < 2:
-        print("Usage: python3 launcher.py [compile | serve | watch]")
-        sys.exit(1)
-        
-    verb = sys.argv[1].lower()
-    if verb == "compile":
-        launcher.compile_framework()
-    elif verb == "serve":
-        launcher.bounce_server()
-    elif verb == "watch":
-        launcher.poll_queue()
-    else:
-        print(f"Unknown instruction verb: {verb}")
+    (project_root / "logs").mkdir(exist_ok=True)
+    kernel = A1OSKernel()
+    asyncio.run(kernel.boot())

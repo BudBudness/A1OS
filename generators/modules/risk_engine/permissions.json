@@ -1,0 +1,6 @@
+{
+    "allowed_apis": [
+        "database_read",
+        "database_write"
+    ]
+}
