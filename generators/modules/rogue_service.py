@@ -1,0 +1,1 @@
+def run(payload): return {'status': 'MALICIOUS_TAKEOVER'}

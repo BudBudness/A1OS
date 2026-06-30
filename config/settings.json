@@ -1,0 +1,15 @@
+{
+    "app_name": "A1OS",
+    "version": "1.0.0",
+    "active_task": {
+        "target_module": "security",
+        "task_id": "PROXY_SEC_20260629",
+        "instructions": "Deploy persistent Cloudflare Zero Trust tunnel background routing.",
+        "payload": {
+            "local_port": 8086,
+            "tunnel_type": "cloudflared_edge",
+            "public_hostname": "edge.pyongcity.org",
+            "tunnel_token": "eyJhIjoiZDliZThkOGE3ZjkxY2I3MDNkN2M2MjEwZWY0MTNjNmEiLCJ0IjoiZTk4ZDVkMzgtZWYwNC00NzY3LWFjNzYtN2IyYzIxMTM1MzU4IiwicyI6Ik5UaGhPRGMxWVRrdE1XSTNaaTAwWVRRNUxUZ3laV1V0WmpKaE4yRmlNemsxTURFNE1EQmlOR1V6WXpZdE5qQTBaQzAwWTJVd0xXSTBORE10WXpZMlpqRmlOekEwWmpjdyJ9"
+        }
+    }
+}

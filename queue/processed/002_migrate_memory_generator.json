@@ -1,0 +1,8 @@
+{
+    "target_module": "memory",
+    "task_id": "MIGRATE_MEM_20260629",
+    "instructions": "Convert legacy memory_gen.py to leverage native Sovereign architecture and ArtifactWriter.",
+    "payload": {
+        "engine_version": "2.0"
+    }
+}

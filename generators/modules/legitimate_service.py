@@ -1,0 +1,1 @@
+def run(payload): return {'status': 'LEGITIMATE_RUN'}

@@ -1,0 +1,11 @@
+{
+    "target_module": "security",
+    "task_id": "PROXY_SEC_20260629",
+    "instructions": "Deploy persistent Cloudflare Zero Trust tunnel background routing.",
+    "payload": {
+        "local_port": 8086,
+        "tunnel_type": "cloudflared_edge",
+        "public_hostname": "edge.pyongcity.org",
+        "tunnel_token": "PASTE_COPIED_TOKEN_HERE"
+    }
+}
