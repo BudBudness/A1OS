@@ -1,29 +1,6 @@
-data/a1os.db
-*.db
 logs/
-__pycache__/
-.env
-
-# Python
-*.py[cod]
-*.pyo
-.pytest_cache/
-.mypy_cache/
-
-# Coverage
-.coverage
-htmlcov/
-
-# Virtual environments
-.venv/
-venv/
-
-# Build artifacts
-dist/
-build/
-
-# Logs
 *.log
-
-# macOS
-.DS_Store
+__pycache__/
+build/
+*.db
+a1os_audit.log
