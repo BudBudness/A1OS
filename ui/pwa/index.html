@@ -3,276 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A1OS Sovereign Console</title>
+    <title>SYSTEM MATRIX CONTROL</title>
     <style>
         :root {
-            --bg-main: #06060a;
-            --bg-card: #0c0c14;
-            --border: #1e1e30;
-            --text-primary: #f0f0f5;
-            --text-secondary: #8e8eaf;
-            --accent-green: #34c759;
-            --accent-blue: #007aff;
-            --accent-amber: #ff9500;
-            --accent-red: #ff3b30;
+            --bg-main: #06060c;
+            --bg-sidebar: #0b0b14;
+            --bg-card: #111122;
+            --bg-input: #16162d;
+            --border: #1f1f3a;
+            --text-main: #d1d1e0;
+            --text-muted: #6b6b8c;
+            --accent-orange: #d97706;
+            --accent-green: #10b981;
+            --font-mono: 'Courier New', Courier, monospace;
         }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background-color: var(--bg-main);
-            color: var(--text-primary);
-            font-family: 'SF Mono', Monaco, Consolas, monospace;
-            margin: 0;
-            padding: 20px;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            height: 100vh;
-            box-sizing: border-box;
-        }
-        header {
-            display: flex;
             justify-content: space-between;
+            padding: 24px 16px;
+        }
+        .sidebar-top {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .sidebar-logo {
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
             align-items: center;
-            padding-bottom: 15px;
+            gap: 10px;
+            padding-bottom: 16px;
             border-bottom: 1px solid var(--border);
         }
-        .title { font-weight: bold; font-size: 1.2rem; color: #fff; letter-spacing: 1px; }
-        .status-pill {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            background: #1a1510;
-            color: var(--accent-amber);
-            border: 1px solid rgba(255,149,0,0.2);
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-orange);
+            border-radius: 50%;
         }
-        .status-pill.online {
-            background: #0d1f11;
-            color: var(--accent-green);
-            border: 1px solid rgba(52,199,89,0.2);
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            flex: 1;
-            min-height: 0;
-        }
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
+        .chat-history {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            min-height: 0;
         }
-        .card-header {
-            font-size: 0.9rem;
+        .history-item {
+            padding: 12px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid transparent;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .history-item.active {
+            border-color: var(--border);
+            color: #fff;
+            background: var(--bg-card);
+        }
+        .sidebar-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .status-pill {
+            background: rgba(217, 119, 6, 0.1);
+            border: 1px solid var(--accent-orange);
+            color: var(--accent-orange);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-pill.connected {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #main-header {
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+        .header-title {
+            font-size: 1rem;
+            letter-spacing: 2px;
             font-weight: bold;
             color: #fff;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
+        }
+        #chat-stream {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .message-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .block-header {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
         }
-        .display-area {
-            flex: 1;
-            background: #030305;
-            border: 1px solid #12121f;
-            border-radius: 4px;
-            padding: 10px;
-            overflow-y: auto;
-            font-size: 0.8rem;
-            color: #a0a0c0;
+        .block-content {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text-main);
             white-space: pre-wrap;
         }
-        .input-row {
-            display: flex;
-            gap: 8px;
-        }
-        input, select, button {
-            background: #121220;
+        .preview-thumbnail {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
             border: 1px solid var(--border);
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-family: inherit;
-            font-size: 0.8rem;
+            margin-top: 12px;
+            display: block;
         }
-        input { flex: 1; }
-        button {
-            background: var(--accent-blue);
-            cursor: pointer;
-            font-weight: bold;
+        #input-container {
+            padding: 24px;
+            background: linear-gradient(transparent, var(--bg-main) 30%);
+        }
+        .input-pill {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            gap: 12px;
+        }
+        .input-pill input {
+            flex: 1;
+            background: transparent;
             border: none;
-            transition: opacity 0.2s;
+            color: #fff;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            outline: none;
+            padding: 8px 0;
         }
-        button:hover { opacity: 0.9; }
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+        .action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            transition: color 0.2s;
         }
-        .metric-box {
-            background: #121220;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #1a1a2e;
-        }
-        .metric-val { font-size: 1.1rem; font-weight: bold; color: #fff; margin-top: 4px; }
+        .action-btn:hover { color: #fff; }
+        .action-btn.recording { color: #ef4444; animation: blink 1.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.4; } }
     </style>
 </head>
 <body>
-
-    <header>
-        <div class="title">A1OS SOVEREIGN CORE MATRIX</div>
-        <div id="kernel-badge" class="status-pill">POLLING KERNEL...</div>
-    </header>
-
-    <div class="grid-container">
-        <div class="card">
-            <div class="card-header"><span>[01] SYSTEM METRICS / TELEMETRY</span><span style="color:var(--accent-green)">LIVE</span></div>
-            <div class="metrics-grid">
-                <div class="metric-box"><div>Process ID</div><div class="metric-val" id="m-pid">--</div></div>
-                <div class="metric-box"><div>GC Tracked Objects</div><div class="metric-val" id="m-gc">--</div></div>
-                <div class="metric-box" grid-column="span 2"><div>1m System Load</div><div class="metric-val" id="m-load">--</div></div>
+    <div id="sidebar">
+        <div class="sidebar-top">
+            <div class="sidebar-logo">
+                <div class="logo-dot"></div>
+                <span>A1OS CORE</span>
             </div>
-            <div class="card-header" style="border:none; padding:0; margin-top:5px;">[LOG ENGINE BROADCASTS]</div>
-            <div class="display-area" id="telemetry-log">System telemetry initialization sequence primed.</div>
+            <div class="chat-history">
+                <div class="history-item active">Operational Shell</div>
+                <div class="history-item">Agent Matrix Logs</div>
+                <div class="history-item">Task Orchestration</div>
+            </div>
         </div>
-
-        <div class="card">
-            <div class="card-header">[02] MULTI-ROLE AGENT ENGINE</div>
-            <div class="input-row">
-                <select id="agent-role">
-                    <option value="devops">devops</option>
-                    <option value="analyst">analyst</option>
-                    <option value="orchestrator">orchestrator</option>
-                </select>
-                <input type="text" id="agent-payload" placeholder="Enter processing directive payload context..." value="audit core network topologies">
-                <button onclick="dispatchAgent()">EXECUTE</button>
+        <div class="sidebar-bottom">
+            <div class="settings-row">
+                <span>Active Agents</span>
+                <span style="color:#fff;" id="active-agents-count">0</span>
             </div>
-            <div class="display-area" id="agent-display">Ready to submit state payloads to agent matrix instances.</div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">[03] DAG WORKFLOW TOPOLOGY CONTROLLER</div>
-            <div class="input-row">
-                <input type="text" id="workflow-steps" placeholder="Comma-separated nodes..." value="fetch_market_liquidity, evaluate_risk_bounds, commit_state_mutation">
-                <button onclick="dispatchWorkflow()" style="background:var(--accent-amber)">DISPATCH DAG</button>
+            <div class="settings-row">
+                <span>Pending Tasks</span>
+                <span style="color:#fff;" id="pending-tasks-count">0</span>
             </div>
-            <div class="display-area" id="workflow-display">Awaiting topological instruction nodes.</div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">[04] KNOWLEDGE GRAPH ENTITY RELATIONS</div>
-            <div class="input-row">
-                <input type="text" id="g-source" placeholder="Source" value="SovereignKernel" style="max-width:30%;">
-                <input type="text" id="g-relation" placeholder="Relation" value="manages" style="max-width:30%;">
-                <input type="text" id="g-target" placeholder="Target" value="StateMatrix" style="max-width:30%;">
-                <button onclick="linkKnowledge()" style="background:var(--accent-green)">LINK</button>
+            <div class="settings-row" style="margin-top: 8px;">
+                <span>Node Matrix</span>
+                <div class="status-pill connected" id="node-status">
+                    <span>CONNECTED</span>
+                </div>
             </div>
-            <div class="display-area" id="knowledge-display">Querying semantic node graph structures...</div>
         </div>
     </div>
-
+    <div id="main-content">
+        <div id="main-header">
+            <div class="header-title">SYSTEM MATRIX CONTROL</div>
+            <div class="status-pill" id="kernel-status">OFFLINE</div>
+        </div>
+        <div id="chat-stream">
+            <div class="message-block">
+                <div class="block-header"><span>[00:00:00] [SYS]</span></div>
+                <div class="block-content">A1OS operational core online. Monitoring state matrix pipelines...</div>
+            </div>
+        </div>
+        <div id="input-container">
+            <div class="input-pill">
+                <button class="action-btn" onclick="triggerMediaSelect()" title="Upload Image Layer">📎</button>
+                <button class="action-btn" id="voice-btn" onclick="toggleVoice()" title="Stream Voice Directive">🎙️</button>
+                <input type="text" id="shell-in" placeholder="Say or type core execution commands..." onkeydown="if(event.key==='Enter') submitDirective()" />
+                <button class="action-btn" onclick="submitDirective()" style="color:var(--accent-green);">▶</button>
+            </div>
+            <input type="file" id="media-file-input" accept="image/*" style="display:none;" onchange="processMedia(this)">
+        </div>
+    </div>
     <script>
-        const API_BASE = 'http://localhost:8030';
+        const API_BASE = 'http://localhost:8086';
+        let recognition = null;
+        let pendingImage64 = null;
 
-        async function pollTelemetry() {
-            try {
-                const res = await fetch(`${API_BASE}/monitoring/metrics`);
-                if (!res.ok) throw new Error("HTTP Channel Degraded");
-                const data = await res.json();
-                
-                document.getElementById('kernel-badge').innerText = "KERNEL ONLINE";
-                document.getElementById('kernel-badge').className = "status-pill online";
-                
-                document.getElementById('m-pid').innerText = data.pid;
-                document.getElementById('m-gc').innerText = data.tracked_objects_gc;
-                document.getElementById('m-load').innerText = data.hardware_telemetry['1m_load'] !== undefined ? data.hardware_telemetry['1m_load'] : '--';
-                
-                if(data.hardware_telemetry.note) {
-                    document.getElementById('telemetry-log').innerText = `[OK] PID ${data.pid} verified.\n[NOTE] ${data.hardware_telemetry.note}`;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
                 }
-            } catch (e) {
-                document.getElementById('kernel-badge').innerText = "KERNEL OFFLINE";
-                document.getElementById('kernel-badge').className = "status-pill";
+            });
+        }
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechEngine();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+            recognition.onresult = (e) => {
+                document.getElementById('shell-in').value = e.results[0][0].transcript;
+                document.getElementById('voice-btn').classList.remove('recording');
+            };
+            recognition.onerror = () => document.getElementById('voice-btn').classList.remove('recording');
+            recognition.onend = () => document.getElementById('voice-btn').classList.remove('recording');
+        }
+
+        function toggleVoice() {
+            if (!recognition) return alert("Native speech module inaccessible.");
+            const btn = document.getElementById('voice-btn');
+            if (btn.classList.contains('recording')) {
+                recognition.stop();
+            } else {
+                btn.classList.add('recording');
+                recognition.start();
             }
         }
 
-        async function dispatchAgent() {
-            const role = document.getElementById('agent-role').value;
-            const payload = document.getElementById('agent-payload').value;
-            const display = document.getElementById('agent-display');
-            display.innerText = "[*] Committing instruction context frame...";
-            
+        function triggerMediaSelect() {
+            document.getElementById('media-file-input').click();
+        }
+
+        function processMedia(input) {
+            if (input.files && input.files[0]) {
+                const r = new FileReader();
+                r.onload = function(e) {
+                    pendingImage64 = e.target.result;
+                    appendBlock('OPERATIONAL NODE', 'Attached Image Asset Layer.');
+                    const stream = document.getElementById('chat-stream');
+                    const img = document.createElement('img');
+                    img.src = pendingImage64;
+                    img.className = 'preview-thumbnail';
+                    stream.lastElementChild.querySelector('.block-content').appendChild(img);
+                };
+                r.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function appendBlock(header, content) {
+            const stream = document.getElementById('chat-stream');
+            const time = new Date().toTimeString().split(' ')[0];
+            const block = document.createElement('div');
+            block.className = 'message-block';
+            block.innerHTML = `
+                <div class="block-header"><span>[${time}] [${header}]</span></div>
+                <div class="block-content">${content}</div>
+            `;
+            stream.appendChild(block);
+            stream.scrollTop = stream.scrollHeight;
+        }
+
+        async function trackKernel() {
             try {
-                const res = await fetch(`${API_BASE}/agent/execute`, {
+                const res = await fetch(`${API_BASE}/agents/stats`);
+                if(!res.ok) throw new Error();
+                const data = await res.json();
+                const badge = document.getElementById('kernel-status');
+                badge.innerText = "CONNECTED";
+                badge.className = "status-pill connected";
+                if (data.active_agents !== undefined) document.getElementById('active-agents-count').innerText = data.active_agents;
+                if (data.pending_tasks !== undefined) document.getElementById('pending-tasks-count').innerText = data.pending_tasks;
+            } catch(e) {
+                const badge = document.getElementById('kernel-status');
+                badge.innerText = "OFFLINE";
+                badge.className = "status-pill";
+            }
+        }
+
+        async function submitDirective() {
+            const el = document.getElementById('shell-in');
+            const cmd = el.value.trim();
+            if(!cmd && !pendingImage64) return;
+            el.value = '';
+            if(cmd) appendBlock('OPERATOR', cmd);
+            const packet = { payload: cmd, media: pendingImage64 };
+            pendingImage64 = null;
+            try {
+                const res = await fetch(`${API_BASE}/`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ role, payload })
+                    body: JSON.stringify(packet)
                 });
                 const data = await res.json();
-                display.innerText = JSON.stringify(data, null, 4);
-            } catch (e) {
-                display.innerText = `[✘] Transaction Aborted: ${e.message}`;
+                appendBlock('AGENT METRIC', typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+            } catch(e) {
+                appendBlock('SYS_ERR', 'Direct endpoint link broken.');
             }
         }
 
-        async function dispatchWorkflow() {
-            const stepsInput = document.getElementById('workflow-steps').value;
-            const steps = stepsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
-            const display = document.getElementById('workflow-display');
-            display.innerText = "[*] Flushing topological chain arrays...";
-            
-            try {
-                const res = await fetch(`${API_BASE}/workflow/dispatch`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ steps })
-                });
-                const data = await res.json();
-                display.innerText = JSON.stringify(data, null, 4);
-            } catch (e) {
-                display.innerText = `[✘] DAG Processing Interrupted: ${e.message}`;
-            }
-        }
-
-        async function linkKnowledge() {
-            const source = document.getElementById('g-source').value;
-            const relation = document.getElementById('g-relation').value;
-            const target = document.getElementById('g-target').value;
-            const display = document.getElementById('knowledge-display');
-            
-            try {
-                await fetch(`${API_BASE}/knowledge/link`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ source, relation, target })
-                });
-                const res = await fetch(`${API_BASE}/knowledge/query`);
-                const data = await res.json();
-                display.innerText = JSON.stringify(data, null, 4);
-            } catch (e) {
-                display.innerText = `[✘] Relation Mutation Failed: ${e.message}`;
-            }
-        }
-
-        // Initialize continuous engine loops
-        setInterval(pollTelemetry, 2000);
-        pollTelemetry();
-        
-        // Initial load of knowledge map state
-        setTimeout(async () => {
-            try {
-                const res = await fetch(`${API_BASE}/knowledge/query`);
-                if(res.ok) {
-                    const data = await res.json();
-                    document.getElementById('knowledge-display').innerText = JSON.stringify(data, null, 4);
-                }
-            } catch(e){}
-        }, 500);
+        setInterval(trackKernel, 3000);
+        trackKernel();
     </script>
 </body>
 </html>

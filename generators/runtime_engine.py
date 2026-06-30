@@ -1,38 +1,43 @@
-# runtime_engine.py - Autonomous Filesystem State Handler
 import os
-import time
 import json
+from pathlib import Path
+from generators.core.context import GenerationContext
+from generators.core.artifact_writer import ArtifactWriter
+from generators.registry import GeneratorRegistry
 
-BASE_DIR = os.path.expanduser("~/A1OS")
-TASK_DIR = os.path.join(BASE_DIR, "tasks/queue")
-DONE_DIR = os.path.join(BASE_DIR, "tasks/done")
-LOG_DIR = os.path.join(BASE_DIR, "memory/logs")
+class SovereignRuntimeEngine:
+    def __init__(self, root_dir):
+        self.root = Path(root_dir).resolve()
+        self.writer = ArtifactWriter(self.root)
+        self.registry = GeneratorRegistry(self.root)
 
-print("A1OS Native File Observer Engine Active. Monitoring filesystem queues...")
-
-while True:
-    try:
-        tasks = [t for t in os.listdir(TASK_DIR) if not t.startswith('.')]
-        for task_file in tasks:
-            task_path = os.path.join(TASK_DIR, task_file)
-            print(f"[FOUND TASK]: Processing {task_file}")
-            
-            with open(task_path, 'r') as f:
-                task_data = json.load(f)
-                
-            task_data["processed_at"] = time.time()
-            task_data["status"] = "Executed"
-            
-            with open(os.path.join(DONE_DIR, task_file), 'w') as out:
-                json.dump(task_data, out, indent=2)
-                
-            os.remove(task_path)
-            
-            with open(os.path.join(LOG_DIR, "session_context.log"), "a") as log:
-                ts = time.strftime('%Y-%m-%d %H:%M:%S')
-                log.write(f"[{ts}] Task executed successfully: {task_file}\n")
-                
-    except Exception as e:
-        print(f"Runtime Warning: {str(e)}")
+    def run(self):
+        print("⚡ Orchestrating System Framework Generation Sequence...")
         
-    time.sleep(2)
+        # Load system base declarations
+        cfg_file = self.root / "config/settings.json"
+        schema_data = json.loads(cfg_file.read_text()) if cfg_file.exists() else {}
+
+        context = GenerationContext(schema_data, self.root)
+        self.registry.discover()
+        
+        try:
+            execution_order = self.registry.resolve_order()
+            print(f"📊 Resolved Module Pipeline Dependency Graph: {' -> '.join(execution_order)}")
+        except Exception as e:
+            print(f"❌ Dependency resolution breakdown: {e}")
+            return
+
+        for name in execution_order:
+            gen = self.registry.generators[name]
+            print(f"⚙️ Running Engine Node: [{name}]")
+            try:
+                gen.generate(context, self.writer)
+            except Exception as e:
+                print(f"❌ Runtime crash on node layer [{name}]: {e}")
+                return
+                
+        print("✅ Core Framework Lifecycle Complete. Manifest updated.")
+
+if __name__ == "__main__":
+    SovereignRuntimeEngine(Path(__file__).parent.parent).run()
