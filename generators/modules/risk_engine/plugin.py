@@ -1,7 +1,7 @@
 def run(payload):
     """
-    Tier 3 Empire Finance Risk Management Engine.
-    Payload format: {"asset": str, "entry_price": float, "current_price": float, "size": float}
+    Tier 3 Empire Finance Risk Engine.
+    Emits an internal IPC Intent to save calculations.
     """
     asset = payload.get("asset", "UNKNOWN")
     entry = float(payload.get("entry_price", 0.0))
@@ -9,16 +9,25 @@ def run(payload):
     size = float(payload.get("size", 0.0))
     
     if entry == 0.0:
-        return {"status": "ERROR", "message": "Invalid entry parameter baseline."}
+        return {"status": "ERROR", "message": "Invalid entry parameter"}
         
     pnl = (current - entry) * size
     risk_factor = (pnl / (entry * size)) * 100 if (entry * size) != 0 else 0
     
-    print(f"📈 Analytics execution for [{asset}] -> Real-time PnL: {pnl:.2f} | Risk Variance: {risk_factor:.2f}%")
+    # NEW: Formulate a System Call Intent for the Kernel
+    intent = {
+        "syscall": "database_write",
+        "target": "core_database",
+        "payload": {
+            "action": "write",
+            "key": f"market_risk_{asset}",
+            "val": f"PNL:{pnl:.2f}|RISK:{risk_factor:.2f}%"
+        }
+    }
     
     return {
         "status": "CALCULATION_COMPLETE",
         "asset": asset,
         "pnl": pnl,
-        "risk_variance_pct": round(risk_factor, 2)
+        "intents": [intent]  # Yield control and data back to the Kernel
     }

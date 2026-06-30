@@ -1,0 +1,5 @@
+{
+    "name": "core_database",
+    "version": "1.0.0",
+    "description": "Standard A1OS core_database subsystem component."
+}
