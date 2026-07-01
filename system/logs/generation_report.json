@@ -1,0 +1,87 @@
+{
+    "generated_modules": [
+        {
+            "memory_intelligence": [
+                "build/src/memory_intelligence/engine.py",
+                "build/src/memory_intelligence/context.py"
+            ]
+        },
+        {
+            "agents": [
+                "build/src/agents/runtime.py",
+                "build/src/agents/orchestrator.py"
+            ]
+        },
+        {
+            "system": [
+                "build/src/system/kernel.py",
+                "build/src/system/config.py"
+            ]
+        },
+        {
+            "security": [
+                "build/src/security/crypto.py",
+                "build/src/security/sandbox.py"
+            ]
+        },
+        {
+            "api": [
+                "build/src/api/router.py",
+                "build/src/api/gateway.py"
+            ]
+        },
+        {
+            "cluster": [
+                "build/src/cluster/topology.py",
+                "build/src/cluster/health.py"
+            ]
+        },
+        {
+            "consensus": [
+                "build/src/consensus/replicator.py",
+                "build/src/consensus/lock_broker.py"
+            ]
+        },
+        {
+            "documentation": [
+                "build/docs/ARCHITECTURE.md"
+            ]
+        },
+        {
+            "events": [
+                "build/src/events/bus.py",
+                "build/src/events/streams.py"
+            ]
+        },
+        {
+            "knowledge": [
+                "build/src/knowledge/graph.py",
+                "build/src/knowledge/distiller.py"
+            ]
+        },
+        {
+            "pwa": [
+                "build/src/pwa/sw.js",
+                "build/src/pwa/index.html"
+            ]
+        },
+        {
+            "scheduler": [
+                "build/src/scheduler/cron.py",
+                "build/src/scheduler/worker.py"
+            ]
+        },
+        {
+            "tests": [
+                "build/tests/run_tests.py"
+            ]
+        },
+        {
+            "workflows": [
+                "build/src/workflows/engine.py",
+                "build/src/workflows/tracker.py"
+            ]
+        }
+    ],
+    "failures": []
+}

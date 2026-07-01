@@ -1,0 +1,97 @@
+{
+    "build/generated/nodes/test_frame.py": {
+        "generator": "test_framework",
+        "hash": "7b909a150abec6b3df57a2a862856723a8fcc870df6dd4602b93d6d6deb9c880",
+        "updated_at": "2026-06-29T18:06:03.812636"
+    },
+    "build/generated/phase5_memory.py": {
+        "generator": "memory",
+        "hash": "b3a7cd898ac81243e92150e76520068d69e23a480eb1387c692abc67fc2fc1ff",
+        "updated_at": "2026-06-29T18:33:28.594297"
+    },
+    "build/generated/phase5_agent.py": {
+        "generator": "agent",
+        "hash": "257914c745ec7b56c1025f628f4df44154dae9731c2d31969328ed17904729fe",
+        "updated_at": "2026-06-29T18:38:57.663401"
+    },
+    "build/generated/phase5_knowledge.py": {
+        "generator": "knowledge",
+        "hash": "3b79e5e4dfcefbf4230ea3cacb36bbd96185c811b0388b22cef19d442375cfb5",
+        "updated_at": "2026-06-29T18:38:57.665073"
+    },
+    "build/generated/phase5_events.py": {
+        "generator": "events",
+        "hash": "3e2be7413644e95e2815e45ad18e04ceca1e0a8f261ca8f67c23a2a5fc2a4c89",
+        "updated_at": "2026-06-29T18:38:57.667595"
+    },
+    "build/generated/phase5_scheduler.py": {
+        "generator": "scheduler",
+        "hash": "572d4c5d48bfe5b3e61fb7e9f52d2bd0b346d54e6fde6a9986680d36eb4bf8a4",
+        "updated_at": "2026-06-29T18:38:57.669777"
+    },
+    "build/generated/server.py": {
+        "generator": "api",
+        "hash": "556a5cf6a5a6f290a106e8a5f4e2ea8c5c381dcdd3f4bdc7dec1dc0648a6216c",
+        "updated_at": "2026-06-29T18:40:37.047967"
+    },
+    "build/generated/phase5_workflow.py": {
+        "generator": "workflow",
+        "hash": "84201e35dec1282fe8c2b97d7c1ae1427ab78950aab5067d99c6f236343a0978",
+        "updated_at": "2026-06-29T18:40:37.050632"
+    },
+    "build/generated/phase5_cluster.py": {
+        "generator": "cluster",
+        "hash": "b1db28e4dbb5cb946ff9a292a7da63d6f9d44f291eb6ec621bc237b3e7ee5caa",
+        "updated_at": "2026-06-29T18:40:37.052144"
+    },
+    "build/generated/phase5_consensus.py": {
+        "generator": "consensus",
+        "hash": "809e9e907f3f46ca4cd420151b70563991d11864189b20176e3da66c63e5953c",
+        "updated_at": "2026-06-29T18:40:37.053260"
+    },
+    "build/generated/phase5_security.py": {
+        "generator": "security",
+        "hash": "e51889e2c074a9cc04e5c8b2cdd5d6fe25f4ade8287050d18a5e3aab5e7d4490",
+        "updated_at": "2026-06-29T18:40:37.055211"
+    },
+    "build/generated/phase5_auth.py": {
+        "generator": "auth",
+        "hash": "238cf2f2a2305c02d3cbc97092d53ab5d2d806f85c46934f0aec1aec44d8ff54",
+        "updated_at": "2026-06-29T18:40:37.057287"
+    },
+    "build/generated/phase5_logging.py": {
+        "generator": "logging",
+        "hash": "8c6ca2522ea2ace2cebc9d786e12b3ee5a13777cdb7136b1dbf45e7b41b8fc79",
+        "updated_at": "2026-06-29T18:40:37.058468"
+    },
+    "build/generated/phase5_backup.py": {
+        "generator": "backup",
+        "hash": "c00899ad189e5c8aa0896cc8fd871bbb5c96b7a69c5343b3e0fdf6a9560bef32",
+        "updated_at": "2026-06-29T18:40:37.059625"
+    },
+    "build/generated/phase5_deployment.py": {
+        "generator": "deployment",
+        "hash": "fe02fe3bf3685e3bf9a2f6c1121b1a388a5a2ba88590cb667adf89e4136a19fe",
+        "updated_at": "2026-06-29T18:40:37.060821"
+    },
+    "build/generated/phase5_monitoring.py": {
+        "generator": "monitoring",
+        "hash": "0faf56fb4d9252e341c7b1be228117df72e39ff58e4f0510e7982dae84168403",
+        "updated_at": "2026-06-29T18:40:37.061869"
+    },
+    "build/generated/phase5_domainpack.py": {
+        "generator": "domainpack",
+        "hash": "b7c74ec1f29eb6f5c32322993c4c2e5edc65e5926fc708457d10a6922eef68d1",
+        "updated_at": "2026-06-29T18:40:37.062961"
+    },
+    "build/generated/phase5_docs.py": {
+        "generator": "docs",
+        "hash": "a168b5f305bd63eb7156460c741345980999ba5a417eaed664d04937ac3a7183",
+        "updated_at": "2026-06-29T18:40:37.064039"
+    },
+    "build/generated/phase5_tests.py": {
+        "generator": "tests",
+        "hash": "83d25856133054b0e8c11a220dbda68d850e3d257f68045deec31934c8e97c5f",
+        "updated_at": "2026-06-29T18:40:37.065105"
+    }
+}
