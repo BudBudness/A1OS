@@ -1,15 +1,10 @@
-import threading
-
 class EventBus:
-    _subscribers = {}
-    _lock = threading.Lock()
-
+    subscribers = {}
     @classmethod
     def subscribe(cls, event_type, callback):
-        with cls._lock:
-            cls._subscribers.setdefault(event_type, []).append(callback)
-
+        if event_type not in cls.subscribers: cls.subscribers[event_type] = []
+        cls.subscribers[event_type].append(callback)
     @classmethod
-    def publish(cls, event_type, data):
-        for callback in cls._subscribers.get(event_type, []):
+    def emit(cls, event_type, data):
+        for callback in cls.subscribers.get(event_type, []):
             callback(data)
