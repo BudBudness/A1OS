@@ -1,5 +1,5 @@
 from flask import Flask, jsonify
-from a1os.bus.event_bus import bus
+from bus.event_bus import bus
 
 app=Flask(__name__)
 

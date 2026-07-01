@@ -1,0 +1,12 @@
+[
+    {
+        "id": 0,
+        "source": "github_eng",
+        "intent": {
+            "syscall": "github_merge_pr",
+            "target": "main",
+            "requires_approval": true
+        },
+        "timestamp": "2026-07-01 12:26:48.848839"
+    }
+]

@@ -1,19 +1,16 @@
-import logging
-from typing import Dict, List, Callable
-
-logger = logging.getLogger("A1OS-EventBus")
+import asyncio
 
 class EventBus:
     def __init__(self):
-        self._subscribers: Dict[str, List[Callable]] = {}
+        self.subscribers = {}
 
-    def subscribe(self, event_type: str, callback: Callable):
-        if event_type not in self._subscribers:
-            self._subscribers[event_type] = []
-        self._subscribers[event_type].append(callback)
+    def subscribe(self, event_type, callback):
+        if event_type not in self.subscribers:
+            self.subscribers[event_type] = []
+        self.subscribers[event_type].append(callback)
+        print(f"📡 [EVENT BUS] New subscriber for: {event_type}")
 
-    def publish(self, event_type: str, data: Dict):
-        if event_type in self._subscribers:
-            for callback in self._subscribers[event_type]:
-                callback(data)
-        logger.info(f"[EVENTBUS] Published: {event_type}")
+    async def emit(self, event_type, data):
+        if event_type in self.subscribers:
+            for callback in self.subscribers[event_type]:
+                await callback(data)
