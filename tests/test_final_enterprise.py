@@ -1,5 +1,5 @@
 from executive.office.c_suite import CFO, CTO
-from system.registry import SystemRegistry
+from core.registry import SystemRegistry
 from organization.departments.finance import FinanceDepartment
 from organization.departments.engineering import EngineeringDepartment
 from applications.trading_app import TradingApp

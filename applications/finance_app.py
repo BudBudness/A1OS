@@ -1,6 +1,6 @@
 from applications.base_app import BaseApplication
 from sdk.worker_sdk import WorkerSDK
-from system.registry import SystemRegistry
+from core.registry import SystemRegistry
 
 class FinanceApp(BaseApplication):
     def __init__(self):

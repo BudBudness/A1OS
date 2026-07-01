@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from system.registry import SystemRegistry
+from core.registry import SystemRegistry
 
 class AuditDashboard:
     def __init__(self):

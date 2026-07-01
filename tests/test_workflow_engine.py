@@ -1,6 +1,6 @@
 from executive.ceo import CEO
 from executive.office.c_suite import CFO
-from system.registry import SystemRegistry
+from core.registry import SystemRegistry
 from organization.departments.finance import FinanceDepartment
 from workflow.engine import WorkflowEngine
 

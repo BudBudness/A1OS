@@ -1,5 +1,5 @@
 import threading
-from system.registry import SystemRegistry
+from core.registry import SystemRegistry
 
 class CapabilityHandle:
     def __init__(self, department):

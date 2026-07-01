@@ -1,6 +1,6 @@
 from executive.ceo import CEO
 from organization.bootstrap import initialize_org
-from system.registry import SystemRegistry
+from core.registry import SystemRegistry
 
 # Initialize System
 initialize_org()

@@ -1,6 +1,6 @@
 from organization.departments.finance import FinanceDepartment
 from organization.departments.engineering import EngineeringDepartment
-from system.registry import SystemRegistry
+from core.registry import SystemRegistry
 
 def initialize_org():
     FinanceDepartment() # Registers itself via BaseDepartment

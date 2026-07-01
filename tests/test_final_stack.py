@@ -1,4 +1,4 @@
-from workflow.event_bus import EventBus
+from core.bus import EventBus
 from workflow.rbac import RBAC
 from dashboard import Dashboard
 from workflow.engine import WorkflowEngine

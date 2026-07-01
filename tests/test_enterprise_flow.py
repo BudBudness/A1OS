@@ -1,6 +1,6 @@
 from organization.departments.finance import FinanceDepartment
 from applications.finance_app import FinanceApp
-from system.registry import SystemRegistry
+from core.registry import SystemRegistry
 
 # 1. Register the Department (Infrastructure Init)
 finance_dept = FinanceDepartment()
