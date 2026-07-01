@@ -1,6 +1,6 @@
-logs/
-*.log
+data/*.json
 __pycache__/
-build/
 *.db
-a1os_audit.log
+*.log
+/backups/
+/system/backups/
