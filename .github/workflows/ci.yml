@@ -1,0 +1,11 @@
+name: A1OS CI Pipeline
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Integrity Suite
+        run: |
+          export PYTHONPATH=$PYTHONPATH:.
+          python3 -m unittest discover tests/
