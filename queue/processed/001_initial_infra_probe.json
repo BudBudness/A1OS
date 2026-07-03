@@ -1,8 +1,0 @@
-{
-    "target_module": "api",
-    "task_id": "PROBE_20260629",
-    "instructions": "Verify file ingestion and compilation loop hot-swap sync.",
-    "payload": {
-        "heartbeat_interval": 10
-    }
-}

@@ -1,16 +1,22 @@
-#!/usr/bin/env python3
-import sys
-from launcher_core import A1OSKernel
+import json
+import os
+import logging
 
-def executive_interface():
-    kernel = A1OSKernel()
-    if len(sys.argv) < 3 or sys.argv[1] != "approve":
-        print("Usage: ./launcher.py approve <id>")
-        return
+log_path = os.path.expanduser('~/A1OS/logs/kernel.log')
+logging.basicConfig(level=logging.INFO, filename=log_path)
+
+def bootstrap():
+    registry_path = os.path.expanduser('~/A1OS/cfg/registry.json')
+    with open(registry_path, 'r') as f:
+        registry = json.load(f)
     
-    req_id = int(sys.argv[2])
-    result = kernel.approve_intent(req_id)
-    print(result)
+    for category, domains in registry.items():
+        for domain in domains:
+            print(f"Bootstrapping [{category.upper()}]: {domain}...")
+            domain_data_path = os.path.expanduser(f'~/A1OS/data/{domain}')
+            os.makedirs(domain_data_path, exist_ok=True)
+            with open(f"{domain_data_path}/state.json", 'w') as sf:
+                json.dump({"status": "initialized", "domain": domain}, sf)
 
 if __name__ == "__main__":
-    executive_interface()
+    bootstrap()

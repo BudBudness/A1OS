@@ -1,6 +1,0 @@
-data/*.json
-__pycache__/
-*.db
-*.log
-/backups/
-/system/backups/

@@ -1,8 +1,0 @@
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY . /app
-
-RUN pip install redis flask
-
-CMD ["python","-u","a1os/api/server.py"]

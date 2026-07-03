@@ -1,6 +1,0 @@
-{
-    "app_id": "github_eng",
-    "name": "Engineering Department",
-    "version": "1.0.0",
-    "permissions": ["github_api", "git_merge"]
-}

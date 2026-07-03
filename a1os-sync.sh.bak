@@ -1,0 +1,31 @@
+#!/bin/bash
+# A1OS Global Maintenance: Integrity, Cleanup, Security
+# Target: 17 Domains
+
+A1OS_ROOT="$HOME/A1OS"
+DATA_DIR="$A1OS_ROOT/data"
+LOG_FILE="$A1OS_ROOT/logs/maintenance.log"
+
+mkdir -p "$A1OS_ROOT/logs"
+
+{
+    echo "[$(date)] Starting A1OS Maintenance..."
+
+    # 1. Integrity Check
+    COUNT=$(find "$DATA_DIR" -maxdepth 1 -mindepth 1 -type d | wc -l)
+    if [ "$COUNT" -ne 17 ]; then
+        echo "CRITICAL: Domain count mismatch. Found $COUNT, Expected 17."
+    else
+        echo "Integrity Verified: 17/17 Domains present."
+    fi
+
+    # 2. Cleanup
+    find "$DATA_DIR" -type f \( -name "*.tmp" -o -name "*.log" -o -name ".DS_Store" \) -delete
+    echo "Transient files purged."
+
+    # 3. Security
+    chmod 700 "$DATA_DIR"/*
+    echo "Permissions enforced."
+
+    echo "[$(date)] Maintenance Complete."
+} >> "$LOG_FILE" 2>&1
