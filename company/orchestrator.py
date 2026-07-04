@@ -1,11 +1,8 @@
-from company.registry import Registry
+from company.registry import AgentRegistry
 
 class Orchestrator:
     def __init__(self):
-        self.registry = Registry()
-        # Initialize registry with workers
-        self._bootstrap_workers()
+        self.registry = AgentRegistry()
 
-    def _bootstrap_workers(self):
-        # Auto-register available workers from the registry
-        pass
+    def get_workers(self):
+        return self.registry.get_workers()
