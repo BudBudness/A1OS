@@ -25,7 +25,7 @@ class A1OSRuntime:
         start_time = time.time()
         
         if not self.governance.validate_policy(action, context):
-            self.logger.log("WARN", f"Governance policy violation blocked execution of {action} for {app_id}")
+            self.governance.log_audit_trail("POLICY_BLOCKED", {"msg": f"Governance policy violation blocked execution of {action} for {app_id}")
             self.metrics.record(f"{app_id}.blocked_actions", 1)
             self.governance.log_audit_trail("POLICY_BLOCKED", {"app_id": app_id, "action": action, "context": context})
             return
