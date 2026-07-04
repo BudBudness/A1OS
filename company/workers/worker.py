@@ -5,5 +5,5 @@ class Worker(BaseAgent):
         super().__init__(name, role=f"{skill} Specialist")
         
     def execute(self, task_payload: dict):
-        pass
+        raise NotImplementedError("Implementation required")
 

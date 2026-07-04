@@ -8,7 +8,7 @@ class DistributedDispatcher:
         
     def dispatch_task(self, task_id: str, payload: dict):
         # Implementation for dispatching tasks to workers
-        pass
+        raise NotImplementedError("Implementation required")
         
     def register_worker(self, worker_id: str, capacity: int):
         self.active_workers[worker_id] = {"capacity": capacity, "tasks": []}

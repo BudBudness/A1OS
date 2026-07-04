@@ -8,5 +8,5 @@ class Sandbox:
         
     def execute(self, code: str):
         # Implementation for isolated service execution
-        pass
+        raise NotImplementedError("Implementation required")
 

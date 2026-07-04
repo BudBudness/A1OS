@@ -5,5 +5,5 @@ class StrategyEngine:
         
     def execute_kpi_loop(self):
         # Placeholder for feedback-driven strategy adjustment
-        pass
+        raise NotImplementedError("Implementation required")
 

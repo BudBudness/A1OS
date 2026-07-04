@@ -11,4 +11,4 @@ class IntentParser:
                 "item": " ".join(parts[2:]),
                 "quantity": int(parts[1])
             }
-        return None
+        raise NotImplementedError("Implementation required")

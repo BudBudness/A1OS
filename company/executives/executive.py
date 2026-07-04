@@ -6,5 +6,5 @@ class Executive(BaseAgent):
         self.domain = domain
         
     def formulate_directive(self, objective: str):
-        pass
+        raise NotImplementedError("Implementation required")
 

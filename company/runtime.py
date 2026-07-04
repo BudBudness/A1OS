@@ -14,5 +14,5 @@ class A1Runtime:
         
     def boot(self):
         # Initialize core runtime orchestration
-        pass
+        raise NotImplementedError("Implementation required")
 

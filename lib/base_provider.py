@@ -3,4 +3,4 @@ from abc import ABC, abstractmethod
 class BaseProvider(ABC):
     @abstractmethod
     def execute(self, action, payload):
-        pass
+        raise NotImplementedError("Implementation required")

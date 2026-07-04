@@ -6,4 +6,4 @@ class Department:
 
     def receive_task(self, task):
         # Validate against governance policies before dispatching to worker
-        pass
+        raise NotImplementedError("Implementation required")

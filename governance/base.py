@@ -5,9 +5,9 @@ from typing import Any, Dict
 class GovernanceController(ABC):
     @abstractmethod
     def validate_policy(self, action: str, context: Dict[str, Any]) -> bool:
-        pass
+        raise NotImplementedError("Implementation required")
 
     @abstractmethod
     def log_audit_trail(self, event_type: str, details: Dict[str, Any]):
-        pass
+        raise NotImplementedError("Implementation required")
 

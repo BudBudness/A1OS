@@ -7,5 +7,5 @@ class CEO:
     
     def set_strategy(self, goal: str):
         # Implementation for high-level strategy orchestration
-        pass
+        raise NotImplementedError("Implementation required")
 

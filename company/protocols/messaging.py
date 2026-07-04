@@ -13,5 +13,5 @@ class AgentProtocol:
     @staticmethod
     def send(message: Message):
         # Implementation for inter-agent messaging
-        pass
+        raise NotImplementedError("Implementation required")
 

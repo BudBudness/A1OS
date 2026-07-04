@@ -8,5 +8,5 @@ class DelegationEngine:
         
     def delegate(self, agent: BaseAgent, task_id: str, priority: int):
         # Maps agent directives to Execution Framework v2 tasks
-        pass
+        raise NotImplementedError("Implementation required")
 

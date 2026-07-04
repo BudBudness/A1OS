@@ -10,5 +10,5 @@ class BaseAgent:
         AgentProtocol.send(Message(self.name, receiver, action, payload))
 
     def receive(self, message: Message):
-        pass
+        raise NotImplementedError("Implementation required")
 

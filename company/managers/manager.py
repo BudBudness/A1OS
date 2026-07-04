@@ -5,5 +5,5 @@ class Manager(BaseAgent):
         super().__init__(name, role=f"{department} Manager")
         
     def decompose_task(self, directive: str):
-        pass
+        raise NotImplementedError("Implementation required")
 
