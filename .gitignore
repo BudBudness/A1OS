@@ -3,3 +3,14 @@ __pycache__/
 logs/*.log
 dump.rdb
 state.log
+
+# Runtime and Environment
+~/
+__pycache__/
+*.pyc
+*.log
+state.json
+backups/
+data/tasks/archive/
+data/ingest/logs/
+data/queue/task_pipe
