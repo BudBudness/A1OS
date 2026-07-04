@@ -1,30 +1,19 @@
-import asyncio
+from company.orchestrator import Orchestrator
+from company.workers.procurement_worker import ProcurementWorker
 import json
-import logging
-import redis.asyncio as redis
-from core.registry import registry
-from core.pm import PersistenceManager
+import os
 
-class A1OSKernel:
+class Kernel:
     def __init__(self):
-        self.redis = redis.Redis(host='127.0.0.1', port=6379, decode_responses=True)
-        self.pm = PersistenceManager()
-    
-    async def loop(self):
-        logging.info("A1OS Kernel started.")
-        while True:
-            # blpop returns (queue_name, task_json)
-            task_data = await self.redis.blpop("tasks")
-            if task_data:
-                _, task_json = task_data
-                task = json.loads(task_json)
-                
-                domain = task.get("domain")
-                action = task.get("action")
-                payload = task.get("payload")
-                
-                provider = registry.get_provider(domain)
-                if provider:
-                    result = provider.execute(action, payload)
-                    self.pm.save_state(action, result)
-                    logging.info(f"Finalized: {result}")
+        self.orch = Orchestrator()
+        self.worker = ProcurementWorker()
+        self.task_dir = 'data/tasks/pending'
+
+    def run_full_cycle(self):
+        for task_file in os.listdir(self.task_dir):
+            path = os.path.join(self.task_dir, task_file)
+            with open(path, 'r') as f:
+                task = json.load(f)
+                result = self.worker.process_task(task['item'], task['quantity'])
+                os.remove(path)
+                return result

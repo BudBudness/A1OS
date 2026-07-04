@@ -1,5 +1,19 @@
+from modules.procurement.procurement import Procurement
+import json
+import os
+
 class ProcurementWorker:
-    def execute_procurement(self, task):
-        # Logic for Alibaba.com interaction simulation
-        # Logic for budgeting/invoice tracking
-        return True
+    def __init__(self):
+        self.engine = Procurement()
+        self.state_path = 'data/procurement/state.json'
+
+    def process_task(self, item, quantity):
+        result = self.engine.execute('BUY', item, quantity)
+        if "Success" in result:
+            self._update_state(item, quantity)
+        return result
+
+    def _update_state(self, item, quantity):
+        data = {"item": item, "quantity": quantity, "status": "processed"}
+        with open(self.state_path, 'w') as f:
+            json.dump(data, f, indent=4)
