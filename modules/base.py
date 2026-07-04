@@ -1,6 +1,6 @@
 import json
 import os
-from modules.log_manager import LogManager
+from log_manager import LogManager
 
 class BaseModule:
     def __init__(self):
