@@ -7,5 +7,7 @@ from .registry import AgentRegistry
 from .hierarchy import HierarchyEngine
 from .strategy import StrategyEngine
 from .lifecycle import LifecycleManager
+from .governance import ApprovalWorkflow
+from .communications import CommunicationEngine
 
-__all__ = ["CEO", "Executive", "Manager", "Worker", "MemoryLayer", "AgentRegistry", "HierarchyEngine", "StrategyEngine", "LifecycleManager"]
+__all__ = ["CEO", "Executive", "Manager", "Worker", "MemoryLayer", "AgentRegistry", "HierarchyEngine", "StrategyEngine", "LifecycleManager", "ApprovalWorkflow", "CommunicationEngine"]
