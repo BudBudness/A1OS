@@ -1,8 +1,5 @@
-from .data_sync import ProcurementData
+from modules.base import BaseModule
 
-class Procurement:
-    def refresh_metrics(self):
-        return "Procurement metrics synchronized with supply chain database."
-
-    def get_data(self):
-        return ProcurementData().get_active_procurements()
+class Procurement(BaseModule):
+    def execute(self, action, **kwargs):
+        return f"Procurement processed {action}."

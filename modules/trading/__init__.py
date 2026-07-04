@@ -1,3 +1,5 @@
-class Trading:
-    def refresh_metrics(self):
-        return 'Trading metrics refreshed.'
+from modules.base import BaseModule
+
+class Trading(BaseModule):
+    def execute(self, action, **kwargs):
+        return f"Trading processed {action}."

@@ -1,3 +1,5 @@
-class Payroll:
-    def refresh_metrics(self):
-        return 'payroll metrics refreshed.'
+from modules.base import BaseModule
+
+class Payroll(BaseModule):
+    def execute(self, action, **kwargs):
+        return f"Payroll processed {action}."

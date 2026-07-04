@@ -1,3 +1,5 @@
-class Sales:
-    def refresh_metrics(self):
-        return 'sales metrics refreshed.'
+from modules.base import BaseModule
+
+class Sales(BaseModule):
+    def execute(self, action, **kwargs):
+        return f"Sales processed {action}."

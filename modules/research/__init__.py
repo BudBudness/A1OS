@@ -1,3 +1,5 @@
-class Research:
-    def refresh_metrics(self):
-        return 'research metrics refreshed.'
+from modules.base import BaseModule
+
+class Research(BaseModule):
+    def execute(self, action, **kwargs):
+        return f"Research processed {action}."
