@@ -28,3 +28,14 @@ dump.rdb
 app.log
 tunnel.log
 PROCUREMENT_STATUS.log
+
+# Runtime artifacts
+__pycache__/
+*.pyc
+*.bak
+logs/
+dump.rdb
+app.log
+tunnel.log
+PROCUREMENT_STATUS.log
+state.json
