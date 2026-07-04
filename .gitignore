@@ -19,3 +19,12 @@ data/queue/task_pipe
 config/
 *.env
 secrets.json
+
+# Runtime artifacts
+*.bak
+state.json
+logs/
+dump.rdb
+app.log
+tunnel.log
+PROCUREMENT_STATUS.log
