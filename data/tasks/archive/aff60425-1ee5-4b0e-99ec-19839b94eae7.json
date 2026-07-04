@@ -1,0 +1,1 @@
+{"id": "aff60425-1ee5-4b0e-99ec-19839b94eae7", "department": "PROCUREMENT", "task_type": "INITIATE_ORDER", "payload": {"item": "play_equipment", "cost": 500}, "status": "PENDING", "created_at": "2026-07-04T02:57:24.573347", "approval_state": "APPROVED", "hash": "e36a7f3f56fac9cefff1fc73c56f15112ba0931025e8e7fe653a2bd9962feb5e"}

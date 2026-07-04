@@ -1,0 +1,7 @@
+{
+  "version": "1.0",
+  "registry": {
+    "services": [],
+    "last_updated": "$(date +%s)"
+  }
+}
