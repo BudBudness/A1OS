@@ -1,10 +1,12 @@
 import json
 import os
+from modules.log_manager import LogManager
 
 class BaseModule:
     def __init__(self):
         self.name = self.__class__.__name__
         self.state_dir = "data"
+        self.logger = LogManager()
         if not os.path.exists(self.state_dir):
             os.makedirs(self.state_dir)
 
@@ -18,9 +20,3 @@ class BaseModule:
             return {}
         with open(path, "r") as f:
             return json.load(f)
-
-    def get_status(self):
-        return f"{self.name} is operational."
-
-    def execute(self, action, **kwargs):
-        raise NotImplementedError("Each module must implement an execute method.")
