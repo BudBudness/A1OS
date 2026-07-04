@@ -1,3 +1,9 @@
+from company.workers.procurement_worker import ProcurementWorker
+from company.workers.comm_worker import CommWorker
+
 class AgentRegistry:
     def get_workers(self):
-        return ["procurement_worker", "ops_worker", "dev_worker", "maintenance_worker"]
+        return {
+            "procurement": ProcurementWorker(),
+            "comm": CommWorker()
+        }
