@@ -1,10 +1,11 @@
-class ExecutiveAgent:
-    def __init__(self, name, role, department):
-        self.name = name
-        self.role = role
-        self.department = department
-        self.capabilities = []
 
-    def delegate(self, task):
-        # Logic to route to departments via ExecutionEngine
+from company.protocols.messaging import Message, AgentProtocol
+
+class CEO:
+    def __init__(self, name: str):
+        self.name = name
+    
+    def set_strategy(self, goal: str):
+        # Implementation for high-level strategy orchestration
         pass
+
