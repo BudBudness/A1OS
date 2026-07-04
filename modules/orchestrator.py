@@ -7,11 +7,16 @@ class Orchestrator:
         self.procurement = Procurement()
 
     def run_cycle(self, trade_side, trade_symbol, supply_item, supply_qty):
-        # Execute trade
+        # 1. Execute trade
         trade_result = self.trading.execute("execute_trade", side=trade_side, symbol=trade_symbol)
-        # Trigger procurement if trade successful
-        procure_result = self.procurement.execute("order_supplies", item=supply_item, quantity=supply_qty)
-        return f"{trade_result} | {procure_result}"
+        
+        # 2. Logic gate: Only procure if trade is successful
+        # Assuming "Success" is part of the string returned by Trading module
+        if "Success" in trade_result:
+            procure_result = self.procurement.execute("order_supplies", item=supply_item, quantity=supply_qty)
+            return f"Trade Result: {trade_result} | Procurement Result: {procure_result}"
+        else:
+            return f"Trade Failed: {trade_result} | Procurement Aborted"
 
 if __name__ == "__main__":
     orch = Orchestrator()
