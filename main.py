@@ -1,6 +1,7 @@
-
 import sys
 import time
+import os
+import json
 from governance.engine import GovernanceEngine
 from observability.logging.core import Logger, MetricsCollector
 from apps.base import BaseApp
@@ -23,7 +24,7 @@ class A1OSRuntime:
 
         self.logger.log("INFO", f"Evaluating governance compliance for {app_id} -> {action}")
         start_time = time.time()
-        
+
         if not self.governance.validate_policy(action, context):
             self.governance.log_audit_trail("POLICY_BLOCKED", {"msg": f"Governance policy violation blocked execution of {action} for {app_id}"})
             self.metrics.record(f"{app_id}.blocked_actions", 1)
@@ -33,12 +34,12 @@ class A1OSRuntime:
         try:
             self.logger.log("INFO", f"Invoking application execution pipeline: {app_id}")
             self.apps[app_id].run(action=action, context=context)
-            
+
             duration = time.time() - start_time
             self.metrics.record(f"{app_id}.execution_time_ms", duration * 1000)
             self.metrics.record(f"{app_id}.execution_success", 1)
             self.governance.log_audit_trail("EXECUTION_SUCCESS", {"app_id": app_id, "action": action})
-            
+
         except Exception as e:
             self.logger.log("CRITICAL", f"Runtime execution failure in module {app_id}: {str(e)}")
             self.metrics.record(f"{app_id}.execution_failure", 1)
@@ -46,8 +47,15 @@ class A1OSRuntime:
 
     def bootstrap(self):
         self.logger.log("INFO", "A1OS Micro-Kernel bootstrap sequence initiated successfully.")
+        checkpoint_path = 'deploy/checkpoint.json'
+        if os.path.exists(checkpoint_path):
+            with open(checkpoint_path, 'r') as f:
+                try:
+                    self.apps = json.load(f)
+                    self.logger.log("INFO", f"State restored from {checkpoint_path}")
+                except json.JSONDecodeError:
+                    self.logger.log("ERROR", "Failed to decode checkpoint.json")
 
 if __name__ == "__main__":
     runtime = A1OSRuntime()
     runtime.bootstrap()
-

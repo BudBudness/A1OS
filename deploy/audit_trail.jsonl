@@ -19,3 +19,10 @@
 {"event": "EXECUTION_SUCCESS", "details": {"app_id": "trading", "action": "trade"}}
 {"event": "EXECUTION_SUCCESS", "details": {"app_id": "procurement", "action": "procurement"}}
 {"event": "POLICY_BLOCKED", "details": {"app_id": "trading", "action": "trade", "context": {"risk_factor": 0.09}}}
+{"event": "EXECUTION_SUCCESS", "details": {"app_id": "trading", "action": "trade"}}
+{"event": "EXECUTION_SUCCESS", "details": {"app_id": "procurement", "action": "procurement"}}
+{"event": "POLICY_BLOCKED", "details": {"app_id": "trading", "action": "trade", "context": {"risk_factor": 0.09}}}
+{"event": "EXECUTION_SUCCESS", "details": {"app_id": "trading", "action": "trade"}}
+{"event": "EXECUTION_SUCCESS", "details": {"app_id": "procurement", "action": "procurement"}}
+{"event": "POLICY_BLOCKED", "details": {"msg": "Governance policy violation blocked execution of trade for trading"}}
+{"event": "POLICY_BLOCKED", "details": {"app_id": "trading", "action": "trade", "context": {"risk_factor": 0.09}}}

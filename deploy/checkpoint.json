@@ -1,1 +1,1 @@
-{"step_0": {"status": "COMPLETED", "result": null}, "step_1": {"status": "COMPLETED", "result": null}}
+{"Finance": "modules.finance", "Trading": "modules.trading", "GitHub Engineering": "modules.github engineering", "CRM": "modules.crm", "Customer Support": "modules.customer support", "Marketing": "modules.marketing", "Sales": "modules.sales", "Research": "modules.research", "Procurement": "modules.procurement", "Payroll": "modules.payroll", "Executive Dashboard": "modules.executive dashboard"}
