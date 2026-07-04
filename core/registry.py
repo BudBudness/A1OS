@@ -1,24 +1,36 @@
-import json, importlib, os, asyncio
+import logging
+import os
+import requests
+
+class PingProvider:
+    def execute(self, action, payload):
+        return f"Pong! Received: {payload}"
+
+class FileProvider:
+    def execute(self, action, payload):
+        if action == "write":
+            with open(payload["path"], "w") as f:
+                f.write(payload["content"])
+            return f"File {payload['path']} written."
+        return "Unknown file action."
+
+class NetworkProvider:
+    def execute(self, action, payload):
+        if action == "get":
+            response = requests.get(payload["url"], timeout=5)
+            return {"status": response.status_code, "text": response.text[:100]}
+        return "Unknown network action."
 
 class Registry:
-    def __init__(self, config_path="~/A1OS/cfg/registry.json"):
-        self.config_path = os.path.expanduser(config_path)
-        self.providers = {}
-
+    def __init__(self):
+        self.providers = {
+            "system": PingProvider(),
+            "file": FileProvider(),
+            "network": NetworkProvider()
+        }
     async def initialize(self):
-        # Offload file I/O and dynamic imports to a thread to prevent blocking
-        if os.path.exists(self.config_path):
-            with open(self.config_path, 'r') as f:
-                data = json.load(f)
-                for name, module_path in data.get("providers", {}).items():
-                    try:
-                        loop = asyncio.get_event_loop()
-                        module = await loop.run_in_executor(None, importlib.import_module, module_path.replace('/', '.'))
-                        self.providers[name] = module.Provider()
-                    except Exception as e:
-                        print(f"Registry Warning: {name} load error: {e}")
-
-    def get_provider(self, name):
-        return self.providers.get(name)
+        logging.info("Registry initialized with system, file, and network providers.")
+    def get_provider(self, domain):
+        return self.providers.get(domain)
 
 registry = Registry()
