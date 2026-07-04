@@ -14,3 +14,8 @@ backups/
 data/tasks/archive/
 data/ingest/logs/
 data/queue/task_pipe
+
+# Security configurations
+config/
+*.env
+secrets.json
