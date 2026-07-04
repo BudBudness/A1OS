@@ -1,0 +1,2 @@
+tmux select-window -t A1OS:dashboard
+tmux send-keys -t A1OS:dashboard 'while true; do clear; echo "--- A1OS DASHBOARD ---"; echo "Time: $(date)"; echo "--- SYSTEM STATUS ---"; echo "Company Status: $(cat company_status.txt)"; echo "Active Tasks: $(ls data/tasks/active 2>/dev/null | wc -l)"; echo "Failed Tasks: $(ls data/tasks/failed 2>/dev/null | wc -l)"; echo "--- LAST 10 OPS ---"; tail -n 10 logs/ops/daemon.log; sleep 2; done' C-m
