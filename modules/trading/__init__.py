@@ -9,7 +9,11 @@ class Trading(BaseModule):
         return "Unknown action."
 
     def _poll_market(self, symbol):
-        return f"Polling market data for {symbol}: Bid 98500.00 | Ask 98505.00"
+        # Simulate market fetch
+        price = 98500.00
+        self.save_state({"last_price": price, "symbol": symbol})
+        return f"Polling market data for {symbol}: Bid {price} | Ask {price + 5.0}"
 
     def _execute_trade(self, params):
-        return f"Executing {params.get('side')} order for {params.get('symbol')} at {params.get('price')}."
+        state = self.load_state()
+        return f"Executing {params.get('side')} order for {params.get('symbol')} at {state.get('last_price', 'N/A')}."
