@@ -6,6 +6,7 @@ class ProcurementWorker:
     def __init__(self):
         self.engine = Procurement()
         self.state_path = 'data/procurement/state.json'
+        os.makedirs(os.path.dirname(self.state_path), exist_ok=True)
 
     def process_task(self, item, quantity):
         result = self.engine.execute('BUY', item, quantity)
