@@ -1,68 +1,25 @@
-#!/usr/bin/env python3
-import json
-import os
-import re
-import sys
-from datetime import datetime
+from fastapi import FastAPI, Request
+import asyncio
+import uuid
 
-STATE_PATH = 'data/state.json'
-QUEUE_PATH = 'data/queue/agent_command.json'
+app = FastAPI()
+runtime = None
 
-def get_system_state():
-    if os.path.exists(STATE_PATH):
-        try:
-            with open(STATE_PATH, 'r') as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            return {"error": "Malformed JSON inside state.json"}
-    return {"error": "state.json context file not found"}
+@app.on_event("startup")
+async def startup():
+    global runtime
+    from core.runtime import Runtime
+    from core.persistence import Persistence
+    runtime = Runtime(Persistence())
+    asyncio.create_task(runtime.run())
 
-def parse_natural_language(text):
-    normalized = text.lower().strip()
-    ts = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    
-    # Intent 1: Status Inspection
-    if re.search(r'(status|health|check|state|how is|report)', normalized):
-        return {"action": "display_status"}
-    
-    # Intent 2: Data Hydration & Cache Synchronization
-    if re.search(r'(refresh|update|hydrate|sync)', normalized):
-        category = "all"
-        for cat in ["finance", "trading", "procurement", "property"]:
-            if cat in normalized:
-                category = cat
-                break
-        return {"task": "refresh_cache", "category": category, "timestamp": ts}
-    
-    # Intent 3: Log Sanitization & Purging
-    if re.search(r'(clean|purge|clear|wipe|sanitize)', normalized):
-        return {"task": "purge_audit", "force": True, "timestamp": ts}
-    
-    # Intent 4: Loop Stabilization & Tuning
-    if re.search(r'(optimize|tune|fix|stabilize)', normalized):
-        return {"task": "system_optimize", "target": "all", "timestamp": ts}
-    
-    return None
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
-def execute():
-    if len(sys.argv) < 2:
-        print(json.dumps({"error": "Empty command string received."}))
-        sys.exit(1)
-        
-    user_input = " ".join(sys.argv[1:])
-    intent = parse_natural_language(user_input)
-    
-    if not intent:
-        print(json.dumps({"error": f"Parsing Failure: Unable to map intent for: '{user_input}'"}))
-        sys.exit(1)
-        
-    if intent.get("action") == "display_status":
-        print(json.dumps({"status": "SUCCESS", "type": "local_read", "data": get_system_state()}, indent=2))
-    else:
-        os.makedirs(os.path.dirname(QUEUE_PATH), exist_ok=True)
-        with open(QUEUE_PATH, 'w') as f:
-            json.dump(intent, f)
-        print(json.dumps({"status": "QUEUED", "type": "task_routing", "payload": intent}, indent=2))
-
-if __name__ == "__main__":
-    execute()
+@app.post("/api/v1/command")
+async def command(req: Request):
+    data = await req.json()
+    data["id"] = data.get("id") or str(uuid.uuid4())
+    await runtime.dispatch(data)
+    return {"status": "queued", "id": data["id"]}

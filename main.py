@@ -1,17 +1,9 @@
-import sys
-from modules.orchestrator import Orchestrator
-from modules.log_manager import LogManager
+import asyncio
+import logging
+import uvicorn
+from gateway import app
 
-def main():
-    logger = LogManager()
-    if len(sys.argv) < 2:
-        print("Usage: python3 main.py [action]")
-        return
-    
-    action = sys.argv[1]
-    logger.log(f"CLI Action Executed: {action}")
-    if action == "run_cycle":
-        print(Orchestrator().run_cycle("BUY", "BTCUSDT", "Default_Asset", 1))
+logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
-    main()
+    uvicorn.run(app, host="0.0.0.0", port=3000)
