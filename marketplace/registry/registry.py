@@ -1,5 +1,5 @@
 from typing import Dict, Type
-from apps.base import BaseApp
+from archive.apps.base import BaseApp
 
 class MarketplaceRegistry:
     def __init__(self):
