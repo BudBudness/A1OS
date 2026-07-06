@@ -1,18 +1,10 @@
-import json
-from governance.base import GovernanceController
-from governance.policy.enforcer import PolicyEnforcer
-from governance.reporting.kpi import KPIEngine
-from typing import Any, Dict
+from typing import Dict
 
-class GovernanceEngine(GovernanceController):
-    def __init__(self):
-        self.policy = PolicyEnforcer()
-        self.kpi = KPIEngine()
-        self.audit_log_path = "deploy/audit_trail.jsonl"
+class GovernanceEngine:
+    def validate(self, report: Dict) -> bool:
+        return report.get("status") == "stable"
 
-    def validate_policy(self, action: str, context: Dict[str, Any]) -> bool:
-        return self.policy.validate(action, context)
-
-    def log_audit_trail(self, event_type: str, details: Dict[str, Any]):
-        with open(self.audit_log_path, "a") as f:
-            f.write(json.dumps({"event": event_type, "details": details}) + "\n")
+    def authorize_optimization(self, report: Dict) -> str:
+        if report.get("metrics", {}).get("cpu", 0) > 90:
+            return "emergency_shutdown"
+        return "optimize_resources"
