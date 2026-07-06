@@ -1,1 +1,1 @@
-AI COMPANY PYONG CITY LTD LIVE
+A1OS - gateway verified live on Termux (port 3000). Core runtime loop running but no workers wired in. Trading worker intentionally stopped. Rest of company/ orchestration layer (CEO, executives, governance, marketplace) is unexecuted code, not yet running.
