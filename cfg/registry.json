@@ -1,7 +1,9 @@
 {
-  "sovereignty": ["faith", "legal"],
-  "orchestration": ["ops", "builder", "growth"],
-  "execution": ["finance", "trading", "commerce", "supply", "property", "network"],
-  "personal": ["lifestyle", "assets", "events"],
-  "resilience": ["intel", "safety", "recovery"]
+    "workers": {
+        "crm_worker": "modules.crm.crm_worker",
+        "finance_worker": "modules.finance.finance_worker",
+        "ops_worker": "modules.ops.ops_worker",
+        "intel_worker": "modules.intel.intel_worker",
+        "governance_worker": "modules.governance.governance_worker"
+    }
 }

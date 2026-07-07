@@ -1,11 +1,11 @@
 from core.worker_base import BaseWorker
 
-class CrmWorker(BaseWorker):
+class OpsWorker(BaseWorker):
     def __init__(self):
-        super().__init__("crm")
+        super().__init__("ops")
 
     def process_task(self, task):
         state = self.load_state()
         state["last_task"] = task.get("data")
         self.save_state(state)
-        return f"Crm processed: {task.get('data')}"
+        return f"Ops processed: {task.get('data')}"
