@@ -1,5 +1,1 @@
-from modules.base import BaseModule
-
-class Crm(BaseModule):
-    def execute(self, action, **kwargs):
-        return f"Crm processed {action}."
+from modules.crm.crm_worker import CRMWorker

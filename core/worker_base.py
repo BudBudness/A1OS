@@ -1,20 +1,29 @@
-import json
 import os
+import json
+import tempfile
+from core.crypto import encrypt_data, decrypt_data
 
 class BaseWorker:
     def __init__(self, name):
         self.name = name
-        self.data_dir = f"data/{name}"
-        self.state_path = f"{self.data_dir}/state.json"
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir, exist_ok=True)
-
-    def load_state(self):
-        if os.path.exists(self.state_path):
-            with open(self.state_path, 'r') as f:
-                try: return json.load(f)
-                except: return {}
-        return {"status": "initialized", "domain": self.name}
+        self.file_path = f"data/{name}_state.json"
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
 
     def save_state(self, state):
-        with open(self.state_path, 'w') as f: json.dump(state, f, indent=4)
+        raw_json = json.dumps(state)
+        encrypted = encrypt_data(raw_json)
+        fd, path = tempfile.mkstemp(dir=os.path.dirname(self.file_path))
+        with os.fdopen(fd, 'w') as tmp:
+            tmp.write(encrypted)
+        os.replace(path, self.file_path)
+
+    def load_state(self):
+        if not os.path.exists(self.file_path):
+            return {}
+        try:
+            with open(self.file_path, 'r') as f:
+                encrypted = f.read()
+            raw_json = decrypt_data(encrypted)
+            return json.loads(raw_json)
+        except Exception:
+            return {}
