@@ -28,3 +28,4 @@ data/**/state.json
 tunnel.log
 state.log
 app.log
+a1os_state.db*
