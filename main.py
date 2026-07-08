@@ -1,16 +1,16 @@
-import asyncio
 import uvicorn
-from gateway import app
-from core.runtime import Runtime
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from core.api import app as api_app
+from core.state import system
 
-runtime = Runtime()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await system.start()
+    yield
 
-async def boot():
-    asyncio.create_task(runtime.run())
-
-@app.on_event("startup")
-async def startup():
-    await boot()
+app = api_app
+app.router.lifespan_context = lifespan
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3000)

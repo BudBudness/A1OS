@@ -1,28 +1,53 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
-from core.kernel import Kernel
+from typing import Any
+import asyncio
+import json
 
-app = FastAPI(title="A1OS Advanced Gateway")
-kernel = Kernel()
+app = FastAPI(title="A1OS Core API", version="1.0.0")
 
-class TaskPayload(BaseModel):
+class ExecutePayload(BaseModel):
     target: str
-    role: str = "user"
-    data: str = ""
-    action: str = "default"
-    tenant_id: str = None
-    customer_id: str = None
-    profile: dict = {}
-
-@app.post("/v1/execute")
-async def execute_task(payload: TaskPayload):
-    result = await kernel.process_input_async(payload.model_dump())
-    if isinstance(result, dict) and "error" in result:
-        if result["error"] == "Unauthorized":
-            raise HTTPException(status_code=403, detail="Unauthorized")
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
+    role: str
+    action: str
+    data: Any
 
 @app.get("/v1/health")
 async def health_check():
-    return {"status": "online", "active_workers": list(kernel.workers.keys())}
+    from core.state import system
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "telemetry": system.monitoring.check_health()
+    }
+
+@app.post("/v1/execute")
+async def execute_task(payload: ExecutePayload, x_signature: str = Header(None)):
+    from core.state import system
+    
+    raw_dict = payload.dict()
+    payload_bytes = json.dumps(raw_dict, sort_keys=True).encode("utf-8")
+    
+    if not system.auth.verify_signature(payload_bytes, x_signature):
+        raise HTTPException(status_code=403, detail="Signature Verification Failed.")
+        
+    try:
+        # Prevent event-loop starvation by instantly tracking metadata asynchronously
+        memory_key = f"task_{payload.target}_{payload.action}"
+        system.memory.store(key=memory_key, value={"role": payload.role, "data": payload.data}, memory_type="short")
+        
+        entity_id = system.knowledge.add_entity(
+            entity_type="api_execution_event",
+            attributes={"target": payload.target, "action": payload.action, "role": payload.role}
+        )
+        
+        # Offload task execution immediately into non-blocking background queue worker
+        asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))
+        
+        return {
+            "status": "queued",
+            "task_id": entity_id,
+            "context_verified": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Engine Routing Failure: {str(e)}")
