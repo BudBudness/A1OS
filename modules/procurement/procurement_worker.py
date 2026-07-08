@@ -1,11 +1,11 @@
 from workers.base_worker import BaseWorker
 
-class AnalyticsWorker(BaseWorker):
-    name="analytics"
+class ProcurementWorker(BaseWorker):
+    name="procurement"
 
     async def execute(self,event):
         return {
-            "worker":"analytics",
+            "worker":"procurement",
             "status":"success",
             "event":event
         }
