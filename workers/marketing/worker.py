@@ -1,4 +1,12 @@
-class Worker:
-    name="marketing"
-    async def execute(self,event):
-        return {"worker":"marketing","status":"ok","event":event}
+class MarketingWorker:
+    def __init__(self):
+        self.name = "marketing"
+        self.status = "active"
+    
+    async def process(self, payload: dict) -> dict:
+        return {
+            "status": "success",
+            "data": payload,
+            "worker": self.name,
+            "processed": True
+        }

@@ -1,15 +1,6 @@
-
 import time
-from typing import Dict
+import sys
 
-class MetricsCollector:
-    def __init__(self):
-        self.data: Dict[str, float] = {}
-        
-    def record(self, metric_name: str, value: float):
-        self.data[metric_name] = value
-
-class Logger:
-    def log(self, level: str, message: str):
-        print(f"[{time.strftime("%Y-%m-%d %H:%M:%S")}] {level}: {message}")
-
+def log(level, message):
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] {level}: {message}")
