@@ -1,33 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>A1OS Dashboard</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A1OS Platform</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>🚀 A1OS Platform</h1>
-        <div class="status">
-            <h2>System Status: <span id="status">Checking...</span></h2>
-        </div>
-        <div class="metrics">
-            <div class="card">
-                <h3>Workers</h3>
-                <p id="workers">Loading...</p>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <span class="logo-icon">◆</span>
+                    <span class="logo-text">A1OS</span>
+                    <span class="logo-badge">v1.0.0</span>
+                </div>
+                <div class="header-status">
+                    <span class="status-dot online"></span>
+                    <span class="status-text">System Online</span>
+                </div>
             </div>
-            <div class="card">
-                <h3>Uptime</h3>
-                <p id="uptime">Loading...</p>
+            <div class="header-right">
+                <a href="/docs" class="header-link" target="_blank">📚 API Docs</a>
+                <a href="/dashboard" class="header-link">📊 Dashboard</a>
+                <button class="header-btn" id="refreshBtn">⟳ Refresh</button>
             </div>
+        </header>
+
+        <!-- Stats Row -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-content">
+                    <div class="stat-label">System Status</div>
+                    <div class="stat-value" id="systemStatus">Online</div>
+                    <div class="stat-sub">v1.0.0 · <span id="errorCount">0</span> errors</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱</div>
+                <div class="stat-content">
+                    <div class="stat-label">Uptime</div>
+                    <div class="stat-value" id="uptime">--</div>
+                    <div class="stat-sub">Response <span id="responseTime">--</span>ms</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👷</div>
+                <div class="stat-content">
+                    <div class="stat-label">Workers</div>
+                    <div class="stat-value" id="workerCount">0</div>
+                    <div class="stat-sub" id="workerList">Active</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <div class="stat-label">Tasks</div>
+                    <div class="stat-value" id="taskCount">0</div>
+                    <div class="stat-sub">Error Rate <span id="errorRate">0.00</span>%</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workers Section -->
+        <section class="workers-section">
+            <div class="section-header">
+                <h2>👷 Active Workers</h2>
+                <span class="section-badge" id="workerBadge">0 workers</span>
+            </div>
+            <div class="workers-grid" id="workersGrid">
+                <!-- Worker cards rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Activity & Logs -->
+        <div class="dual-column">
+            <!-- Recent Activity -->
+            <section class="activity-section">
+                <div class="section-header">
+                    <h2>📋 Recent Activity</h2>
+                    <span class="section-badge">Live</span>
+                </div>
+                <div class="activity-feed" id="activityFeed">
+                    <!-- Activity items rendered by JS -->
+                </div>
+            </section>
+
+            <!-- System Logs -->
+            <section class="logs-section">
+                <div class="section-header">
+                    <h2>📊 System Logs</h2>
+                    <span class="section-badge">Streaming</span>
+                </div>
+                <div class="logs-container" id="logsContainer">
+                    <!-- Log entries rendered by JS -->
+                </div>
+            </section>
         </div>
-        <div class="actions">
-            <h3>Execute Task</h3>
-            <input type="text" id="taskTarget" placeholder="target (e.g., analytics)" value="analytics">
-            <input type="text" id="taskData" placeholder="data">
-            <button onclick="executeTask()">Run</button>
-            <pre id="result"></pre>
+
+        <!-- Quick Actions -->
+        <section class="actions-section">
+            <div class="section-header">
+                <h2>⚡ Quick Actions</h2>
+            </div>
+            <div class="actions-grid">
+                <button class="action-btn primary" id="executeBtn">▶ Execute Task</button>
+                <button class="action-btn secondary" id="uploadBtn">⬆ Upload File</button>
+                <button class="action-btn secondary" id="jobsBtn">📋 Job Queue</button>
+                <button class="action-btn secondary" id="logsBtn">🔍 View Logs</button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <span>A1OS Platform v1.0.0</span>
+            <span>·</span>
+            <span id="lastUpdate">Last updated: --</span>
+            <span>·</span>
+            <span>🔒 Secure</span>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="executeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>▶ Execute Task</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Target Worker</label>
+                    <select id="modalTarget" class="form-input">
+                        <option value="analytics">Analytics</option>
+                        <option value="research">Research</option>
+                        <option value="finance">Finance</option>
+                        <option value="hr">HR</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Action</label>
+                    <input type="text" id="modalAction" class="form-input" placeholder="e.g., process, analyze, run" value="run">
+                </div>
+                <div class="form-group">
+                    <label>Data (JSON)</label>
+                    <textarea id="modalData" class="form-input" rows="3" placeholder='{"key": "value"}'>{"test": true}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <input type="text" id="modalRole" class="form-input" value="user">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel">Cancel</button>
+                <button class="modal-btn execute" id="modalExecute">Execute</button>
+            </div>
         </div>
     </div>
+
     <script src="/static/js/dashboard.js"></script>
 </body>
 </html>
