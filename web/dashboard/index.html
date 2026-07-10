@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>A1OS Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 A1OS Platform</h1>
+        <div class="status">
+            <h2>System Status: <span id="status">Checking...</span></h2>
+        </div>
+        <div class="metrics">
+            <div class="card">
+                <h3>Workers</h3>
+                <p id="workers">Loading...</p>
+            </div>
+            <div class="card">
+                <h3>Uptime</h3>
+                <p id="uptime">Loading...</p>
+            </div>
+        </div>
+        <div class="actions">
+            <h3>Execute Task</h3>
+            <input type="text" id="taskTarget" placeholder="target (e.g., analytics)" value="analytics">
+            <input type="text" id="taskData" placeholder="data">
+            <button onclick="executeTask()">Run</button>
+            <pre id="result"></pre>
+        </div>
+    </div>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

@@ -3,7 +3,6 @@ from company.workers.dev_worker import DevWorker
 from company.workers.maintenance_worker import MaintenanceWorker
 from company.workers.ops_worker import OpsWorker
 from company.workers.procurement_worker import ProcurementWorker
-from modules.trading.trading_worker import TradingWorker
 from modules.finance.finance_worker import FinanceWorker
 from modules.crm.crm_worker import CRMWorker
 import asyncio
@@ -15,7 +14,6 @@ def register(runtime):
         "maintenance": MaintenanceWorker(),
         "operations": OpsWorker(),
         "procurement": ProcurementWorker(),
-        "trading": TradingWorker(),
         "finance": FinanceWorker(),
         "crm": CRMWorker()
     }
