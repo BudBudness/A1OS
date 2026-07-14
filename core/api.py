@@ -10,9 +10,12 @@ from core.dispatcher import dispatcher
 
 app = FastAPI(title="A1OS Advanced Gateway")
 
-# Fallback workers - hardcoded for now
-WORKERS = ["analytics", "research", "finance", "support", "security", "sales", 
-           "procurement", "marketing", "legal", "hr", "devops", "crm"]
+# All workers - including POS
+WORKERS = [
+    "analytics", "research", "finance", "support", "security",
+    "sales", "procurement", "marketing", "legal", "hr",
+    "devops", "crm", "pos"
+]
 
 class ExecutePayload(BaseModel):
     target: str
@@ -24,9 +27,17 @@ def load_workers():
     for worker_name in WORKERS:
         try:
             module = importlib.import_module(f"workers.{worker_name}.worker")
-            worker_class = getattr(module, f"{worker_name.capitalize()}Worker")
-            dispatcher.register(worker_name, worker_class())
-            print(f"[A1OS] Loaded worker: {worker_name}")
+            # Try to find the worker class
+            worker_class = None
+            for attr in dir(module):
+                if attr.endswith("Worker"):
+                    worker_class = getattr(module, attr)
+                    break
+            if worker_class:
+                dispatcher.register(worker_name, worker_class())
+                print(f"[A1OS] Loaded worker: {worker_name}")
+            else:
+                print(f"[A1OS] Failed to load worker {worker_name}: no Worker class found")
         except Exception as e:
             print(f"[A1OS] Failed to load worker {worker_name}: {e}")
 
@@ -37,19 +48,6 @@ async def startup_event():
         app.mount("/static", StaticFiles(directory="web/static"), name="static")
     except:
         pass
-
-@app.get("/")
-async def root():
-    return {
-        "message": "Welcome to A1OS Platform",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "/v1/health",
-            "docs": "/docs",
-            "dashboard": "/dashboard",
-            "execute": "/v1/execute"
-        }
-    }
 
 @app.get("/v1/health")
 async def health_check():
@@ -73,27 +71,23 @@ async def execute_task(payload: ExecutePayload, request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/dashboard", response_class=HTMLResponse)
-async def get_dashboard():
-    html_path = "web/dashboard/index.html"
+@app.get("/pos", response_class=HTMLResponse)
+async def get_pos():
+    html_path = "web/pos/index.html"
     if os.path.exists(html_path):
         with open(html_path, "r") as f:
             return f.read()
-    return HTMLResponse("<h1>Dashboard not found</h1>")
+    return HTMLResponse("<h1>POS not found</h1>")
 
-@app.post("/job")
-async def create_job(data: dict):
-    return {"job_id": "job_123", "status": "queued", "data": data}
-
-@app.post("/upload")
-async def upload_file():
-    return {"status": "upload_ready", "message": "File upload endpoint active"}
-
-@app.post("/tenant")
-async def tenant_endpoint(data: dict):
+@app.get("/")
+async def root():
     return {
-        "tenant_id": data.get("tenant_id", "default"),
-        "data": data.get("data", {}),
-        "isolated": True,
-        "message": "Tenant data stored"
+        "message": "Welcome to A1OS Platform",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/v1/health",
+            "docs": "/docs",
+            "dashboard": "/dashboard",
+            "execute": "/v1/execute"
+        }
     }

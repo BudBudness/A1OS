@@ -1,0 +1,11 @@
+import uvicorn
+from core.api import app
+
+if __name__ == "__main__":
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=3011,
+        ssl_keyfile="origin.key",
+        ssl_certfile="origin.pem",
+    )

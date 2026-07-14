@@ -29,3 +29,16 @@ tunnel.log
 state.log
 app.log
 a1os_state.db*
+
+# PostgreSQL Data Directory
+data/postgres/
+*.sql
+
+# DNS and Network Scripts (Local Config)
+dns-setup.sh
+dns_forwarder.py
+dns_forwarder_v2.py
+
+# Python Cache
+__pycache__/
+*.pyc
