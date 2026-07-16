@@ -8,3 +8,8 @@ if __name__ == "__main__":
 async def get_admin():
     with open("web/admin/index.html", "r") as f:
         return f.read()
+
+@app.get("/pos")
+async def get_pos():
+    with open("web/pos/index.html", "r") as f:
+        return f.read()

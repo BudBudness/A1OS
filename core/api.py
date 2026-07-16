@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI
+from fastapi import HTTPException, Request
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -91,3 +93,4 @@ async def root():
             "execute": "/v1/execute"
         }
     }
+app.mount("/pos", StaticFiles(directory="web/pos", html=True), name="pos")
