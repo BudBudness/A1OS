@@ -2345,12 +2345,12 @@ class A1OS:
 
         return result
 
-    async def execute(self, action: str, **kwargs):
+    async def execute(self, capability: str, **kwargs):
         """
         Execute any registered system capability through the unified
         capability execution contract.
         """
-        return await self.capabilities.execute(action, **kwargs)
+        return await self.capabilities.execute(capability, **kwargs)
 
 
 # Global A1OS system instance used by the application lifecycle.
