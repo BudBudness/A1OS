@@ -151,3 +151,8 @@ class A1OS:
             f"Unsupported system action: {action}"
         )
 
+
+# Global A1OS system instance used by the application lifecycle.
+
+
+system = A1OS()
