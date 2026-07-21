@@ -263,7 +263,8 @@ class A1OS:
         )
 
 
-    async def _capability_process_management(self, action="list", **kwargs):
+    async def _capability_process_management(self, operation="list", **kwargs):
+        action = operation
         import subprocess
 
         if action == "list":
