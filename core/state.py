@@ -92,4 +92,19 @@ class A1OS:
         current_runs = self.knowledge.get_meta("total_completed_tasks", 0)
         self.knowledge.set_meta("total_completed_tasks", current_runs + 1)
 
+    async def execute(self, action: str, **kwargs):
+        """
+        Execute system-level operations routed through the durable runtime.
+        """
+        if action == "health_check":
+            return {
+                "status": "healthy",
+                "runtime": str(self.runtime.__class__.__name__),
+                "database": "available",
+            }
+
+        raise RuntimeError(
+            f"Unsupported system action: {action}"
+        )
+
 system = A1OS()
