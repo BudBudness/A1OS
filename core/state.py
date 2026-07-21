@@ -294,7 +294,27 @@ class A1OS:
         import uuid
         from pathlib import Path
 
-        db_path = Path(self._runtime_path()) / "data" / "sovereignty_policy.db"
+        runtime = getattr(self, "runtime", None)
+
+        if runtime is not None:
+            runtime_root = getattr(runtime, "root", None)
+
+            if runtime_root is None:
+                runtime_root = getattr(runtime, "runtime_root", None)
+
+            if runtime_root is None:
+                runtime_root = getattr(runtime, "base_dir", None)
+
+            if runtime_root is None:
+                runtime_root = getattr(runtime, "path", None)
+
+        else:
+            runtime_root = None
+
+        if runtime_root is None:
+            runtime_root = Path(__file__).resolve().parent.parent
+
+        db_path = Path(runtime_root) / "data" / "sovereignty_policy.db"
         db_path.parent.mkdir(parents=True, exist_ok=True)
 
         db = sqlite3.connect(str(db_path))
