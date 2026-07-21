@@ -211,6 +211,10 @@ class A1OS:
             "autonomous_actuation",
             self._capability_autonomous_actuation,
         )
+        self.capabilities.register(
+            "sovereignty_policy_learning",
+            self._capability_sovereignty_policy_learning,
+        )
 
         self.capabilities.register(
             "sovereignty_policy",
@@ -269,6 +273,335 @@ class A1OS:
             "capabilities",
             self._capability_list,
         )
+
+
+    async def _capability_sovereignty_policy_learning(
+        self,
+        operation="authorize",
+        capability=None,
+        entity_id=None,
+        action=None,
+        kwargs=None,
+        decision_id=None,
+        verified=True,
+        confidence_threshold=0.90,
+        min_successes=3,
+        **extra,
+    ):
+        import json
+        import sqlite3
+        import time
+        import uuid
+        from pathlib import Path
+
+        db_path = Path(self._runtime_path()) / "data" / "sovereignty_policy.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        db = sqlite3.connect(str(db_path))
+        db.row_factory = sqlite3.Row
+
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS approvals (
+            id TEXT PRIMARY KEY,
+            decision_id TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            capability TEXT NOT NULL,
+            action TEXT NOT NULL,
+            kwargs TEXT NOT NULL,
+            approved_at REAL NOT NULL,
+            executed_at REAL,
+            verified INTEGER DEFAULT 0,
+            success INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS remediation_policies (
+            id TEXT PRIMARY KEY,
+            entity_id TEXT NOT NULL,
+            capability TEXT NOT NULL,
+            action TEXT NOT NULL,
+            success_count INTEGER NOT NULL DEFAULT 0,
+            failure_count INTEGER NOT NULL DEFAULT 0,
+            confidence REAL NOT NULL DEFAULT 0.0,
+            autonomous_authorization INTEGER NOT NULL DEFAULT 0,
+            last_success REAL,
+            updated_at REAL NOT NULL
+        );
+        """)
+
+        now = time.time()
+
+        if operation == "authorize":
+            row = db.execute(
+                """
+                SELECT *
+                FROM remediation_policies
+                WHERE entity_id = ?
+                  AND capability = ?
+                  AND action = ?
+                """,
+                (entity_id, capability, action or ""),
+            ).fetchone()
+
+            if row:
+                successes = int(row["success_count"])
+                confidence = float(row["confidence"])
+
+                if (
+                    successes >= int(min_successes)
+                    and confidence >= float(confidence_threshold)
+                    and int(row["autonomous_authorization"]) == 1
+                ):
+                    db.close()
+                    return {
+                        "status": "sovereign_action_autonomously_authorized",
+                        "entity_id": entity_id,
+                        "capability": capability,
+                        "action": action,
+                        "decision": "autonomous_authorization",
+                        "requires_human": False,
+                        "confidence": confidence,
+                        "success_count": successes,
+                        "timestamp": now,
+                    }
+
+            decision_id = str(uuid.uuid4())
+            db.close()
+
+            return {
+                "status": "sovereign_action_human_required",
+                "decision_id": decision_id,
+                "entity_id": entity_id,
+                "capability": capability,
+                "action": action,
+                "decision": "human_required",
+                "requires_human": True,
+                "confidence": 0.0,
+                "timestamp": now,
+            }
+
+        if operation in {"approve_execute", "human_approve_execute"}:
+            if not decision_id:
+                raise RuntimeError(
+                    "decision_id is required for human-approved execution"
+                )
+
+            approval_id = str(uuid.uuid4())
+            execution_kwargs = dict(kwargs or {})
+
+            db.execute(
+                """
+                INSERT INTO approvals (
+                    id,
+                    decision_id,
+                    entity_id,
+                    capability,
+                    action,
+                    kwargs,
+                    approved_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    approval_id,
+                    decision_id,
+                    entity_id,
+                    capability,
+                    action or "",
+                    json.dumps(execution_kwargs, sort_keys=True),
+                    now,
+                ),
+            )
+            db.commit()
+            db.close()
+
+            try:
+                result = await self.capabilities.execute(
+                    capability,
+                    **execution_kwargs,
+                )
+                execution_success = True
+            except Exception as exc:
+                result = {
+                    "status": "execution_failed",
+                    "error": str(exc),
+                }
+                execution_success = False
+
+            verified_success = bool(execution_success and verified)
+            completed_at = time.time()
+
+            db = sqlite3.connect(str(db_path))
+            db.row_factory = sqlite3.Row
+
+            db.execute(
+                """
+                UPDATE approvals
+                SET executed_at = ?,
+                    verified = ?,
+                    success = ?
+                WHERE id = ?
+                """,
+                (
+                    completed_at,
+                    int(verified_success),
+                    int(execution_success),
+                    approval_id,
+                ),
+            )
+
+            policy = db.execute(
+                """
+                SELECT *
+                FROM remediation_policies
+                WHERE entity_id = ?
+                  AND capability = ?
+                  AND action = ?
+                """,
+                (entity_id, capability, action or ""),
+            ).fetchone()
+
+            if policy:
+                success_count = int(policy["success_count"])
+                failure_count = int(policy["failure_count"])
+
+                if verified_success:
+                    success_count += 1
+                else:
+                    failure_count += 1
+
+                total = success_count + failure_count
+                confidence = success_count / total if total else 0.0
+
+                autonomous = int(
+                    success_count >= int(min_successes)
+                    and confidence >= float(confidence_threshold)
+                )
+
+                db.execute(
+                    """
+                    UPDATE remediation_policies
+                    SET success_count = ?,
+                        failure_count = ?,
+                        confidence = ?,
+                        autonomous_authorization = ?,
+                        last_success = ?,
+                        updated_at = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        success_count,
+                        failure_count,
+                        confidence,
+                        autonomous,
+                        completed_at if verified_success else policy["last_success"],
+                        completed_at,
+                        policy["id"],
+                    ),
+                )
+
+            else:
+                success_count = 1 if verified_success else 0
+                failure_count = 0 if verified_success else 1
+                total = success_count + failure_count
+                confidence = success_count / total if total else 0.0
+
+                autonomous = int(
+                    success_count >= int(min_successes)
+                    and confidence >= float(confidence_threshold)
+                )
+
+                db.execute(
+                    """
+                    INSERT INTO remediation_policies (
+                        id,
+                        entity_id,
+                        capability,
+                        action,
+                        success_count,
+                        failure_count,
+                        confidence,
+                        autonomous_authorization,
+                        last_success,
+                        updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(uuid.uuid4()),
+                        entity_id,
+                        capability,
+                        action or "",
+                        success_count,
+                        failure_count,
+                        confidence,
+                        autonomous,
+                        completed_at if verified_success else None,
+                        completed_at,
+                    ),
+                )
+
+            db.commit()
+
+            learned = db.execute(
+                """
+                SELECT *
+                FROM remediation_policies
+                WHERE entity_id = ?
+                  AND capability = ?
+                  AND action = ?
+                """,
+                (entity_id, capability, action or ""),
+            ).fetchone()
+
+            learning = {
+                "success_count": int(learned["success_count"]),
+                "failure_count": int(learned["failure_count"]),
+                "confidence": float(learned["confidence"]),
+                "autonomous_authorization": bool(
+                    learned["autonomous_authorization"]
+                ),
+                "confidence_threshold": float(confidence_threshold),
+                "minimum_successes": int(min_successes),
+            }
+
+            db.close()
+
+            return {
+                "status": "human_approved_action_executed",
+                "approval_id": approval_id,
+                "decision_id": decision_id,
+                "entity_id": entity_id,
+                "capability": capability,
+                "action": action,
+                "execution": result,
+                "verified": verified_success,
+                "learning": learning,
+                "timestamp": completed_at,
+            }
+
+        if operation in {"policies", "list_policies"}:
+            rows = db.execute(
+                """
+                SELECT *
+                FROM remediation_policies
+                ORDER BY updated_at DESC
+                """
+            ).fetchall()
+
+            policies = [dict(row) for row in rows]
+            db.close()
+
+            return {
+                "status": "sovereignty_remediation_policies_complete",
+                "count": len(policies),
+                "policies": policies,
+                "timestamp": now,
+            }
+
+        raise RuntimeError(
+            f"Unsupported sovereignty policy learning operation: {operation}"
+        )
+
 
     async def _capability_service_management(self, operation="list", **kwargs):
         import subprocess
