@@ -14,16 +14,73 @@ class Runtime:
     def __init__(self, system=None):
         self.system = system
         self.started = False
+        self.worker_task = None
+        self.worker_running = False
 
     async def start(self):
         self.started = True
+        self.worker_running = True
+        self.worker_task = asyncio.create_task(self._durable_worker())
         print("[A1OS] Execution runtime online.")
+        print("[A1OS] Durable task worker online.")
+
+    async def _durable_worker(self):
+        while self.worker_running:
+            try:
+                pending = DurableQueue.pending(limit=10)
+
+                for row in pending:
+                    task_id = row["task_id"]
+
+                    if row["status"] not in {"queued", "retry"}:
+                        continue
+
+                    payload = {
+                        "target": row["target"],
+                        "role": row["role"],
+                        "action": row["action"],
+                    }
+
+                    import json
+                    payload["data"] = json.loads(row["payload"])
+
+                    await self.execute(
+                        task_id=task_id,
+                        payload=payload,
+                    )
+
+                await asyncio.sleep(1)
+
+            except asyncio.CancelledError:
+                break
+
+            except Exception as exc:
+                print(f"[A1OS] Durable worker error: {exc}")
+                await asyncio.sleep(2)
 
     async def execute(self, task_id: str, payload: Dict[str, Any]):
         target = str(payload.get("target", "default")).lower()
         action = payload.get("action", "default")
 
-        DurableQueue.claim(task_id)
+        claimed = DurableQueue.claim(task_id)
+
+
+        if not claimed:
+
+            return {
+
+                "task_id": task_id,
+
+                "target": target,
+
+                "action": action,
+
+                "status": "skipped",
+
+                "reason": "task_already_claimed_or_not_pending",
+
+            }
+
 
         result = {
             "task_id": task_id,
