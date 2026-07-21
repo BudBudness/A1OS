@@ -275,6 +275,75 @@ class A1OS:
         )
 
 
+
+    def _confidence_decay(
+        self,
+        confidence,
+        last_success,
+        now,
+        half_life_seconds=86400.0,
+    ):
+        if confidence is None or last_success is None:
+            return 0.0
+
+        age = max(0.0, float(now) - float(last_success))
+        decay = 0.5 ** (age / float(half_life_seconds))
+
+        return max(
+            0.0,
+            min(1.0, float(confidence) * decay),
+        )
+
+
+    def _failure_penalty(
+        self,
+        confidence,
+        failure_count,
+    ):
+        failures = max(0, int(failure_count or 0))
+        penalty = 0.20 * failures
+
+        return max(
+            0.0,
+            min(1.0, float(confidence or 0.0) - penalty),
+        )
+
+
+    def _effective_policy_confidence(
+        self,
+        confidence,
+        last_success,
+        failure_count,
+        now,
+    ):
+        decayed = self._confidence_decay(
+            confidence=confidence,
+            last_success=last_success,
+            now=now,
+        )
+
+        return self._failure_penalty(
+            confidence=decayed,
+            failure_count=failure_count,
+        )
+
+
+    def _policy_autonomy_allowed(
+        self,
+        confidence,
+        success_count,
+        failure_count,
+        minimum_successes=3,
+        confidence_threshold=0.90,
+        max_failures=2,
+    ):
+        return (
+            int(success_count or 0) >= minimum_successes
+            and int(failure_count or 0) <= max_failures
+            and float(confidence or 0.0) >= confidence_threshold
+        )
+
+
     async def _capability_sovereignty_policy_learning(
         self,
         operation="authorize",
