@@ -212,6 +212,10 @@ class A1OS:
             self._capability_digital_world_query,
         )
         self.capabilities.register(
+            "digital_world_state",
+            self._capability_digital_world_state,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -901,6 +905,166 @@ class A1OS:
 
         raise RuntimeError(
             f"Unsupported digital world query operation: {operation}"
+        )
+
+
+    async def _capability_digital_world_state(
+        self,
+        operation="set",
+        entity_id=None,
+        state=None,
+        metadata=None,
+        **kwargs,
+    ):
+        import json
+        import sqlite3
+        import time
+        from pathlib import Path
+
+        valid_states = {
+            "healthy",
+            "degraded",
+            "failed",
+            "compromised",
+            "recovering",
+        }
+
+        runtime = getattr(self, "runtime", None)
+        runtime_path = None
+
+        if runtime is not None:
+            runtime_path = getattr(runtime, "runtime_path", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "root", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "base_dir", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "path", None)
+
+        if runtime_path is None:
+            runtime_path = Path.cwd()
+
+        graph_path = (
+            Path(runtime_path)
+            / "data"
+            / "digital_world_graph.db"
+        )
+
+        if not graph_path.exists():
+            raise RuntimeError(
+                "Digital world graph database does not exist"
+            )
+
+        db = sqlite3.connect(graph_path)
+        db.row_factory = sqlite3.Row
+
+        if operation == "set":
+            if entity_id is None:
+                raise RuntimeError(
+                    "entity_id is required for state update"
+                )
+
+            if state not in valid_states:
+                raise RuntimeError(
+                    f"Unsupported entity state: {state}"
+                )
+
+            entity = db.execute("""
+                SELECT id, entity_type, state, metadata
+                FROM entities
+                WHERE id = ?
+            """, (entity_id,)).fetchone()
+
+            if entity is None:
+                db.close()
+                raise RuntimeError(
+                    f"Entity not found: {entity_id}"
+                )
+
+            current_metadata = json.loads(entity["metadata"])
+
+            if metadata:
+                current_metadata.update(metadata)
+
+            now = time.time()
+
+            db.execute("""
+                UPDATE entities
+                SET state = ?,
+                    metadata = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """, (
+                state,
+                json.dumps(current_metadata),
+                now,
+                entity_id,
+            ))
+
+            db.commit()
+            db.close()
+
+            return {
+                "status": "entity_state_updated",
+                "entity_id": entity_id,
+                "state": state,
+                "updated_at": now,
+            }
+
+        if operation == "get":
+            if entity_id is None:
+                raise RuntimeError(
+                    "entity_id is required for state query"
+                )
+
+            entity = db.execute("""
+                SELECT id, entity_type, state, metadata,
+                       created_at, updated_at
+                FROM entities
+                WHERE id = ?
+            """, (entity_id,)).fetchone()
+
+            db.close()
+
+            if entity is None:
+                raise RuntimeError(
+                    f"Entity not found: {entity_id}"
+                )
+
+            return {
+                "status": "entity_state_retrieved",
+                "entity": {
+                    "id": entity["id"],
+                    "type": entity["entity_type"],
+                    "state": entity["state"],
+                    "metadata": json.loads(entity["metadata"]),
+                    "created_at": entity["created_at"],
+                    "updated_at": entity["updated_at"],
+                },
+            }
+
+        if operation == "summary":
+            rows = db.execute("""
+                SELECT state, COUNT(*) AS count
+                FROM entities
+                GROUP BY state
+                ORDER BY state
+            """).fetchall()
+
+            db.close()
+
+            return {
+                "status": "digital_world_state_summary_complete",
+                "states": {
+                    row["state"]: row["count"]
+                    for row in rows
+                },
+            }
+
+        db.close()
+
+        raise RuntimeError(
+            f"Unsupported digital world state operation: {operation}"
         )
 
 
