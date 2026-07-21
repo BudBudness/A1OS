@@ -1,0 +1,8 @@
+STATUS=healthy
+PRIMARY_DB=/data/data/com.termux/files/home/A1OS_RESTORED/data/a1os.db
+LOCAL_REPLICA=/data/data/com.termux/files/home/A1OS_RESTORED/replica/a1os-replica.db
+EXTERNAL_BACKUP=/data/data/com.termux/files/home/A1OS_EXTERNAL_BACKUP/a1os-20260721T083439Z.db
+BACKUP_SHA256=f0b022274de8b9b5ef3992147ec5fc4aa2be3d75ca5bbf65b19041375e3ea5d1
+RESTORE_VALIDATION=PASS
+LAST_SYNC=2026-07-21T08:34:39Z
+RETENTION=14
