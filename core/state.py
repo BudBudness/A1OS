@@ -208,6 +208,10 @@ class A1OS:
             self._capability_digital_world_graph,
         )
         self.capabilities.register(
+            "digital_world_query",
+            self._capability_digital_world_query,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -740,6 +744,163 @@ class A1OS:
 
         raise RuntimeError(
             f"Unsupported digital world graph operation: {operation}"
+        )
+
+
+    async def _capability_digital_world_query(
+        self,
+        operation="entity",
+        entity_id=None,
+        entity_type=None,
+        state=None,
+        relationship_type=None,
+        **kwargs,
+    ):
+        import json
+        import sqlite3
+        from pathlib import Path
+
+        runtime = getattr(self, "runtime", None)
+        runtime_path = None
+
+        if runtime is not None:
+            runtime_path = getattr(runtime, "runtime_path", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "root", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "base_dir", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "path", None)
+
+        if runtime_path is None:
+            runtime_path = Path.cwd()
+
+        graph_path = (
+            Path(runtime_path)
+            / "data"
+            / "digital_world_graph.db"
+        )
+
+        if not graph_path.exists():
+            raise RuntimeError(
+                "Digital world graph database does not exist"
+            )
+
+        db = sqlite3.connect(graph_path)
+        db.row_factory = sqlite3.Row
+
+        if operation == "entity":
+            query = """
+                SELECT id, entity_type, state, metadata,
+                       created_at, updated_at
+                FROM entities
+                WHERE 1=1
+            """
+            params = []
+
+            if entity_id is not None:
+                query += " AND id = ?"
+                params.append(entity_id)
+
+            if entity_type is not None:
+                query += " AND entity_type = ?"
+                params.append(entity_type)
+
+            if state is not None:
+                query += " AND state = ?"
+                params.append(state)
+
+            rows = db.execute(query, params).fetchall()
+
+            db.close()
+
+            return {
+                "status": "entity_query_complete",
+                "count": len(rows),
+                "entities": [
+                    {
+                        "id": row["id"],
+                        "type": row["entity_type"],
+                        "state": row["state"],
+                        "metadata": json.loads(row["metadata"]),
+                        "created_at": row["created_at"],
+                        "updated_at": row["updated_at"],
+                    }
+                    for row in rows
+                ],
+            }
+
+        if operation == "relationship":
+            query = """
+                SELECT id, source_id, target_id,
+                       relationship_type, metadata, created_at
+                FROM relationships
+                WHERE 1=1
+            """
+            params = []
+
+            if relationship_type is not None:
+                query += " AND relationship_type = ?"
+                params.append(relationship_type)
+
+            rows = db.execute(query, params).fetchall()
+
+            db.close()
+
+            return {
+                "status": "relationship_query_complete",
+                "count": len(rows),
+                "relationships": [
+                    {
+                        "id": row["id"],
+                        "source_id": row["source_id"],
+                        "target_id": row["target_id"],
+                        "type": row["relationship_type"],
+                        "metadata": json.loads(row["metadata"]),
+                        "created_at": row["created_at"],
+                    }
+                    for row in rows
+                ],
+            }
+
+        if operation == "neighbors":
+            if entity_id is None:
+                raise RuntimeError(
+                    "entity_id is required for neighbors query"
+                )
+
+            rows = db.execute("""
+                SELECT
+                    r.source_id,
+                    r.target_id,
+                    r.relationship_type,
+                    r.metadata
+                FROM relationships r
+                WHERE r.source_id = ?
+                   OR r.target_id = ?
+            """, (entity_id, entity_id)).fetchall()
+
+            db.close()
+
+            return {
+                "status": "entity_neighbors_query_complete",
+                "entity_id": entity_id,
+                "count": len(rows),
+                "relationships": [
+                    {
+                        "source_id": row["source_id"],
+                        "target_id": row["target_id"],
+                        "type": row["relationship_type"],
+                        "metadata": json.loads(row["metadata"]),
+                    }
+                    for row in rows
+                ],
+            }
+
+        db.close()
+
+        raise RuntimeError(
+            f"Unsupported digital world query operation: {operation}"
         )
 
 
