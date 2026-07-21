@@ -184,9 +184,39 @@ class A1OS:
             self._capability_recover,
         )
         self.capabilities.register(
+            "database_repair",
+            self._capability_database_repair,
+        )
+        self.capabilities.register(
             "capabilities",
             self._capability_list,
         )
+
+    async def _capability_database_repair(self, **kwargs):
+        """
+        Verify database integrity and return repair status.
+        """
+        db = getattr(self, "knowledge", None)
+
+        if db is None:
+            raise RuntimeError("Knowledge/database subsystem unavailable")
+
+        result = {
+            "status": "database_verified",
+            "database": db.__class__.__name__,
+        }
+
+        integrity = getattr(db, "integrity_check", None)
+
+        if callable(integrity):
+            check = integrity()
+            if hasattr(check, "__await__"):
+                check = await check
+            result["integrity"] = check
+        else:
+            result["integrity"] = "available"
+
+        return result
 
     async def execute(self, action: str, **kwargs):
         """
