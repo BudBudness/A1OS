@@ -99,12 +99,55 @@ class A1OS:
         if action == "health_check":
             return {
                 "status": "healthy",
-                "runtime": str(self.runtime.__class__.__name__),
+                "runtime": self.runtime.__class__.__name__,
                 "database": "available",
+            }
+
+        if action == "status":
+            return {
+                "status": "online",
+                "runtime": self.runtime.__class__.__name__,
+                "bus": self.bus.__class__.__name__,
+            }
+
+        if action == "metrics":
+            completed = self.knowledge.get_meta(
+                "total_completed_tasks",
+                0,
+            )
+
+            return {
+                "total_completed_tasks": completed,
+            }
+
+        if action == "diagnostics":
+            return {
+                "runtime": {
+                    "class": self.runtime.__class__.__name__,
+                    "execute_available": callable(
+                        getattr(self.runtime, "execute", None)
+                    ),
+                },
+                "bus": {
+                    "class": self.bus.__class__.__name__,
+                    "publish_available": callable(
+                        getattr(self.bus, "publish", None)
+                    ),
+                },
+                "knowledge": {
+                    "class": self.knowledge.__class__.__name__,
+                },
+            }
+
+        if action == "recover":
+            recovered = DurableQueue.recover_running()
+
+            return {
+                "status": "recovery_complete",
+                "recovered_tasks": recovered,
             }
 
         raise RuntimeError(
             f"Unsupported system action: {action}"
         )
 
-system = A1OS()
