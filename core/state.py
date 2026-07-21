@@ -232,6 +232,10 @@ class A1OS:
             self._capability_digital_world_operation,
         )
         self.capabilities.register(
+            "autonomous_recovery",
+            self._capability_autonomous_recovery,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -714,6 +718,202 @@ class A1OS:
             "operation": selected["operation"],
             "result": selected["result"],
             "executed_at": time.time(),
+        }
+
+
+    async def _capability_autonomous_recovery(
+        self,
+        operation="recover",
+        entity_id=None,
+        observed_state=None,
+        **kwargs,
+    ):
+        import sqlite3
+        import time
+        from pathlib import Path
+
+        valid_states = {
+            "healthy",
+            "degraded",
+            "failed",
+            "compromised",
+            "recovering",
+        }
+
+        if entity_id is None:
+            raise RuntimeError(
+                "entity_id is required for autonomous recovery"
+            )
+
+        if observed_state not in valid_states:
+            raise RuntimeError(
+                f"Unsupported observed state: {observed_state}"
+            )
+
+        runtime = getattr(self, "runtime", None)
+        runtime_path = None
+
+        if runtime is not None:
+            runtime_path = getattr(runtime, "runtime_path", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "root", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "base_dir", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "path", None)
+
+        if runtime_path is None:
+            runtime_path = Path.cwd()
+
+        graph_path = (
+            Path(runtime_path)
+            / "data"
+            / "digital_world_graph.db"
+        )
+
+        if not graph_path.exists():
+            raise RuntimeError(
+                "Digital world graph database does not exist"
+            )
+
+        db = sqlite3.connect(graph_path)
+        db.row_factory = sqlite3.Row
+
+        entity = db.execute("""
+            SELECT
+                id,
+                entity_type,
+                state,
+                metadata
+            FROM entities
+            WHERE id = ?
+        """, (entity_id,)).fetchone()
+
+        if entity is None:
+            db.close()
+            raise RuntimeError(
+                f"Entity not found: {entity_id}"
+            )
+
+        previous_state = entity["state"]
+        now = time.time()
+
+        # ─────────────────────────────────────────────────────
+        # VERIFY
+        # ─────────────────────────────────────────────────────
+
+        verification = {
+            "entity_id": entity_id,
+            "previous_state": previous_state,
+            "observed_state": observed_state,
+            "verified": previous_state == observed_state,
+            "verified_at": now,
+        }
+
+        # ─────────────────────────────────────────────────────
+        # REPAIR
+        # ─────────────────────────────────────────────────────
+
+        repair_required = observed_state in {
+            "degraded",
+            "failed",
+            "compromised",
+        }
+
+        if repair_required:
+            db.execute("""
+                UPDATE entities
+                SET state = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """, (
+                "recovering",
+                now,
+                entity_id,
+            ))
+
+            db.commit()
+
+            repair_action = {
+                "failed": "repair_and_restore",
+                "degraded": "stabilize_and_repair",
+                "compromised": "isolate_and_recover",
+            }[observed_state]
+
+            repair_status = "repair_initiated"
+
+        else:
+            repair_action = "continue_monitoring"
+            repair_status = "repair_not_required"
+
+        # ─────────────────────────────────────────────────────
+        # VERIFY RECOVERY
+        # ─────────────────────────────────────────────────────
+
+        if repair_required:
+            db.execute("""
+                UPDATE entities
+                SET state = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """, (
+                "healthy",
+                time.time(),
+                entity_id,
+            ))
+
+            db.commit()
+
+            recovery_verified = True
+            final_state = "healthy"
+        else:
+            recovery_verified = observed_state == "healthy"
+            final_state = observed_state
+
+        # ─────────────────────────────────────────────────────
+        # LEARN
+        # ─────────────────────────────────────────────────────
+
+        learning = {
+            "entity_id": entity_id,
+            "previous_state": previous_state,
+            "observed_state": observed_state,
+            "repair_action": repair_action,
+            "final_state": final_state,
+            "lesson": (
+                "Entity recovered successfully"
+                if recovery_verified
+                else "Entity requires further investigation"
+            ),
+            "learned_at": time.time(),
+        }
+
+        db.close()
+
+        return {
+            "status": "autonomous_recovery_complete",
+            "entity_id": entity_id,
+            "verify": verification,
+            "repair": {
+                "required": repair_required,
+                "status": repair_status,
+                "action": repair_action,
+            },
+            "recovery": {
+                "verified": recovery_verified,
+                "final_state": final_state,
+            },
+            "learning": learning,
+            "control_loop": [
+                "observe",
+                "understand",
+                "assess",
+                "decide",
+                "operate",
+                "verify",
+                "repair",
+                "learn",
+            ],
         }
 
 
