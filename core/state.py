@@ -23,6 +23,7 @@ from selfheal.engine import SelfHealEngine
 from execution.distributed.engine import DistributedEngine
 from core.runtime import Runtime
 from core.queue.durable import DurableQueue
+from datetime import datetime, timezone
 
 class CapabilityRegistry:
     """
@@ -212,6 +213,10 @@ class A1OS:
             self._capability_autonomous_actuation,
         )
         self.capabilities.register(
+            "adaptive_authorization_test",
+            self._capability_adaptive_authorization_test,
+        )
+        self.capabilities.register(
             "sovereignty_policy_learning",
             self._capability_sovereignty_policy_learning,
         )
@@ -344,6 +349,197 @@ class A1OS:
         )
 
 
+
+    async def _capability_adaptive_authorization_test(self, operation="run", **kwargs):
+        """
+        Deterministic authorization-path test matrix.
+
+        This does not mutate production policy records. It exercises the
+        authorization mathematics against isolated synthetic policies.
+        """
+        if operation != "run":
+            raise RuntimeError(
+                f"Unsupported adaptive authorization test operation: {operation}"
+            )
+
+        now = datetime.now(timezone.utc).timestamp()
+
+        def policy(
+            successes=0,
+            failures=0,
+            confidence=0.0,
+            last_success=None,
+        ):
+            return {
+                "success_count": successes,
+                "failure_count": failures,
+                "confidence": confidence,
+                "last_success": last_success if last_success is not None else now,
+                "autonomous_authorization": 1,
+            }
+
+        cases = []
+
+        # 1. Zero successes → human required.
+        p0 = policy(successes=0, confidence=0.0)
+        c0 = self._effective_policy_confidence(
+            p0["confidence"],
+            p0["last_success"],
+            p0["failure_count"],
+            now,
+        )
+        a0 = self._policy_autonomy_allowed(
+            c0,
+            p0["success_count"],
+            p0["failure_count"],
+        )
+        cases.append({
+            "name": "zero_successes_human_required",
+            "passed": c0 < 0.90 and not a0,
+            "effective_confidence": c0,
+            "autonomous": a0,
+        })
+
+        # 2. Three successes, confidence 1.0 → autonomous.
+        p3 = policy(successes=3, confidence=1.0)
+        c3 = self._effective_policy_confidence(
+            p3["confidence"],
+            p3["last_success"],
+            p3["failure_count"],
+            now,
+        )
+        a3 = self._policy_autonomy_allowed(
+            c3,
+            p3["success_count"],
+            p3["failure_count"],
+        )
+        cases.append({
+            "name": "three_successes_autonomous",
+            "passed": c3 >= 0.90 and a3,
+            "effective_confidence": c3,
+            "autonomous": a3,
+        })
+
+        # 3. Confidence below threshold → human required.
+        pl = policy(successes=3, confidence=0.80)
+        cl = self._effective_policy_confidence(
+            pl["confidence"],
+            pl["last_success"],
+            pl["failure_count"],
+            now,
+        )
+        al = self._policy_autonomy_allowed(
+            cl,
+            pl["success_count"],
+            pl["failure_count"],
+        )
+        cases.append({
+            "name": "confidence_below_threshold_human_required",
+            "passed": cl < 0.90 and not al,
+            "effective_confidence": cl,
+            "autonomous": al,
+        })
+
+        # 4. One failure → penalty applied.
+        p1 = policy(successes=3, failures=1, confidence=1.0)
+        c1 = self._effective_policy_confidence(
+            p1["confidence"],
+            p1["last_success"],
+            p1["failure_count"],
+            now,
+        )
+        a1 = self._policy_autonomy_allowed(
+            c1,
+            p1["success_count"],
+            p1["failure_count"],
+        )
+        cases.append({
+            "name": "one_failure_penalty_applied",
+            "passed": c1 < 1.0 and abs(c1 - 0.8) < 1e-9 and not a1,
+            "effective_confidence": c1,
+            "autonomous": a1,
+        })
+
+        # 5. Three failures → authorization revoked.
+        pf = policy(successes=3, failures=3, confidence=1.0)
+        cf = self._effective_policy_confidence(
+            pf["confidence"],
+            pf["last_success"],
+            pf["failure_count"],
+            now,
+        )
+        af = self._policy_autonomy_allowed(
+            cf,
+            pf["success_count"],
+            pf["failure_count"],
+        )
+        cases.append({
+            "name": "three_failures_authorization_revoked",
+            "passed": not af,
+            "effective_confidence": cf,
+            "autonomous": af,
+        })
+
+        # 6. Simulated time decay → authorization revoked.
+        stale = now - (30 * 86400)
+        pd = policy(successes=3, confidence=1.0, last_success=stale)
+        cd = self._effective_policy_confidence(
+            pd["confidence"],
+            pd["last_success"],
+            pd["failure_count"],
+            now,
+        )
+        ad = self._policy_autonomy_allowed(
+            cd,
+            pd["success_count"],
+            pd["failure_count"],
+        )
+        cases.append({
+            "name": "time_decay_revokes_authorization",
+            "passed": cd < 0.90 and not ad,
+            "effective_confidence": cd,
+            "autonomous": ad,
+        })
+
+        # 7. Human-approved successful recovery → confidence restoration.
+        before = policy(successes=2, confidence=0.70)
+        before_confidence = self._effective_policy_confidence(
+            before["confidence"],
+            before["last_success"],
+            before["failure_count"],
+            now,
+        )
+
+        after = policy(successes=3, confidence=1.0)
+        after_confidence = self._effective_policy_confidence(
+            after["confidence"],
+            after["last_success"],
+            after["failure_count"],
+            now,
+        )
+
+        cases.append({
+            "name": "human_approved_success_restores_confidence",
+            "passed": after_confidence > before_confidence,
+            "before_confidence": before_confidence,
+            "after_confidence": after_confidence,
+        })
+
+        failed = [case for case in cases if not case["passed"]]
+
+        return {
+            "status": (
+                "adaptive_authorization_test_matrix_passed"
+                if not failed
+                else "adaptive_authorization_test_matrix_failed"
+            ),
+            "total": len(cases),
+            "passed": len(cases) - len(failed),
+            "failed": len(failed),
+            "cases": cases,
+            "timestamp": now,
+        }
+
     async def _capability_sovereignty_policy_learning(
         self,
         operation="authorize",
@@ -449,6 +645,9 @@ class A1OS:
                         "decision": "autonomous_authorization",
                         "requires_human": False,
                         "confidence": confidence,
+            "effective_confidence": confidence,
+            "failure_count": int(policy.get("failure_count", 0)),
+            "success_count": int(policy.get("success_count", 0)),
                         "success_count": successes,
                         "timestamp": now,
                     }
