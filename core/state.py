@@ -211,6 +211,16 @@ class A1OS:
             "autonomous_actuation",
             self._capability_autonomous_actuation,
         )
+
+        self.capabilities.register(
+            "sovereignty_policy",
+            self._capability_sovereignty_policy,
+        )
+
+        self.capabilities.register(
+            "sovereign_control",
+            self._capability_sovereign_control,
+        )
         self.capabilities.register(
             "digital_world_graph",
             self._capability_digital_world_graph,
@@ -1107,6 +1117,217 @@ class A1OS:
         raise RuntimeError(
             f"Unsupported digital world graph operation: {operation}"
         )
+
+
+
+    async def _capability_sovereignty_policy(
+        self,
+        operation="evaluate",
+        entity_id=None,
+        action=None,
+        risk=None,
+        **kwargs,
+    ):
+        import sqlite3
+        import time
+        import uuid
+        import json
+
+        valid_operations = {
+            "evaluate",
+            "authorize",
+            "escalate",
+            "policy",
+            "risk",
+        }
+
+        if operation not in valid_operations:
+            raise RuntimeError(
+                f"Unsupported sovereignty policy operation: {operation}"
+            )
+
+        policies = {
+            "observe": {
+                "risk": "low",
+                "authorization": "autonomous",
+                "requires_human": False,
+            },
+            "diagnose": {
+                "risk": "low",
+                "authorization": "autonomous",
+                "requires_human": False,
+            },
+            "verify": {
+                "risk": "low",
+                "authorization": "autonomous",
+                "requires_human": False,
+            },
+            "restart_process": {
+                "risk": "medium",
+                "authorization": "autonomous",
+                "requires_human": False,
+            },
+            "restart_service": {
+                "risk": "medium",
+                "authorization": "autonomous",
+                "requires_human": False,
+            },
+            "repair_database": {
+                "risk": "high",
+                "authorization": "conditional",
+                "requires_human": True,
+            },
+            "modify_network": {
+                "risk": "high",
+                "authorization": "conditional",
+                "requires_human": True,
+            },
+            "delete_data": {
+                "risk": "critical",
+                "authorization": "human",
+                "requires_human": True,
+            },
+            "destroy_entity": {
+                "risk": "critical",
+                "authorization": "human",
+                "requires_human": True,
+            },
+        }
+
+        if operation == "policy":
+            return {
+                "status": "sovereignty_policy_complete",
+                "policies": policies,
+            }
+
+        if operation == "risk":
+            policy = policies.get(
+                action,
+                {
+                    "risk": "unknown",
+                    "authorization": "human",
+                    "requires_human": True,
+                },
+            )
+
+            return {
+                "status": "risk_assessment_complete",
+                "action": action,
+                "risk": policy["risk"],
+                "authorization": policy["authorization"],
+                "requires_human": policy["requires_human"],
+            }
+
+        policy = policies.get(
+            action,
+            {
+                "risk": "unknown",
+                "authorization": "human",
+                "requires_human": True,
+            },
+        )
+
+        decision_id = str(uuid.uuid4())
+        timestamp = time.time()
+
+        if policy["authorization"] == "autonomous":
+            decision = "authorized"
+            status = "sovereign_action_authorized"
+        elif policy["authorization"] == "conditional":
+            decision = "escalate"
+            status = "sovereign_action_requires_escalation"
+        else:
+            decision = "human_required"
+            status = "sovereign_action_human_required"
+
+        if operation == "authorize":
+            return {
+                "status": status,
+                "decision_id": decision_id,
+                "entity_id": entity_id,
+                "action": action,
+                "risk": policy["risk"],
+                "decision": decision,
+                "requires_human": policy["requires_human"],
+                "timestamp": timestamp,
+            }
+
+        if operation == "escalate":
+            return {
+                "status": "sovereign_action_escalated",
+                "decision_id": decision_id,
+                "entity_id": entity_id,
+                "action": action,
+                "risk": policy["risk"],
+                "reason": "policy_requires_human_authority",
+                "timestamp": timestamp,
+            }
+
+        return {
+            "status": "sovereignty_policy_evaluation_complete",
+            "decision_id": decision_id,
+            "entity_id": entity_id,
+            "action": action,
+            "risk": policy["risk"],
+            "decision": decision,
+            "requires_human": policy["requires_human"],
+            "timestamp": timestamp,
+        }
+
+
+    async def _capability_sovereign_control(
+        self,
+        operation="evaluate",
+        entity_id=None,
+        action=None,
+        **kwargs,
+    ):
+        import time
+
+        if operation not in {
+            "evaluate",
+            "authorize",
+            "execute",
+            "escalate",
+        }:
+            raise RuntimeError(
+                f"Unsupported sovereign control operation: {operation}"
+            )
+
+        policy = await self._capability_sovereignty_policy(
+            operation="authorize",
+            entity_id=entity_id,
+            action=action,
+            **kwargs,
+        )
+
+        if operation == "evaluate":
+            return {
+                "status": "sovereign_control_evaluation_complete",
+                "policy": policy,
+            }
+
+        if operation == "escalate":
+            return {
+                "status": "sovereign_control_escalated",
+                "policy": policy,
+                "reason": "human_authority_required",
+            }
+
+        if policy["decision"] != "authorized":
+            return {
+                "status": "sovereign_control_blocked",
+                "policy": policy,
+                "reason": "action_not_autonomously_authorized",
+            }
+
+        return {
+            "status": "sovereign_control_authorized",
+            "entity_id": entity_id,
+            "action": action,
+            "policy": policy,
+            "timestamp": time.time(),
+        }
 
 
     async def _capability_autonomous_actuation(
