@@ -200,6 +200,10 @@ class A1OS:
             self._capability_observability,
         )
         self.capabilities.register(
+            "digital_world_model",
+            self._capability_digital_world_model,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -414,6 +418,141 @@ class A1OS:
             "runtime": str(getattr(self, "runtime", None)),
             "capabilities": self.capabilities.list(),
         }
+
+
+    async def _capability_digital_world_model(
+        self,
+        operation="snapshot",
+        entity_type=None,
+        entity_id=None,
+        entity=None,
+        relationship=None,
+        state=None,
+        **kwargs,
+    ):
+        import time
+        import uuid
+
+        entities = {
+            "device",
+            "process",
+            "service",
+            "network",
+            "database",
+            "application",
+            "user",
+            "business",
+            "ai_agent",
+        }
+
+        relationships = {
+            "depends_on",
+            "runs_on",
+            "connects_to",
+            "owns",
+            "monitors",
+            "repairs",
+        }
+
+        states = {
+            "healthy",
+            "degraded",
+            "failed",
+            "compromised",
+            "recovering",
+        }
+
+        if operation == "snapshot":
+            return {
+                "status": "digital_world_model_snapshot_complete",
+                "system": "A1OS",
+                "entities": sorted(entities),
+                "relationships": sorted(relationships),
+                "states": sorted(states),
+                "timestamp": time.time(),
+            }
+
+        if operation == "understand":
+            return {
+                "status": "digital_world_understood",
+                "entities": sorted(entities),
+                "relationships": sorted(relationships),
+                "states": sorted(states),
+                "capabilities": self.capabilities.list(),
+            }
+
+        if operation == "register_entity":
+            if entity_type not in entities:
+                raise RuntimeError(
+                    f"Unsupported entity type: {entity_type}"
+                )
+
+            state = state or "healthy"
+
+            if state not in states:
+                raise RuntimeError(
+                    f"Unsupported entity state: {state}"
+                )
+
+            return {
+                "status": "entity_registered",
+                "entity": {
+                    "id": entity_id or str(uuid.uuid4()),
+                    "type": entity_type,
+                    "state": state,
+                    "metadata": entity or {},
+                    "registered_at": time.time(),
+                },
+            }
+
+        if operation == "relate_entities":
+            if relationship not in relationships:
+                raise RuntimeError(
+                    f"Unsupported relationship: {relationship}"
+                )
+
+            return {
+                "status": "relationship_registered",
+                "relationship": {
+                    "source": entity_id,
+                    "target": kwargs.get("target_id"),
+                    "type": relationship,
+                    "created_at": time.time(),
+                },
+            }
+
+        if operation == "set_state":
+            if state not in states:
+                raise RuntimeError(
+                    f"Unsupported entity state: {state}"
+                )
+
+            return {
+                "status": "entity_state_updated",
+                "entity_id": entity_id,
+                "state": state,
+                "updated_at": time.time(),
+            }
+
+        if operation == "govern":
+            return {
+                "status": "sovereign_governance_ready",
+                "authority": "A1OS",
+                "scope": "entire_digital_world",
+                "control_loop": [
+                    "observe",
+                    "understand",
+                    "decide",
+                    "operate",
+                    "verify",
+                    "repair",
+                    "learn",
+                ],
+            }
+
+        raise RuntimeError(
+            f"Unsupported digital world model operation: {operation}"
+        )
 
 
     async def _capability_database_repair(self, **kwargs):
