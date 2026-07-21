@@ -21,6 +21,7 @@ from apps.admin.dashboard import AdminDashboard
 from selfheal.engine import SelfHealEngine
 from execution.distributed.engine import DistributedEngine
 from core.runtime import Runtime
+from core.queue.durable import DurableQueue
 
 class A1OS:
     def __init__(self):
@@ -49,6 +50,14 @@ class A1OS:
         self.distributed = DistributedEngine()
     
     async def start(self):
+        recovered = DurableQueue.recover_running()
+
+        if recovered:
+            print(
+                f"[A1OS] Recovered {recovered} interrupted task(s) "
+                "from running -> retry."
+            )
+
         await self.runtime.start()
         
         # Wire automated multi-stage workflow pipeline subscribers
