@@ -204,6 +204,10 @@ class A1OS:
             self._capability_digital_world_model,
         )
         self.capabilities.register(
+            "digital_world_graph",
+            self._capability_digital_world_graph,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -552,6 +556,190 @@ class A1OS:
 
         raise RuntimeError(
             f"Unsupported digital world model operation: {operation}"
+        )
+
+
+    async def _capability_digital_world_graph(
+        self,
+        operation="snapshot",
+        entity=None,
+        relationship=None,
+        **kwargs,
+    ):
+        import json
+        import sqlite3
+        import time
+        import uuid
+        from pathlib import Path
+
+        runtime = getattr(self, "runtime", None)
+
+        if runtime is not None:
+            runtime_path = getattr(runtime, "runtime_path", None)
+
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "root", None)
+
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "base_dir", None)
+
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "path", None)
+        else:
+            runtime_path = None
+
+        if runtime_path is None:
+            runtime_path = Path.cwd()
+
+        graph_path = Path(runtime_path) / "data" / "digital_world_graph.db"
+
+        graph_path.parent.mkdir(parents=True, exist_ok=True)
+
+        db = sqlite3.connect(graph_path)
+
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS entities (
+                id TEXT PRIMARY KEY,
+                entity_type TEXT NOT NULL,
+                state TEXT NOT NULL,
+                metadata TEXT NOT NULL,
+                created_at REAL NOT NULL,
+                updated_at REAL NOT NULL
+            )
+        """)
+
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS relationships (
+                id TEXT PRIMARY KEY,
+                source_id TEXT NOT NULL,
+                target_id TEXT NOT NULL,
+                relationship_type TEXT NOT NULL,
+                metadata TEXT NOT NULL,
+                created_at REAL NOT NULL
+            )
+        """)
+
+        db.commit()
+
+        now = time.time()
+
+        if operation == "register_entity":
+            entity_id = entity.get("id") or str(uuid.uuid4())
+
+            db.execute("""
+                INSERT INTO entities
+                (id, entity_type, state, metadata, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    entity_type=excluded.entity_type,
+                    state=excluded.state,
+                    metadata=excluded.metadata,
+                    updated_at=excluded.updated_at
+            """, (
+                entity_id,
+                entity["type"],
+                entity.get("state", "healthy"),
+                json.dumps(entity.get("metadata", {})),
+                now,
+                now,
+            ))
+
+            db.commit()
+            db.close()
+
+            return {
+                "status": "graph_entity_registered",
+                "entity_id": entity_id,
+                "graph": str(graph_path),
+            }
+
+        if operation == "register_relationship":
+            relationship_id = relationship.get("id") or str(uuid.uuid4())
+
+            db.execute("""
+                INSERT INTO relationships
+                (id, source_id, target_id, relationship_type, metadata, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                relationship_id,
+                relationship["source_id"],
+                relationship["target_id"],
+                relationship["type"],
+                json.dumps(relationship.get("metadata", {})),
+                now,
+            ))
+
+            db.commit()
+            db.close()
+
+            return {
+                "status": "graph_relationship_registered",
+                "relationship_id": relationship_id,
+                "graph": str(graph_path),
+            }
+
+        if operation == "snapshot":
+            entities = db.execute("""
+                SELECT id, entity_type, state, metadata
+                FROM entities
+                ORDER BY entity_type, id
+            """).fetchall()
+
+            relationships = db.execute("""
+                SELECT source_id, target_id, relationship_type, metadata
+                FROM relationships
+                ORDER BY relationship_type
+            """).fetchall()
+
+            db.close()
+
+            return {
+                "status": "digital_world_graph_snapshot_complete",
+                "graph": str(graph_path),
+                "entity_count": len(entities),
+                "relationship_count": len(relationships),
+                "entities": [
+                    {
+                        "id": row[0],
+                        "type": row[1],
+                        "state": row[2],
+                        "metadata": json.loads(row[3]),
+                    }
+                    for row in entities
+                ],
+                "relationships": [
+                    {
+                        "source_id": row[0],
+                        "target_id": row[1],
+                        "type": row[2],
+                        "metadata": json.loads(row[3]),
+                    }
+                    for row in relationships
+                ],
+            }
+
+        if operation == "understand":
+            entity_count = db.execute(
+                "SELECT COUNT(*) FROM entities"
+            ).fetchone()[0]
+
+            relationship_count = db.execute(
+                "SELECT COUNT(*) FROM relationships"
+            ).fetchone()[0]
+
+            db.close()
+
+            return {
+                "status": "digital_world_graph_understood",
+                "entity_count": entity_count,
+                "relationship_count": relationship_count,
+                "graph": str(graph_path),
+            }
+
+        db.close()
+
+        raise RuntimeError(
+            f"Unsupported digital world graph operation: {operation}"
         )
 
 
