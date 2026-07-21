@@ -32,6 +32,27 @@ async def health_check():
     snapshot["version"] = "1.0.0"
     return snapshot
 
+@app.get("/v1/tasks/{task_id}")
+async def get_task(task_id: str):
+    row = DurableQueue.get(task_id)
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    return {
+        "task_id": row["task_id"],
+        "target": row["target"],
+        "role": row["role"],
+        "action": row["action"],
+        "status": row["status"],
+        "attempts": row["attempts"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "completed_at": row["completed_at"],
+        "error": row["error"],
+    }
+
+
 @app.post("/v1/execute")
 async def execute_task(payload: ExecutePayload, x_signature: str = Header(None)):
     from core.state import system
