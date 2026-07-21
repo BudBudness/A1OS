@@ -102,6 +102,27 @@ class DurableQueue:
         )
 
     @staticmethod
+    def recover_running():
+        """
+        Recover tasks stranded in running state after
+        an interrupted process.
+
+        Running tasks become retryable. Their retry schedule
+        is reset so the durable worker can reclaim them.
+        """
+        cur = Database.execute(
+            """
+            UPDATE tasks
+            SET status='retry',
+                updated_at=CURRENT_TIMESTAMP,
+                error='Recovered after process interruption',
+                next_attempt_at=NULL
+            WHERE status='running'
+            """
+        )
+        return cur.rowcount
+
+    @staticmethod
     def get(task_id):
         return Database.fetchone(
             "SELECT * FROM tasks WHERE task_id=?",
