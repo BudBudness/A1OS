@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+import sys
+import argparse
+import json
+import urllib.request
+import urllib.error
+
+API_URL = "http://127.0.0.1:8000/v1"
+
+def send_request(endpoint, method="GET", data=None):
+    url = f"{API_URL}/{endpoint}"
+    req = urllib.request.Request(url, method=method)
+    if data:
+        req.add_header("Content-Type", "application/json")
+        json_data = json.dumps(data).encode("utf-8")
+    else:
+        json_data = None
+        
+    try:
+        with urllib.request.urlopen(req, data=json_data) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        try:
+            return json.loads(e.read().decode("utf-8"))
+        except Exception:
+            return {"error": f"HTTP Error {e.code}"}
+    except urllib.error.URLError as e:
+        return {"error": f"Failed to connect to API gateway: {e.reason}"}
+
+def cmd_status(args):
+    res = send_request("health")
+    print(json.dumps(res, indent=2))
+
+def cmd_exec(args):
+    payload = {
+        "target": args.target,
+        "action": args.action,
+        "role": args.role
+    }
+    if args.tenant_id:
+        payload["tenant_id"] = args.tenant_id
+    if args.customer_id:
+        payload["customer_id"] = args.customer_id
+    if args.profile:
+        try:
+            payload["profile"] = json.loads(args.profile)
+        except json.JSONDecodeError:
+            print("Error: --profile must be a valid JSON string.")
+            sys.exit(1)
+            
+    res = send_request("execute", method="POST", data=payload)
+    print(json.dumps(res, indent=2))
+
+def main():
+    parser = argparse.ArgumentParser(description="A1OS Control Interface Command Line Tool")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Status Command
+    subparsers.add_parser("status", help="Query global health and active worker states")
+
+    # Exec Command
+    exec_parser = subparsers.add_parser("exec", help="Execute an application payload vector")
+    exec_parser.add_argument("-t", "--target", required=True, help="Target execution worker")
+    exec_parser.add_argument("-a", "--action", default="default", help="Action modifier argument")
+    exec_parser.add_argument("-r", "--role", default="user", help="RBAC identity perspective context")
+    exec_parser.add_argument("--tenant-id", help="Multi-tenant context isolation key")
+    exec_parser.add_argument("--customer-id", help="Target unique CRM primary entity ID")
+    exec_parser.add_argument("--profile", help="JSON data string structure profile representation")
+
+    args = parser.parse_args()
+    if args.command == "status":
+        cmd_status(args)
+    elif args.command == "exec":
+        cmd_exec(args)
+
+if __name__ == "__main__":
+    main()

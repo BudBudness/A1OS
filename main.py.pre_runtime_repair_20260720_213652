@@ -1,0 +1,41 @@
+import uvicorn
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Dict, Any
+
+app = FastAPI(title="A1OS Platform")
+
+class TaskPayload(BaseModel):
+    target: str
+    role: str = "user"
+    data: str = ""
+    action: str = "default"
+
+class A1OS:
+    def __init__(self):
+        print("[A1OS] Initializing system...")
+    
+    async def process(self, payload: Dict) -> Dict:
+        return {
+            "status": "success",
+            "data": payload,
+            "worker": payload.get("target", "unknown")
+        }
+
+system = A1OS()
+
+@app.post("/v1/execute")
+async def execute_task(payload: TaskPayload):
+    result = await system.process(payload.model_dump())
+    return result
+
+@app.get("/v1/health")
+async def health_check():
+    return {"status": "online", "version": "1.0.0", "port": 3002}
+
+@app.get("/")
+async def root():
+    return {"message": "A1OS Platform Running", "docs": "/docs"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=3005)

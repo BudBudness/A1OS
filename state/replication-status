@@ -1,0 +1,8 @@
+STATUS=healthy
+PRIMARY_DB=/data/data/com.termux/files/home/A1OS_RESTORED/data/a1os.db
+REPLICA_DB=/data/data/com.termux/files/home/A1OS_RESTORED/replica/a1os-replica.db
+REPLICA_INTEGRITY=ok
+REPLICATION_LAG_SECONDS=0
+MAX_ALLOWED_LAG_SECONDS=30
+LAST_SYNC=2026-07-21T13:08:11Z
+PID=15660
