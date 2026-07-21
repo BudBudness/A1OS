@@ -280,7 +280,7 @@ class A1OS:
         operation="authorize",
         capability=None,
         entity_id=None,
-        action=None,
+        target_action=None,
         kwargs=None,
         decision_id=None,
         verified=True,
@@ -339,7 +339,7 @@ class A1OS:
                   AND capability = ?
                   AND action = ?
                 """,
-                (entity_id, capability, action or ""),
+                (entity_id, capability, target_action or ""),
             ).fetchone()
 
             if row:
@@ -356,7 +356,7 @@ class A1OS:
                         "status": "sovereign_action_autonomously_authorized",
                         "entity_id": entity_id,
                         "capability": capability,
-                        "action": action,
+                        "action": target_action,
                         "decision": "autonomous_authorization",
                         "requires_human": False,
                         "confidence": confidence,
@@ -372,7 +372,7 @@ class A1OS:
                 "decision_id": decision_id,
                 "entity_id": entity_id,
                 "capability": capability,
-                "action": action,
+                "action": target_action,
                 "decision": "human_required",
                 "requires_human": True,
                 "confidence": 0.0,
@@ -406,7 +406,7 @@ class A1OS:
                     decision_id,
                     entity_id,
                     capability,
-                    action or "",
+                    target_action or "",
                     json.dumps(execution_kwargs, sort_keys=True),
                     now,
                 ),
@@ -457,7 +457,7 @@ class A1OS:
                   AND capability = ?
                   AND action = ?
                 """,
-                (entity_id, capability, action or ""),
+                (entity_id, capability, target_action or ""),
             ).fetchone()
 
             if policy:
@@ -530,7 +530,7 @@ class A1OS:
                         str(uuid.uuid4()),
                         entity_id,
                         capability,
-                        action or "",
+                        target_action or "",
                         success_count,
                         failure_count,
                         confidence,
@@ -550,7 +550,7 @@ class A1OS:
                   AND capability = ?
                   AND action = ?
                 """,
-                (entity_id, capability, action or ""),
+                (entity_id, capability, target_action or ""),
             ).fetchone()
 
             learning = {
@@ -572,7 +572,7 @@ class A1OS:
                 "decision_id": decision_id,
                 "entity_id": entity_id,
                 "capability": capability,
-                "action": action,
+                "action": target_action,
                 "execution": result,
                 "verified": verified_success,
                 "learning": learning,
