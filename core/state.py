@@ -216,6 +216,10 @@ class A1OS:
             self._capability_digital_world_state,
         )
         self.capabilities.register(
+            "digital_world_reconcile",
+            self._capability_digital_world_reconcile,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -1065,6 +1069,136 @@ class A1OS:
 
         raise RuntimeError(
             f"Unsupported digital world state operation: {operation}"
+        )
+
+
+    async def _capability_digital_world_reconcile(
+        self,
+        operation="reconcile",
+        entity_id=None,
+        observed_state=None,
+        **kwargs,
+    ):
+        import sqlite3
+        import time
+        from pathlib import Path
+
+        valid_states = {
+            "healthy",
+            "degraded",
+            "failed",
+            "compromised",
+            "recovering",
+        }
+
+        runtime = getattr(self, "runtime", None)
+        runtime_path = None
+
+        if runtime is not None:
+            runtime_path = getattr(runtime, "runtime_path", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "root", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "base_dir", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "path", None)
+
+        if runtime_path is None:
+            runtime_path = Path.cwd()
+
+        graph_path = (
+            Path(runtime_path)
+            / "data"
+            / "digital_world_graph.db"
+        )
+
+        if not graph_path.exists():
+            raise RuntimeError(
+                "Digital world graph database does not exist"
+            )
+
+        db = sqlite3.connect(graph_path)
+        db.row_factory = sqlite3.Row
+
+        if operation == "reconcile":
+            if entity_id is None:
+                raise RuntimeError(
+                    "entity_id is required for reconciliation"
+                )
+
+            if observed_state not in valid_states:
+                raise RuntimeError(
+                    f"Unsupported observed state: {observed_state}"
+                )
+
+            entity = db.execute("""
+                SELECT id, state
+                FROM entities
+                WHERE id = ?
+            """, (entity_id,)).fetchone()
+
+            if entity is None:
+                db.close()
+                raise RuntimeError(
+                    f"Entity not found: {entity_id}"
+                )
+
+            previous_state = entity["state"]
+            changed = previous_state != observed_state
+            now = time.time()
+
+            if changed:
+                db.execute("""
+                    UPDATE entities
+                    SET state = ?,
+                        updated_at = ?
+                    WHERE id = ?
+                """, (
+                    observed_state,
+                    now,
+                    entity_id,
+                ))
+
+                db.commit()
+
+            db.close()
+
+            return {
+                "status": "entity_reconciliation_complete",
+                "entity_id": entity_id,
+                "previous_state": previous_state,
+                "observed_state": observed_state,
+                "changed": changed,
+                "reconciled_at": now,
+            }
+
+        if operation == "drift":
+            rows = db.execute("""
+                SELECT id, entity_type, state, updated_at
+                FROM entities
+                WHERE state != 'healthy'
+            """).fetchall()
+
+            db.close()
+
+            return {
+                "status": "digital_world_drift_analysis_complete",
+                "drift_count": len(rows),
+                "drift": [
+                    {
+                        "id": row["id"],
+                        "type": row["entity_type"],
+                        "state": row["state"],
+                        "updated_at": row["updated_at"],
+                    }
+                    for row in rows
+                ],
+            }
+
+        db.close()
+
+        raise RuntimeError(
+            f"Unsupported digital world reconcile operation: {operation}"
         )
 
 
