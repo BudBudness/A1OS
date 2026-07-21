@@ -19,7 +19,7 @@ class DurableQueue:
 
     @staticmethod
     def claim(task_id):
-        Database.execute(
+        cur = Database.execute(
             """
             UPDATE tasks
             SET status='running',
@@ -29,6 +29,7 @@ class DurableQueue:
             """,
             (task_id,)
         )
+        return cur.rowcount == 1
 
     @staticmethod
     def complete(task_id):
