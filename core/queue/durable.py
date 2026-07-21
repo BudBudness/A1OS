@@ -25,7 +25,17 @@ class DurableQueue:
             SET status='running',
                 attempts=attempts+1,
                 updated_at=CURRENT_TIMESTAMP
-            WHERE task_id=? AND status IN ('queued','retry')
+            WHERE task_id=?
+              AND (
+                    status='queued'
+                    OR (
+                        status='retry'
+                        AND (
+                            next_attempt_at IS NULL
+                            OR datetime(next_attempt_at) <= CURRENT_TIMESTAMP
+                        )
+                    )
+                  )
             """,
             (task_id,)
         )
@@ -39,6 +49,7 @@ class DurableQueue:
             SET status='completed',
                 completed_at=CURRENT_TIMESTAMP,
                 error=NULL,
+                next_attempt_at=NULL,
                 updated_at=CURRENT_TIMESTAMP
             WHERE task_id=?
             """,
@@ -47,33 +58,48 @@ class DurableQueue:
 
     @staticmethod
     def fail(task_id, error):
-        Database.execute(
+        row = Database.fetchone(
             """
+            SELECT attempts, max_attempts
+            FROM tasks
+            WHERE task_id=?
+            """,
+            (task_id,)
+        )
+
+        if not row:
+            return
+
+        attempts = row["attempts"]
+        max_attempts = row["max_attempts"]
+
+        if attempts >= max_attempts:
+            Database.execute(
+                """
+                UPDATE tasks
+                SET status='failed',
+                    error=?,
+                    next_attempt_at=NULL,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE task_id=?
+                """,
+                (str(error), task_id)
+            )
+            return
+
+        delay_seconds = 2 ** attempts
+
+        Database.execute(
+            f"""
             UPDATE tasks
-            SET status='failed',
+            SET status='retry',
                 error=?,
+                next_attempt_at=datetime('now', '+{delay_seconds} seconds'),
                 updated_at=CURRENT_TIMESTAMP
             WHERE task_id=?
             """,
             (str(error), task_id)
         )
-
-    @staticmethod
-    def recover_running():
-        """
-        Recover tasks stranded in running state after an interrupted process.
-        They are made retryable for future worker execution.
-        """
-        cur = Database.execute(
-            """
-            UPDATE tasks
-            SET status='retry',
-                updated_at=CURRENT_TIMESTAMP,
-                error='Recovered after process interruption'
-            WHERE status='running'
-            """
-        )
-        return cur.rowcount
 
     @staticmethod
     def get(task_id):
