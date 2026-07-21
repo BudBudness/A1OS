@@ -1,3 +1,4 @@
+import inspect
 from runtime.events.router import EventRouter
 from runtime.scheduler.worker_scheduler import WorkerScheduler
 from infra.messaging.bus import MessageBus
@@ -23,8 +24,51 @@ from execution.distributed.engine import DistributedEngine
 from core.runtime import Runtime
 from core.queue.durable import DurableQueue
 
+class CapabilityRegistry:
+    """
+    Central registry for executable A1OS capabilities.
+
+    Every capability follows the durable execution contract:
+        async handler(**kwargs) -> result
+    """
+
+    def __init__(self):
+        self._capabilities = {}
+
+    def register(self, name, handler):
+        if not callable(handler):
+            raise TypeError(f"Capability handler for '{name}' must be callable")
+        self._capabilities[name] = handler
+
+    def unregister(self, name):
+        self._capabilities.pop(name, None)
+
+    def has(self, name):
+        return name in self._capabilities
+
+    def list(self):
+        return sorted(self._capabilities.keys())
+
+    async def execute(self, name, **kwargs):
+        handler = self._capabilities.get(name)
+
+        if handler is None:
+            raise RuntimeError(
+                f"Capability not registered: {name}"
+            )
+
+        result = handler(**kwargs)
+
+        if inspect.isawaitable(result):
+            result = await result
+
+        return result
+
+
 class A1OS:
     def __init__(self):
+        self.capabilities = CapabilityRegistry()
+        self._register_capabilities()
         self.bus = MessageBus()
         self.knowledge = KnowledgeBase()
         self.runtime = Runtime(self)
@@ -92,64 +136,64 @@ class A1OS:
         current_runs = self.knowledge.get_meta("total_completed_tasks", 0)
         self.knowledge.set_meta("total_completed_tasks", current_runs + 1)
 
+    async def _capability_health_check(self, **kwargs):
+        return {
+            "status": "healthy",
+            "runtime": self.runtime.__class__.__name__,
+            "database": "available",
+        }
+
+    async def _capability_diagnostics(self, **kwargs):
+        return {
+            "status": "diagnostics_complete",
+            "runtime": self.runtime.__class__.__name__,
+            "capabilities": self.capabilities.list(),
+        }
+
+    async def _capability_recover(self, **kwargs):
+        recovered = 0
+
+        if hasattr(self.runtime, "recover"):
+            result = self.runtime.recover()
+            if inspect.isawaitable(result):
+                result = await result
+            recovered = result if result is not None else 0
+
+        return {
+            "status": "recovery_complete",
+            "recovered": recovered,
+        }
+
+    async def _capability_list(self, **kwargs):
+        return {
+            "status": "capabilities_available",
+            "capabilities": self.capabilities.list(),
+        }
+
+    def _register_capabilities(self):
+        self.capabilities.register(
+            "health_check",
+            self._capability_health_check,
+        )
+        self.capabilities.register(
+            "diagnostics",
+            self._capability_diagnostics,
+        )
+        self.capabilities.register(
+            "recover",
+            self._capability_recover,
+        )
+        self.capabilities.register(
+            "capabilities",
+            self._capability_list,
+        )
+
     async def execute(self, action: str, **kwargs):
         """
-        Execute system-level operations routed through the durable runtime.
+        Execute any registered system capability through the unified
+        capability execution contract.
         """
-        if action == "health_check":
-            return {
-                "status": "healthy",
-                "runtime": self.runtime.__class__.__name__,
-                "database": "available",
-            }
-
-        if action == "status":
-            return {
-                "status": "online",
-                "runtime": self.runtime.__class__.__name__,
-                "bus": self.bus.__class__.__name__,
-            }
-
-        if action == "metrics":
-            completed = self.knowledge.get_meta(
-                "total_completed_tasks",
-                0,
-            )
-
-            return {
-                "total_completed_tasks": completed,
-            }
-
-        if action == "diagnostics":
-            return {
-                "runtime": {
-                    "class": self.runtime.__class__.__name__,
-                    "execute_available": callable(
-                        getattr(self.runtime, "execute", None)
-                    ),
-                },
-                "bus": {
-                    "class": self.bus.__class__.__name__,
-                    "publish_available": callable(
-                        getattr(self.bus, "publish", None)
-                    ),
-                },
-                "knowledge": {
-                    "class": self.knowledge.__class__.__name__,
-                },
-            }
-
-        if action == "recover":
-            recovered = DurableQueue.recover_running()
-
-            return {
-                "status": "recovery_complete",
-                "recovered_tasks": recovered,
-            }
-
-        raise RuntimeError(
-            f"Unsupported system action: {action}"
-        )
+        return await self.capabilities.execute(action, **kwargs)
 
 
 # Global A1OS system instance used by the application lifecycle.
