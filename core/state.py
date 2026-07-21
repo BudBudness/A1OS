@@ -220,6 +220,10 @@ class A1OS:
             self._capability_digital_world_reconcile,
         )
         self.capabilities.register(
+            "digital_world_intelligence",
+            self._capability_digital_world_intelligence,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -1199,6 +1203,152 @@ class A1OS:
 
         raise RuntimeError(
             f"Unsupported digital world reconcile operation: {operation}"
+        )
+
+
+    async def _capability_digital_world_intelligence(
+        self,
+        operation="assess",
+        entity_id=None,
+        **kwargs,
+    ):
+        import sqlite3
+        import time
+        from pathlib import Path
+
+        runtime = getattr(self, "runtime", None)
+        runtime_path = None
+
+        if runtime is not None:
+            runtime_path = getattr(runtime, "runtime_path", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "root", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "base_dir", None)
+            if runtime_path is None:
+                runtime_path = getattr(runtime, "path", None)
+
+        if runtime_path is None:
+            runtime_path = Path.cwd()
+
+        graph_path = (
+            Path(runtime_path)
+            / "data"
+            / "digital_world_graph.db"
+        )
+
+        if not graph_path.exists():
+            raise RuntimeError(
+                "Digital world graph database does not exist"
+            )
+
+        db = sqlite3.connect(graph_path)
+        db.row_factory = sqlite3.Row
+
+        if operation == "assess":
+            rows = db.execute("""
+                SELECT
+                    e.id,
+                    e.entity_type,
+                    e.state,
+                    COUNT(r.id) AS relationship_count
+                FROM entities e
+                LEFT JOIN relationships r
+                    ON e.id = r.source_id
+                    OR e.id = r.target_id
+                GROUP BY
+                    e.id,
+                    e.entity_type,
+                    e.state
+                ORDER BY e.id
+            """).fetchall()
+
+            db.close()
+
+            assessments = []
+
+            for row in rows:
+                state = row["state"]
+
+                if state == "healthy":
+                    condition = "stable"
+                    priority = "normal"
+                elif state == "degraded":
+                    condition = "degraded"
+                    priority = "elevated"
+                elif state == "failed":
+                    condition = "failed"
+                    priority = "critical"
+                elif state == "compromised":
+                    condition = "compromised"
+                    priority = "critical"
+                elif state == "recovering":
+                    condition = "recovering"
+                    priority = "elevated"
+                else:
+                    condition = "unknown"
+                    priority = "elevated"
+
+                assessments.append({
+                    "entity_id": row["id"],
+                    "entity_type": row["entity_type"],
+                    "state": state,
+                    "condition": condition,
+                    "priority": priority,
+                    "relationship_count": row["relationship_count"],
+                })
+
+            return {
+                "status": "digital_world_intelligence_assessment_complete",
+                "timestamp": time.time(),
+                "entity_count": len(assessments),
+                "assessments": assessments,
+            }
+
+        if operation == "entity":
+            if entity_id is None:
+                raise RuntimeError(
+                    "entity_id is required for entity intelligence"
+                )
+
+            entity = db.execute("""
+                SELECT
+                    e.id,
+                    e.entity_type,
+                    e.state,
+                    COUNT(r.id) AS relationship_count
+                FROM entities e
+                LEFT JOIN relationships r
+                    ON e.id = r.source_id
+                    OR e.id = r.target_id
+                WHERE e.id = ?
+                GROUP BY
+                    e.id,
+                    e.entity_type,
+                    e.state
+            """, (entity_id,)).fetchone()
+
+            db.close()
+
+            if entity is None:
+                raise RuntimeError(
+                    f"Entity not found: {entity_id}"
+                )
+
+            return {
+                "status": "entity_intelligence_assessment_complete",
+                "entity": {
+                    "id": entity["id"],
+                    "type": entity["entity_type"],
+                    "state": entity["state"],
+                    "relationship_count": entity["relationship_count"],
+                },
+            }
+
+        db.close()
+
+        raise RuntimeError(
+            f"Unsupported digital world intelligence operation: {operation}"
         )
 
 
