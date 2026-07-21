@@ -2678,12 +2678,16 @@ class A1OS:
 
         return result
 
-    async def execute(self, capability: str, **kwargs):
+    async def execute(self, action: str, **kwargs):
         """
         Execute any registered system capability through the unified
         capability execution contract.
+
+        The public dispatch parameter is intentionally named `action`.
+        Capability-specific payload fields may therefore safely use
+        `capability=...` without colliding with the dispatcher.
         """
-        return await self.capabilities.execute(capability, **kwargs)
+        return await self.capabilities.execute(action, **kwargs)
 
 
 # Global A1OS system instance used by the application lifecycle.
