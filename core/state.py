@@ -192,9 +192,60 @@ class A1OS:
             self._capability_process_management,
         )
         self.capabilities.register(
+            "service_management",
+            self._capability_service_management,
+        )
+        self.capabilities.register(
             "capabilities",
             self._capability_list,
         )
+
+    async def _capability_service_management(self, operation="list", **kwargs):
+        import subprocess
+
+        if operation == "list":
+            result = subprocess.run(
+                ["ps", "-ef"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            services = [
+                line
+                for line in result.stdout.splitlines()
+                if line.strip()
+            ]
+
+            return {
+                "status": "service_inventory_complete",
+                "count": len(services),
+                "services": services,
+            }
+
+        if operation == "health":
+            result = subprocess.run(
+                ["ps", "-ef"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            services = [
+                line
+                for line in result.stdout.splitlines()
+                if line.strip()
+            ]
+
+            return {
+                "status": "service_health_complete",
+                "service_count": len(services),
+            }
+
+        raise RuntimeError(
+            f"Unsupported service management operation: {operation}"
+        )
+
 
     async def _capability_process_management(self, action="list", **kwargs):
         import subprocess
