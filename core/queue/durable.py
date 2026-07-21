@@ -37,6 +37,7 @@ class DurableQueue:
             UPDATE tasks
             SET status='completed',
                 completed_at=CURRENT_TIMESTAMP,
+                error=NULL,
                 updated_at=CURRENT_TIMESTAMP
             WHERE task_id=?
             """,
@@ -78,4 +79,17 @@ class DurableQueue:
         return Database.fetchone(
             "SELECT * FROM tasks WHERE task_id=?",
             (task_id,)
+        )
+
+    @staticmethod
+    def pending(limit=10):
+        return Database.fetchall(
+            """
+            SELECT *
+            FROM tasks
+            WHERE status IN ('queued', 'retry')
+            ORDER BY created_at ASC
+            LIMIT ?
+            """,
+            (limit,)
         )
