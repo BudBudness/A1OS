@@ -224,6 +224,10 @@ class A1OS:
             self._capability_digital_world_intelligence,
         )
         self.capabilities.register(
+            "digital_world_decision",
+            self._capability_digital_world_decision,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -573,6 +577,76 @@ class A1OS:
         raise RuntimeError(
             f"Unsupported digital world model operation: {operation}"
         )
+
+
+    async def _capability_digital_world_decision(
+        self,
+        operation="decide",
+        **kwargs,
+    ):
+        import time
+
+        if operation != "decide":
+            raise RuntimeError(
+                f"Unsupported digital world decision operation: {operation}"
+            )
+
+        graph = await self._capability_digital_world_intelligence(
+            operation="assess",
+            **kwargs,
+        )
+
+        decisions = []
+
+        for assessment in graph.get("assessments", []):
+            state = assessment.get("state")
+            condition = assessment.get("condition")
+            priority = assessment.get("priority")
+            entity_id = assessment.get("entity_id")
+
+            if state == "compromised":
+                action = "isolate_and_recover"
+                urgency = "critical"
+            elif state == "failed":
+                action = "repair_and_restore"
+                urgency = "critical"
+            elif state == "degraded":
+                action = "investigate_and_stabilize"
+                urgency = "high"
+            elif state == "recovering":
+                action = "monitor_recovery"
+                urgency = "medium"
+            else:
+                action = "continue_monitoring"
+                urgency = "normal"
+
+            decisions.append(
+                {
+                    "entity_id": entity_id,
+                    "state": state,
+                    "condition": condition,
+                    "priority": priority,
+                    "decision": action,
+                    "urgency": urgency,
+                }
+            )
+
+        return {
+            "status": "digital_world_decision_complete",
+            "timestamp": time.time(),
+            "decision_count": len(decisions),
+            "decisions": decisions,
+            "control_loop": [
+                "observe",
+                "understand",
+                "assess",
+                "decide",
+                "operate",
+                "verify",
+                "repair",
+                "learn",
+            ],
+        }
 
 
     async def _capability_digital_world_graph(
