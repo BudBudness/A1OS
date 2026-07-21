@@ -228,6 +228,10 @@ class A1OS:
             self._capability_digital_world_decision,
         )
         self.capabilities.register(
+            "digital_world_operation",
+            self._capability_digital_world_operation,
+        )
+        self.capabilities.register(
             "security_audit",
             self._capability_security_audit,
         )
@@ -646,6 +650,70 @@ class A1OS:
                 "repair",
                 "learn",
             ],
+        }
+
+
+    async def _capability_digital_world_operation(
+        self,
+        operation="execute",
+        entity_id=None,
+        decision=None,
+        **kwargs,
+    ):
+        import time
+
+        if operation != "execute":
+            raise RuntimeError(
+                f"Unsupported digital world operation: {operation}"
+            )
+
+        if entity_id is None:
+            raise RuntimeError(
+                "entity_id is required for operation execution"
+            )
+
+        if decision is None:
+            raise RuntimeError(
+                "decision is required for operation execution"
+            )
+
+        supported_operations = {
+            "continue_monitoring": {
+                "operation": "monitor",
+                "result": "monitoring_active",
+            },
+            "monitor_recovery": {
+                "operation": "monitor",
+                "result": "recovery_monitoring_active",
+            },
+            "investigate_and_stabilize": {
+                "operation": "stabilize",
+                "result": "stabilization_required",
+            },
+            "repair_and_restore": {
+                "operation": "repair",
+                "result": "repair_required",
+            },
+            "isolate_and_recover": {
+                "operation": "isolate",
+                "result": "isolation_and_recovery_required",
+            },
+        }
+
+        selected = supported_operations.get(decision)
+
+        if selected is None:
+            raise RuntimeError(
+                f"Unsupported digital world decision: {decision}"
+            )
+
+        return {
+            "status": "digital_world_operation_complete",
+            "entity_id": entity_id,
+            "decision": decision,
+            "operation": selected["operation"],
+            "result": selected["result"],
+            "executed_at": time.time(),
         }
 
 
