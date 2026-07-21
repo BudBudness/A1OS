@@ -204,6 +204,10 @@ class A1OS:
             self._capability_digital_world_model,
         )
         self.capabilities.register(
+            "digital_world_recovery",
+            self._capability_digital_world_recovery,
+        )
+        self.capabilities.register(
             "digital_world_graph",
             self._capability_digital_world_graph,
         )
