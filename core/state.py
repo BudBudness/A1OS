@@ -196,6 +196,22 @@ class A1OS:
             self._capability_service_management,
         )
         self.capabilities.register(
+            "observability",
+            self._capability_observability,
+        )
+        self.capabilities.register(
+            "security_audit",
+            self._capability_security_audit,
+        )
+        self.capabilities.register(
+            "filesystem_management",
+            self._capability_filesystem_management,
+        )
+        self.capabilities.register(
+            "network_management",
+            self._capability_network_management,
+        )
+        self.capabilities.register(
             "capabilities",
             self._capability_list,
         )
@@ -292,6 +308,111 @@ class A1OS:
         raise RuntimeError(
             f"Unsupported process management action: {action}"
         )
+
+
+    async def _capability_network_management(self, operation="interfaces", **kwargs):
+        import subprocess
+
+        commands = {
+            "interfaces": ["ip", "addr"],
+            "routes": ["ip", "route"],
+            "connections": ["ss", "-tun"],
+            "ports": ["ss", "-lntup"],
+        }
+
+        if operation not in commands:
+            raise RuntimeError(
+                f"Unsupported network management operation: {operation}"
+            )
+
+        result = subprocess.run(
+            commands[operation],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        return {
+            "status": "network_inventory_complete",
+            "operation": operation,
+            "return_code": result.returncode,
+            "output": result.stdout.splitlines(),
+            "errors": result.stderr.splitlines(),
+        }
+
+
+    async def _capability_filesystem_management(self, operation="disk_usage", path=".", **kwargs):
+        import shutil
+        from pathlib import Path
+
+        target = Path(path).expanduser()
+
+        if operation == "disk_usage":
+            usage = shutil.disk_usage(target)
+            return {
+                "status": "filesystem_inventory_complete",
+                "path": str(target),
+                "total": usage.total,
+                "used": usage.used,
+                "free": usage.free,
+            }
+
+        if operation == "exists":
+            return {
+                "status": "filesystem_check_complete",
+                "path": str(target),
+                "exists": target.exists(),
+                "is_file": target.is_file(),
+                "is_directory": target.is_dir(),
+            }
+
+        raise RuntimeError(
+            f"Unsupported filesystem management operation: {operation}"
+        )
+
+
+    async def _capability_security_audit(self, operation="open_ports", **kwargs):
+        import subprocess
+
+        commands = {
+            "open_ports": ["ss", "-lntup"],
+            "processes": ["ps", "-ef"],
+        }
+
+        if operation not in commands:
+            raise RuntimeError(
+                f"Unsupported security audit operation: {operation}"
+            )
+
+        result = subprocess.run(
+            commands[operation],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        return {
+            "status": "security_audit_complete",
+            "operation": operation,
+            "return_code": result.returncode,
+            "findings": [
+                line
+                for line in result.stdout.splitlines()
+                if line.strip()
+            ],
+        }
+
+
+    async def _capability_observability(self, operation="runtime", **kwargs):
+        import time
+
+        return {
+            "status": "observability_snapshot_complete",
+            "operation": operation,
+            "timestamp": time.time(),
+            "runtime": str(getattr(self, "runtime", None)),
+            "capabilities": self.capabilities.list(),
+        }
 
 
     async def _capability_database_repair(self, **kwargs):
