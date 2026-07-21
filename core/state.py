@@ -188,9 +188,60 @@ class A1OS:
             self._capability_database_repair,
         )
         self.capabilities.register(
+            "process_management",
+            self._capability_process_management,
+        )
+        self.capabilities.register(
             "capabilities",
             self._capability_list,
         )
+
+    async def _capability_process_management(self, action="list", **kwargs):
+        import subprocess
+
+        if action == "list":
+            result = subprocess.run(
+                ["ps", "-ef"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            processes = [
+                line
+                for line in result.stdout.splitlines()
+                if line.strip()
+            ]
+
+            return {
+                "status": "process_inventory_complete",
+                "count": len(processes),
+                "processes": processes,
+            }
+
+        if action == "health":
+            result = subprocess.run(
+                ["ps", "-ef"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            processes = [
+                line
+                for line in result.stdout.splitlines()
+                if line.strip()
+            ]
+
+            return {
+                "status": "process_health_complete",
+                "process_count": len(processes),
+            }
+
+        raise RuntimeError(
+            f"Unsupported process management action: {action}"
+        )
+
 
     async def _capability_database_repair(self, **kwargs):
         """
