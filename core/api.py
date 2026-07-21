@@ -5,6 +5,7 @@ import asyncio
 import json
 from observability.health import health_snapshot
 from observability.metrics import increment
+from core.queue.durable import DurableQueue
 
 app = FastAPI(title="A1OS Core API", version="1.0.0")
 
@@ -36,8 +37,30 @@ async def execute_task(payload: ExecutePayload, x_signature: str = Header(None))
     from core.state import system
     raw_dict = payload.dict()
     memory_key = f"task_{payload.target}_{payload.action}"
-    system.memory.store(key=memory_key, value={"role": payload.role, "data": payload.data}, memory_type="short")
-    entity_id = system.knowledge.add_entity(entity_type="api_execution_event", attributes={"target": payload.target, "action": payload.action, "role": payload.role})
+    system.memory.store(
+        key=memory_key,
+        value={"role": payload.role, "data": payload.data},
+        memory_type="short",
+    )
+
+    entity_id = system.knowledge.add_entity(
+        entity_type="api_execution_event",
+        attributes={
+            "target": payload.target,
+            "action": payload.action,
+            "role": payload.role,
+        },
+    )
+
+    task_id = DurableQueue.enqueue(
+        target=payload.target,
+        role=payload.role,
+        action=payload.action,
+        data=payload.data,
+        task_id=entity_id,
+    )
+
     increment("api.execute.accepted", f"target={payload.target}")
-    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))
-    return {"status": "accepted", "task_id": entity_id}
+    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+
+    return {"status": "accepted", "task_id": task_id}

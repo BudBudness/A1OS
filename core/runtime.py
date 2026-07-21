@@ -1,5 +1,6 @@
 import asyncio
 from typing import Any, Dict
+from core.queue.durable import DurableQueue
 
 
 class Runtime:
@@ -21,6 +22,8 @@ class Runtime:
     async def execute(self, task_id: str, payload: Dict[str, Any]):
         target = str(payload.get("target", "default")).lower()
         action = payload.get("action", "default")
+
+        DurableQueue.claim(task_id)
 
         result = {
             "task_id": task_id,
@@ -53,6 +56,8 @@ class Runtime:
 
                         result["result"] = output
 
+                DurableQueue.complete(task_id)
+
                 await system.bus.publish(
                     "task.completed",
                     {
@@ -61,11 +66,15 @@ class Runtime:
                     }
                 )
 
+            else:
+                DurableQueue.complete(task_id)
+
             return result
 
         except Exception as exc:
             result["status"] = "failed"
             result["error"] = str(exc)
+            DurableQueue.fail(task_id, exc)
 
             if system is not None:
                 await system.bus.publish(
