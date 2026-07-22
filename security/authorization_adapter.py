@@ -5,6 +5,16 @@ import uuid
 
 
 class AuthorizationAdapter:
+    CONSEQUENTIAL_CAPABILITIES = {
+        "digital_world_decision",
+        "digital_world_operation",
+        "autonomous_recovery",
+        "sovereign_control",
+        "autonomous_actuation",
+        "digital_world_recovery",
+        "database_repair",
+    }
+
     READ_ONLY_CAPABILITIES = {
         "health",
         "observability",
