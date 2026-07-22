@@ -949,7 +949,7 @@ class A1OS:
                 "decision": "autonomous_authorization",
                 "reason": "Consequential authorization granted.",
                 "provenance": {
-                    "authorization_id": f"auth-{int(__import__("time").time())}",
+                    "authorization_id": f"auth-{__import__("uuid").uuid4()}",
                     "entity_id": entity_id,
                     "capability": capability,
                     "action": target_action,
