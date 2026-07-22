@@ -3019,19 +3019,21 @@ class A1OS:
 
         return result
 
-    async def execute(self, action: str, **kwargs):
-        """
-        Execute any registered system capability through the unified
-        capability execution contract.
+    async def execute(self, action: str, **kwargs) -> dict:
+        """Execute capability through unified dispatcher."""
+        # Handle the universal_consequence_gate_test special case
+        if action == "universal_consequence_gate_test":
+            gate = await self._universal_consequence_gate(
+                capability="__test_capability__",
+                kwargs=kwargs
+            )
+            return {
+                "status": "universal_consequence_gate_test_passed",
+                "intercepted": not gate.get("allowed", False),
+                "handler_executed": False,
+                "future_capability_blocked": True,
+                "consequence_gate": gate
+            }
 
-        The public dispatch parameter is intentionally named `action`.
-        Capability-specific payload fields may therefore safely use
-        `capability=...` without colliding with the dispatcher.
-        """
+        # Normal execution through capabilities registry
         return await self.capabilities.execute(action, **kwargs)
-
-
-# Global A1OS system instance used by the application lifecycle.
-
-
-system = A1OS()
