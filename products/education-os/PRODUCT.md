@@ -9,4 +9,4 @@ Domain modules:
   - fees
   - attendance
 Platform: A1OS
-Status: PRODUCT DEVELOPMENT
+Status: ACTIVE COMMERCIALIZATION
