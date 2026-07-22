@@ -53,11 +53,17 @@ class AuthorizationAdapter:
             or ""
         )
 
-        if capability not in self.KNOWN_CAPABILITIES:
+        known_capabilities = (
+            self.READ_ONLY_CAPABILITIES
+            | self.CONSEQUENTIAL_CAPABILITIES
+            | self.KNOWN_CAPABILITIES
+        )
+
+        if capability not in known_capabilities:
             return {
                 "allowed": False,
                 "requires_authorization": True,
-                "classification": "consequential",
+                "classification": "unknown",
                 "capability": capability,
                 "decision": "human_required",
                 "reason": "Unknown capability - fail closed",
