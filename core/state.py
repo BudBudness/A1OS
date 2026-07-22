@@ -3074,3 +3074,6 @@ class A1OS:
 
         # Normal execution through capabilities registry
         return await self.capabilities.execute(action, **kwargs)
+
+# Authoritative application control-plane singleton.
+system = A1OS()
