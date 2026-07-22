@@ -517,40 +517,39 @@ class A1OS:
                 "authorization": authorization,
             }
 
-        provenance = authorization.get("provenance")
-
-        if not isinstance(provenance, dict):
-            provenance = self._authorization_provenance_record(
-                capability=capability,
-                entity_id=entity_id,
-                action=target_action,
-                decision=authorization.get(
-                    "decision",
-                    "autonomous_authorized",
-                ),
-                requires_human=False,
-                confidence=float(
+        # Caller- or policy-supplied provenance is never authoritative.
+        # The consequence gate is the sole provenance issuer.
+        provenance = self._authorization_provenance_record(
+            capability=capability,
+            entity_id=entity_id,
+            action=target_action,
+            decision=authorization.get(
+                "decision",
+                "autonomous_authorized",
+            ),
+            requires_human=False,
+            confidence=float(
+                authorization.get(
+                    "confidence",
                     authorization.get(
-                        "confidence",
-                        authorization.get(
-                            "effective_confidence",
-                            0.0,
-                        ),
-                    )
-                    or 0.0
-                ),
-                success_count=int(
-                    authorization.get("success_count", 0)
-                    or 0
-                ),
-                failure_count=int(
-                    authorization.get("failure_count", 0)
-                    or 0
-                ),
-                decision_id=authorization.get("decision_id"),
-                approval_id=authorization.get("approval_id"),
-                verified=True,
-            )
+                        "effective_confidence",
+                        0.0,
+                    ),
+                )
+                or 0.0
+            ),
+            success_count=int(
+                authorization.get("success_count", 0)
+                or 0
+            ),
+            failure_count=int(
+                authorization.get("failure_count", 0)
+                or 0
+            ),
+            decision_id=authorization.get("decision_id"),
+            approval_id=authorization.get("approval_id"),
+            verified=True,
+        )
 
         return {
             "allowed": True,
@@ -889,9 +888,47 @@ class A1OS:
     def _verify_authorization_provenance(self, record):
         if not isinstance(record, dict):
             return False
-        # Check required fields
-        required = ["authorization_id", "entity_id", "capability", "timestamp"]
-        return all(field in record for field in required)
+
+        required = [
+            "provenance_id",
+            "capability",
+            "entity_id",
+            "action",
+            "decision",
+            "requires_human",
+            "confidence",
+            "success_count",
+            "failure_count",
+            "verified",
+            "policy_version",
+            "previous_hash",
+            "timestamp",
+            "record_hash",
+        ]
+
+        if not all(field in record for field in required):
+            return False
+
+        import hashlib
+        import json
+
+        unsigned = {
+            key: record[key]
+            for key in record
+            if key != "record_hash"
+        }
+
+        canonical = json.dumps(
+            unsigned,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+        expected_hash = hashlib.sha256(
+            canonical.encode("utf-8")
+        ).hexdigest()
+
+        return record.get("record_hash") == expected_hash
     async def _capability_sovereignty_policy_learning(
         self,
         operation: str,
