@@ -33,7 +33,8 @@ class CapabilityRegistry:
         async handler(**kwargs) -> result
     """
 
-    def __init__(self):
+    def __init__(self, owner=None):
+        self.owner = owner
         self._capabilities = {}
 
     def register(self, name, handler):
@@ -51,12 +52,61 @@ class CapabilityRegistry:
         return sorted(self._capabilities.keys())
 
     async def execute(self, name, **kwargs):
+        """
+        Universal dispatcher-level consequence enforcement.
+
+        Execution path:
+
+            caller
+              ↓
+            dispatcher
+              ↓
+            consequence gate
+              ↓
+            authorization
+              ↓
+            capability handler
+
+        Unknown and future capabilities fail closed.
+        """
+
         handler = self._capabilities.get(name)
 
         if handler is None:
             raise RuntimeError(
                 f"Capability not registered: {name}"
             )
+
+        owner = self.owner
+
+        control_plane = {
+            "sovereignty_policy",
+            "sovereignty_policy_learning",
+            "sovereignty_policy_test",
+            "adaptive_authorization_test",
+            "universal_consequence_gate_test",
+            "consequence_gate_test",
+        }
+
+        if (
+            owner is not None
+            and name not in control_plane
+            and hasattr(owner, "_universal_consequence_gate")
+        ):
+            gate = await owner._universal_consequence_gate(
+                capability=name,
+                kwargs=dict(kwargs),
+            )
+
+            if not gate.get("allowed", False):
+                return {
+                    "status": "consequence_gate_human_required",
+                    "capability": name,
+                    "consequence_gate": gate,
+                }
+
+            kwargs = dict(kwargs)
+            kwargs["_consequence_gate"] = gate
 
         result = handler(**kwargs)
 
@@ -68,7 +118,7 @@ class CapabilityRegistry:
 
 class A1OS:
     def __init__(self):
-        self.capabilities = CapabilityRegistry()
+        self.capabilities = CapabilityRegistry(self)
         self._register_capabilities()
         self.bus = MessageBus()
         self.knowledge = KnowledgeBase()
@@ -216,6 +266,11 @@ class A1OS:
             "adaptive_authorization_test",
             self._capability_adaptive_authorization_test,
         )
+
+        self.capabilities.register(
+            "universal_consequence_gate_test",
+            self._capability_universal_consequence_gate_test,
+        )
         self.capabilities.register(
             "sovereignty_policy_learning",
             self._capability_sovereignty_policy_learning,
@@ -349,6 +404,121 @@ class A1OS:
         )
 
 
+
+    async def _universal_consequence_gate(
+        self,
+        capability,
+        kwargs=None,
+    ):
+        """
+        Mandatory consequence classification at dispatcher level.
+
+        Default-deny invariant:
+
+        - Explicitly classified read-only capabilities may execute.
+        - Every unknown capability is consequential.
+        - Every future capability is consequential by default.
+        - Consequential execution requires authorization.
+        """
+
+        kwargs = dict(kwargs or {})
+
+        read_only_capabilities = {
+            "health",
+            "observability",
+            "digital_world_model",
+            "digital_world_graph",
+            "digital_world_query",
+            "digital_world_state",
+            "digital_world_intelligence",
+        }
+
+        if capability in read_only_capabilities:
+            return {
+                "allowed": True,
+                "requires_authorization": False,
+                "classification": "read_only",
+                "capability": capability,
+                "decision": "read_only_allowed",
+            }
+
+        return {
+            "allowed": False,
+            "requires_authorization": True,
+            "classification": "consequential",
+            "capability": capability,
+            "decision": "human_required",
+            "reason": (
+                "Capability is not explicitly classified as read-only. "
+                "Unknown and future capabilities fail closed."
+            ),
+        }
+
+    async def _capability_universal_consequence_gate_test(
+        self,
+        operation="run",
+        **kwargs,
+    ):
+        """
+        Proves dispatcher-level interception of a dynamically added
+        future capability.
+        """
+
+        if operation != "run":
+            raise RuntimeError(
+                "Unsupported universal consequence gate test operation: "
+                f"{operation}"
+            )
+
+        future_capability = (
+            "__future_capability_added_later__"
+        )
+
+        executed = False
+
+        async def future_handler(**handler_kwargs):
+            nonlocal executed
+            executed = True
+            return {
+                "status": "future_capability_executed",
+                "handler_kwargs": handler_kwargs,
+            }
+
+        self.capabilities.register(
+            future_capability,
+            future_handler,
+        )
+
+        result = await self.capabilities.execute(
+            future_capability,
+            operation="consequential_operation",
+        )
+
+        intercepted = (
+            result.get("status")
+            == "consequence_gate_human_required"
+        )
+
+        blocked = not executed
+
+        self.capabilities.unregister(
+            future_capability
+        )
+
+        return {
+            "status": (
+                "universal_consequence_gate_test_passed"
+                if intercepted and blocked
+                else "universal_consequence_gate_test_failed"
+            ),
+            "future_capability": future_capability,
+            "intercepted": intercepted,
+            "handler_executed": executed,
+            "future_capability_blocked": blocked,
+            "consequence_gate": result.get(
+                "consequence_gate"
+            ),
+        }
 
     async def _capability_adaptive_authorization_test(self, operation="run", **kwargs):
         """
@@ -2512,6 +2682,15 @@ class A1OS:
         metadata=None,
         **kwargs,
     ):
+
+
+        if operation == "status":
+            return {
+                "status": "digital_world_state_available",
+                "read_only": True,
+                "consequential": False,
+                "timestamp": datetime.now(timezone.utc).timestamp(),
+            }
         import json
         import sqlite3
         import time
