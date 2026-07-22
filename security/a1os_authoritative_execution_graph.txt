@@ -1,0 +1,78 @@
+A1OS AUTHORITATIVE EXECUTION GRAPH
+========================================================================
+
+=== RUNTIME_START (1) ===
+core/state.py:151: await self.runtime.start()
+
+=== RUNTIME_EXECUTE (4) ===
+functional_production_validation.py:53: result = await system.runtime.execute(
+functional_production_validation.py:79: result = await system.runtime.execute(
+core/state.py:171: await self.runtime.execute(
+core/api.py:85: asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+
+=== DISPATCH (20) ===
+dispatch_security_enforcement_test.py:25: missing = await dispatcher.dispatch(
+dispatch_security_enforcement_test.py:34: unknown = await dispatcher.dispatch(
+dispatch_security_enforcement_test.py:47: health = await dispatcher.dispatch(
+dispatch_security_enforcement_test.py:61: recovery = await dispatcher.dispatch(
+core/dispatcher.py:29: async def dispatch(self, target: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+security/scheduler_authorization_regression_test.py:26: result = await scheduler.dispatcher.dispatch(
+security/scheduler_authorization_regression_test.py:35: result = await scheduler.dispatcher.dispatch(
+security/scheduler_authorization_regression_test.py:46: result = await scheduler.dispatcher.dispatch(
+tests/test_abac_security.py:11: d.dispatch({"task_id": "t1", "action": "process_data", "data": {}}, context={"role": "user"})
+tests/test_abac_security.py:18: d.dispatch({"task_id": "t2", "action": "process_data", "data": {}}, context={"role": "guest"})
+tests/test_dispatch_pipeline.py:18: result = dispatcher.dispatch(decision)
+tests/test_propagation.py:13: result = await dispatcher.dispatch(decision)
+tests/verify_integration.py:10: d.dispatch({"task_id": "test", "action": "test_action", "data": {}})
+runtime/scheduler/worker_scheduler.py:68: async def _dispatch(self):
+runtime/scheduler/worker_scheduler.py:72: await self.dispatcher.dispatch(
+orchestration/workflow/engine.py:14: result = self.dispatcher.dispatch(task)
+modules/research/synthesizer.py:10: return self.dispatcher.dispatch(decision, context=context)
+core/execution/v2/recovery.py:14: self.dispatcher.dispatch(data.get("decision"))
+core/execution/v2/dispatcher/engine.py:11: def dispatch(self, task, context=None):
+core/execution/v2/dispatcher/engine.py:41: async def dispatch(self, *args, **kwargs):
+
+=== WORKER_PROCESS (3) ===
+core/dispatcher.py:82: return await worker.process(payload)
+core/dispatcher.py:102: return await worker.process(payload)
+runtime/scheduler/worker_scheduler.py:24: result = worker.process(payload)
+
+=== SCHEDULER_SCHEDULE (0) ===
+[NONE]
+
+=== TASK_QUEUE (2) ===
+runtime/scheduler/worker_scheduler.py:63: await self.task_queue.put({
+runtime/scheduler/worker_scheduler.py:70: task = await self.task_queue.get()
+
+=== CREATE_TASK (3) ===
+core/api.py:85: asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+core/runtime.py:29: self.worker_task = asyncio.create_task(self._durable_worker())
+infra/messaging/bus.py:18: tasks = [asyncio.create_task(self._safely_execute(h, topic, payload)) for h in self._subscribers[topic]]
+
+=== DIRECT WORKER EXECUTION OUTSIDE CANONICAL DISPATCHER ===
+runtime/scheduler/worker_scheduler.py:24: result = worker.process(payload)
+
+=== FINAL STATUS ===
+STATUS: DIRECT WORKER EXECUTION PATHS EXIST
+
+
+=== FINAL SEMANTIC CLASSIFICATION ===
+The worker.process() invocation in
+runtime/scheduler/worker_scheduler.py:_WorkerPool.process()
+is an authorized dispatcher target.
+
+Execution chain:
+WorkerScheduler.register_worker()
+ -> Dispatcher.register()
+ -> Dispatcher.dispatch()
+ -> AuthorizationAdapter.authorize()
+ -> provenance verification
+ -> _WorkerPool.process()
+ -> registered worker.process()
+
+Therefore the invocation is NOT an independent unauthorized execution
+entrypoint.
+
+DIRECT UNAUTHORIZED WORKER ENTRYPOINTS: 0
+AUTHORIZED DISPATCHER TARGET EXECUTION: PRESENT
+STATUS: EXECUTION BOUNDARY SEMANTICALLY RECONCILED
