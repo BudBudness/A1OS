@@ -3,7 +3,7 @@ Image Coffee Roastery
 Platform: A1OS
 Product Layer: Business OS
 Deployment Type: Coffee / Hospitality
-Status: PRODUCT DEVELOPMENT
+Status: ACTIVE COMMERCIALIZATION
 
 DOMAIN MODULES:
   - products
