@@ -1,0 +1,220 @@
+====================================================================
+A1OS RUNTIME-V2 PRODUCTION EXECUTION TRACE
+====================================================================
+GENERATED: 2026-07-22T21:19:13+03:00
+
+=== PRIMARY RUNTIME OBJECT ===
+core/state.py:55:    async def execute(self, name, **kwargs):
+core/state.py:114:class A1OS:
+core/state.py:3059:    async def execute(self, action: str, **kwargs) -> dict:
+core/api.py:57:async def execute_task(payload: ExecutePayload, x_signature: str = Header(None)):
+core/execution/v2/security/sandbox.py:5:    def execute(self, cmd_list):
+core/execution/v2/worker/pool.py:9:    def execute(self, task_func: Callable, *args: Any, **kwargs: Any) -> Any:
+core/persistence/engine.py:4:class StateManager:
+core/persistence/database.py:25:    def execute(cls, sql, params=()):
+core/registry.py:6:    def execute(self, action, payload):
+core/registry.py:10:    def execute(self, action, payload):
+core/registry.py:18:    def execute(self, action, payload):
+core/runtime.py:7:class Runtime:
+core/runtime.py:66:    async def execute(self, task_id: str, payload: Dict[str, Any]):
+core/worker.py:6:    async def execute(self, event: Dict[str, Any]) -> Any:
+core/state.py.pre_runtime_repair_20260720_213652:24:class A1OS:
+runtime/bootstrap.py:6:class Runtime:
+runtime/engine.py:4:class A1OSEngine:
+
+=== EXTERNAL ENTRYPOINTS → RUNTIME ===
+core/state.py:171:        await self.runtime.execute(
+core/state.py:602:        result = await self.capabilities.execute(
+core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+core/execution/v2/recovery.py:14:                self.dispatcher.dispatch(data.get("decision"))
+core/runtime.py:93:                    output = system.execute(
+core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+runtime/scheduler/worker_scheduler.py:72:            await self.dispatcher.dispatch(
+
+=== AUTHORIZATION BOUNDARY ===
+core/state.py:96:                "_verify_authorization_provenance",
+core/state.py:522:        provenance = self._authorization_provenance_record(
+core/state.py:824:    def _authorization_provenance_record(
+core/state.py:888:    def _verify_authorization_provenance(self, record):
+core/dispatcher.py:8:from security.authorization_adapter import AuthorizationAdapter
+core/dispatcher.py:15:        self.authorization_adapter = AuthorizationAdapter()
+core/dispatcher.py:40:        authorization = await self.authorization_adapter.authorize(
+core/dispatcher.py:67:            and not self.authorization_adapter.verify_provenance(provenance)
+security/authorization_adapter.py:7:class AuthorizationAdapter:
+security/authorization_adapter.py:36:    async def authorize(self, capability, kwargs=None):
+security/authorization_adapter.py:158:    def verify_provenance(record):
+security/runtime_v2_integration_inventory.txt:690:core/state.py:96:                "_verify_authorization_provenance",
+security/runtime_v2_integration_inventory.txt:691:core/state.py:522:        provenance = self._authorization_provenance_record(
+security/runtime_v2_integration_inventory.txt:692:core/state.py:824:    def _authorization_provenance_record(
+security/runtime_v2_integration_inventory.txt:693:core/state.py:888:    def _verify_authorization_provenance(self, record):
+security/runtime_v2_integration_inventory.txt:694:core/dispatcher.py:8:from security.authorization_adapter import AuthorizationAdapter
+security/runtime_v2_integration_inventory.txt:695:core/dispatcher.py:15:        self.authorization_adapter = AuthorizationAdapter()
+security/runtime_v2_integration_inventory.txt:696:core/dispatcher.py:40:        authorization = await self.authorization_adapter.authorize(
+security/runtime_v2_integration_inventory.txt:697:core/dispatcher.py:67:            and not self.authorization_adapter.verify_provenance(provenance)
+security/runtime_v2_integration_inventory.txt:699:security/authorization_adapter.py:7:class AuthorizationAdapter:
+security/runtime_v2_integration_inventory.txt:700:security/authorization_adapter.py:36:    async def authorize(self, capability, kwargs=None):
+security/runtime_v2_integration_inventory.txt:701:security/authorization_adapter.py:158:    def verify_provenance(record):
+
+=== CAPABILITY CONTRACT REGISTRY CONSUMERS ===
+
+=== DIRECT CAPABILITY EXECUTION ===
+core/state.py:185:    async def _capability_health_check(self, **kwargs):
+core/state.py:192:    async def _capability_diagnostics(self, **kwargs):
+core/state.py:199:    async def _capability_recover(self, **kwargs):
+core/state.py:213:    async def _capability_list(self, **kwargs):
+core/state.py:567:    async def _capability_universal_consequence_gate_test(
+core/state.py:633:    async def _capability_adaptive_authorization_test(self, operation="run", **kwargs):
+core/state.py:932:    async def _capability_sovereignty_policy_learning(
+core/state.py:975:    async def _capability_service_management(self, operation="list", **kwargs):
+core/state.py:1022:    async def _capability_process_management(self, operation="list", **kwargs):
+core/state.py:1070:    async def _capability_network_management(self, operation="interfaces", **kwargs):
+core/state.py:1101:    async def _capability_filesystem_management(self, operation="disk_usage", path=".", **kwargs):
+core/state.py:1131:    async def _capability_security_audit(self, operation="open_ports", **kwargs):
+core/state.py:1163:    async def _capability_observability(self, operation="runtime", **kwargs):
+core/state.py:1175:    async def _capability_digital_world_model(
+core/state.py:1310:    async def _capability_digital_world_decision(
+core/state.py:1322:        graph = await self._capability_digital_world_intelligence(
+core/state.py:1380:    async def _capability_digital_world_operation(
+core/state.py:1444:    async def _capability_autonomous_recovery(
+core/state.py:1640:    async def _capability_digital_world_graph(
+core/state.py:1825:    async def _capability_sovereignty_policy(
+core/state.py:1980:    async def _capability_sovereign_control(
+core/state.py:1999:        policy = await self._capability_sovereignty_policy(
+core/state.py:2035:    async def _capability_autonomous_actuation(
+core/state.py:2392:    async def _capability_digital_world_recovery(
+core/state.py:2431:    async def _capability_digital_world_query(
+core/state.py:2588:    async def _capability_digital_world_state(
+core/state.py:2757:    async def _capability_digital_world_reconcile(
+core/state.py:2887:    async def _capability_digital_world_intelligence(
+core/state.py:3033:    async def _capability_database_repair(self, **kwargs):
+
+=== DIRECT WORKER EXECUTION ===
+core/state.py:171:        await self.runtime.execute(
+core/state.py:602:        result = await self.capabilities.execute(
+core/state.py:1502:        entity = db.execute("""
+core/state.py:1544:            db.execute("""
+core/state.py:1574:            db.execute("""
+core/state.py:1678:        db.execute("""
+core/state.py:1689:        db.execute("""
+core/state.py:1707:            db.execute("""
+core/state.py:1737:            db.execute("""
+core/state.py:1760:            entities = db.execute("""
+core/state.py:1766:            relationships = db.execute("""
+core/state.py:1800:            entity_count = db.execute(
+core/state.py:1804:            relationship_count = db.execute(
+core/state.py:2096:        incident.execute("""
+core/state.py:2112:        entity = graph.execute("""
+core/state.py:2136:        dependencies = graph.execute("""
+core/state.py:2180:        incident.execute("""
+core/state.py:2266:        graph.execute("""
+core/state.py:2285:        incident.execute("""
+core/state.py:2494:            rows = db.execute(query, params).fetchall()
+core/state.py:2527:            rows = db.execute(query, params).fetchall()
+core/state.py:2553:            rows = db.execute("""
+core/state.py:2658:            entity = db.execute("""
+core/state.py:2677:            db.execute("""
+core/state.py:2706:            entity = db.execute("""
+core/state.py:2733:            rows = db.execute("""
+core/state.py:2816:            entity = db.execute("""
+core/state.py:2833:                db.execute("""
+core/state.py:2858:            rows = db.execute("""
+core/state.py:2927:            rows = db.execute("""
+core/state.py:2992:            entity = db.execute("""
+core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+core/execution/dispatcher.py:12:        return worker_class().execute(task)
+core/optimization_loop.py:11:    report = await ops.execute({})
+core/optimization_loop.py:14:        result = await proc.execute({"action": action})
+core/persistence.py:9:        self.conn.execute("CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT)")
+core/persistence/database.py:18:            conn.execute("PRAGMA journal_mode=WAL")
+core/persistence/database.py:19:            conn.execute("PRAGMA foreign_keys=ON")
+core/persistence/database.py:20:            conn.execute("PRAGMA busy_timeout=5000")
+core/persistence/database.py:27:        cur = conn.execute(sql, params)
+core/persistence/database.py:33:        return cls.connection().execute(sql, params).fetchone()
+core/persistence/database.py:37:        return cls.connection().execute(sql, params).fetchall()
+core/runtime.py:55:                    await self.execute(task_id, payload)
+core/runtime.py:93:                    output = system.execute(
+core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+core/auth/lifecycle.py:18:        Database.execute(
+core/auth/lifecycle.py:44:        Database.execute(
+core/queue/durable.py:10:        Database.execute(
+core/queue/durable.py:22:        cur = Database.execute(
+core/queue/durable.py:46:        Database.execute(
+core/queue/durable.py:77:            Database.execute(
+core/queue/durable.py:92:        Database.execute(
+core/queue/durable.py:113:        cur = Database.execute(
+core/recovery/checkpoints.py:9:        Database.execute(
+core/dispatcher.py:82:                return await worker.process(payload)
+core/dispatcher.py:102:            return await worker.process(payload)
+runtime/scheduler/worker_scheduler.py:24:            result = worker.process(payload)
+apps/mobile/api.py:30:            c.execute("SELECT sku, name, quantity, location FROM inventory_registry")
+apps/mobile/api.py:34:            c.execute("SELECT asset_name, SUM(amount) as total_gross FROM finance_ledger GROUP BY asset_name")
+apps/mobile/api.py:77:            conn.execute("PRAGMA busy_timeout = 5000;")
+apps/mobile/api.py:81:            c.execute("SELECT quantity, name FROM inventory_registry WHERE sku = ?", (sku,))
+apps/mobile/api.py:92:            c.execute("BEGIN TRANSACTION;")
+apps/mobile/api.py:95:            c.execute("UPDATE inventory_registry SET quantity = quantity - ? WHERE sku = ?", (qty, sku))
+apps/mobile/api.py:100:            c.execute("""
+apps/mobile/api.py:106:            c.execute("""
+apps/mobile/api.py:115:            c.execute("SELECT lifetime_value FROM crm_profiles WHERE customer_id = ?", (customer_id,))
+apps/mobile/api.py:124:            c.execute("UPDATE crm_profiles SET tier = ? WHERE customer_id = ?", (new_tier, customer_id))
+services/notifications/engine.py:17:            c.execute("INSERT INTO notification_history (topic, payload, status, error_context) VALUES (?,?,?,?)", (topic, json.dumps(payload), status, err))
+
+=== SCHEDULER / ASYNC EXECUTION ===
+core/state.py:4:from runtime.scheduler.worker_scheduler import WorkerScheduler
+core/state.py:26:from core.queue.durable import DurableQueue
+core/api.py:8:from core.queue.durable import DurableQueue
+core/api.py:76:    task_id = DurableQueue.enqueue(
+core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+core/execution/framework.py:14:    def process_queue(self):
+core/execution/framework.py:35:if __name__ == "__main__": ExecutionEngine().process_queue()
+core/execution/v2/dispatcher/engine.py:31:                return asyncio.run(result)
+core/execution/v2/registry/task_queue.py:3:    QUEUE_FILE = "/tmp/a1os_queue.json"
+core/optimization_loop.py:20:    asyncio.run(run_optimization())
+core/runtime.py:4:from core.queue.durable import DurableQueue
+core/runtime.py:29:        self.worker_task = asyncio.create_task(self._durable_worker())
+core/state.py.pre_runtime_repair_20260720_213652:2:from runtime.scheduler.worker_scheduler import WorkerScheduler
+core/queue/durable.py:8:    def enqueue(target, role, action, data, task_id=None):
+core/queue/durable.py:14:            VALUES (?,?,?,?,?,'queued',CURRENT_TIMESTAMP)
+core/queue/durable.py:30:                    status='queued'
+core/queue/durable.py:138:            WHERE status IN ('queued', 'retry')
+runtime/engine.py:26:            async with asyncio.TaskGroup() as tg:
+runtime/engine.py:27:                tg.create_task(self._worker("scheduler", 60))
+runtime/engine.py:28:                tg.create_task(self._worker("runtime_monitor", 30))
+runtime/events/router.py:7:        self.event_queue = asyncio.Queue()
+runtime/events/router.py:15:        await self.event_queue.put({"type": event_type, "data": data})
+runtime/events/router.py:19:            event = await self.event_queue.get()
+runtime/scheduler/engine.py:2:    async def schedule(self,event):
+runtime/scheduler/worker_scheduler.py:48:        self.task_queue = asyncio.Queue()
+runtime/scheduler/worker_scheduler.py:62:    async def schedule(self, task_type: str, payload: dict):
+runtime/scheduler/worker_scheduler.py:63:        await self.task_queue.put({
+runtime/scheduler/worker_scheduler.py:70:            task = await self.task_queue.get()
+runtime/scheduler/worker_scheduler.py:77:            self.task_queue.task_done()
+
+=== SECURITY REGRESSION TESTS ===
+./adaptive_authorization_integrity_test.py
+./authorization_decision_integrity_test.py
+./authorization_execution_commitment_binding_test.py
+./authorization_execution_commitment_expiry_integrity_test.py
+./authorization_execution_commitment_integrity_test.py
+./authorization_execution_replay_integrity_test.py
+./authorization_lifecycle_integrity_test.py
+./authorization_provenance_continuity_integrity_test.py
+./consequential_authorization_execution_integration_test.py
+./dispatch_security_enforcement_test.py
+./end_to_end_execution_authorization_audit_test.py
+./execution_authorization_continuity_integrity_test.py
+./operational_runtime_enforcement_test.py
+./production_path_enforcement_audit_test.py
+./security/scheduler_authorization_regression_test.py
+security/scheduler_authorization_regression_test.py
+
+=== GIT STATE ===
+## main...origin/main
+?? security/runtime_v2_integration_inventory.txt
+?? security/runtime_v2_production_execution_trace.txt
+
+====================================================================
+PHASE 2 — PRODUCTION EXECUTION TRACE COMPLETE
+====================================================================
+NEXT: CLASSIFY REAL ENTRYPOINTS AGAINST THE AUTHORITATIVE CONTRACT
