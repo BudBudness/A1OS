@@ -52,24 +52,6 @@ class CapabilityRegistry:
         return sorted(self._capabilities.keys())
 
     async def execute(self, name, **kwargs):
-        """
-        Universal dispatcher-level consequence enforcement.
-
-        Execution path:
-
-            caller
-              ↓
-            dispatcher
-              ↓
-            consequence gate
-              ↓
-            authorization
-              ↓
-            capability handler
-
-        Unknown and future capabilities fail closed.
-        """
-
         handler = self._capabilities.get(name)
 
         if handler is None:
@@ -77,36 +59,17 @@ class CapabilityRegistry:
                 f"Capability not registered: {name}"
             )
 
-        owner = self.owner
+        # Universal dispatcher-level consequence gate.
+        gate = self._consequence_gate(
+            capability=name,
+            kwargs=kwargs,
+        )
 
-        control_plane = {
-            "sovereignty_policy",
-            "sovereignty_policy_learning",
-            "sovereignty_policy_test",
-            "adaptive_authorization_test",
-            "universal_consequence_gate_test",
-            "consequence_gate_test",
-        }
-
-        if (
-            owner is not None
-            and name not in control_plane
-            and hasattr(owner, "_universal_consequence_gate")
-        ):
-            gate = await owner._universal_consequence_gate(
-                capability=name,
-                kwargs=dict(kwargs),
+        if not gate.get("allowed", False):
+            raise RuntimeError(
+                "CONSEQUENCE GATE BLOCKED EXECUTION: "
+                f"{gate.get('decision', 'human_required')}"
             )
-
-            if not gate.get("allowed", False):
-                return {
-                    "status": "consequence_gate_human_required",
-                    "capability": name,
-                    "consequence_gate": gate,
-                }
-
-            kwargs = dict(kwargs)
-            kwargs["_consequence_gate"] = gate
 
         result = handler(**kwargs)
 
@@ -114,6 +77,7 @@ class CapabilityRegistry:
             result = await result
 
         return result
+
 
 
 class A1OS:
@@ -709,6 +673,101 @@ class A1OS:
             "cases": cases,
             "timestamp": now,
         }
+
+
+    def _authorization_provenance_record(
+        self,
+        *,
+        capability,
+        entity_id,
+        action,
+        decision,
+        requires_human,
+        confidence,
+        success_count=0,
+        failure_count=0,
+        decision_id=None,
+        approval_id=None,
+        execution_id=None,
+        verified=None,
+        policy_version="sovereignty-policy-v1",
+        previous_hash="GENESIS",
+        timestamp=None,
+    ):
+        """
+        Creates a canonical authorization provenance record.
+
+        The record is deterministic and hashable. The hash is calculated
+        over the canonical record contents, excluding the hash itself.
+        """
+        import hashlib
+        import json
+        import time
+        import uuid
+
+        if timestamp is None:
+            timestamp = time.time()
+
+        record = {
+            "provenance_id": str(uuid.uuid4()),
+            "decision_id": decision_id,
+            "approval_id": approval_id,
+            "execution_id": execution_id,
+            "capability": capability,
+            "entity_id": entity_id,
+            "action": action,
+            "decision": decision,
+            "requires_human": bool(requires_human),
+            "confidence": float(confidence or 0.0),
+            "success_count": int(success_count or 0),
+            "failure_count": int(failure_count or 0),
+            "verified": verified,
+            "policy_version": policy_version,
+            "previous_hash": previous_hash,
+            "timestamp": float(timestamp),
+        }
+
+        canonical = json.dumps(
+            record,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+        record["record_hash"] = hashlib.sha256(
+            canonical.encode("utf-8")
+        ).hexdigest()
+
+        return record
+
+    def _verify_authorization_provenance(
+        self,
+        record,
+    ):
+        import hashlib
+        import json
+
+        if not isinstance(record, dict):
+            return False
+
+        supplied_hash = record.get("record_hash")
+
+        if not supplied_hash:
+            return False
+
+        payload = dict(record)
+        payload.pop("record_hash", None)
+
+        canonical = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+        expected_hash = hashlib.sha256(
+            canonical.encode("utf-8")
+        ).hexdigest()
+
+        return supplied_hash == expected_hash
 
     async def _capability_sovereignty_policy_learning(
         self,
