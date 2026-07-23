@@ -19,7 +19,6 @@ Active Student
 
 DEPLOYMENTS:
   - Little Oaks
-  - Taibah
 
 PLATFORM: A1OS
 CORE STATUS: FROZEN
