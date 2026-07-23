@@ -1,6 +1,7 @@
-Little Oaks
-===========
-Product: Education OS
-Deployment: School
-Status: ACTIVE DEPLOYMENT
-Modules: students, admissions, fees, attendance, reporting
+Little Oaks — Education OS Deployment
+======================================
+Deployment: little-oaks
+Product: Education OS v0.1
+Modules: students, admissions
+Status: OPERATIONAL DOMAIN BUILD
+Organization-specific configuration belongs in this deployment.
