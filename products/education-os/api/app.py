@@ -545,7 +545,14 @@ def create_admission(admission: AdmissionCreate):
     conn = db()
 
     student = conn.execute(
-        "SELECT id FROM students WHERE id = ?",
+        """
+        SELECT
+            id,
+            first_name,
+            last_name
+        FROM students
+        WHERE id = ?
+        """,
         (admission.student_id,)
     ).fetchone()
 
