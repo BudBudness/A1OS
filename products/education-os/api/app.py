@@ -154,6 +154,182 @@ def get_student(student_id: int):
         conn.close()
 
 
+class AttendanceSessionCreate(BaseModel):
+    attendance_date: str
+    class_name: str
+    notes: Optional[str] = None
+
+
+class AttendanceRecordCreate(BaseModel):
+    student_id: int
+    status: str
+    notes: Optional[str] = None
+
+
+@app.post("/attendance/sessions", status_code=201)
+def create_attendance_session(payload: AttendanceSessionCreate):
+    if payload.attendance_date.strip() == "":
+        raise HTTPException(status_code=400, detail="attendance_date is required")
+
+    if payload.class_name.strip() == "":
+        raise HTTPException(status_code=400, detail="class_name is required")
+
+    with get_db() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO attendance_sessions
+            (attendance_date, class_name, notes)
+            VALUES (?, ?, ?)
+            """,
+            (
+                payload.attendance_date,
+                payload.class_name,
+                payload.notes,
+            ),
+        )
+        session_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "session_id": session_id,
+        "attendance_date": payload.attendance_date,
+        "class_name": payload.class_name,
+    }
+
+
+@app.post("/attendance/sessions/{session_id}/records", status_code=201)
+def record_attendance(
+    session_id: int,
+    payload: AttendanceRecordCreate,
+):
+    allowed = {"present", "absent", "late", "excused"}
+
+    if payload.status not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"status must be one of: {', '.join(sorted(allowed))}",
+        )
+
+    with get_db() as conn:
+        session = conn.execute(
+            "SELECT id FROM attendance_sessions WHERE id = ?",
+            (session_id,),
+        ).fetchone()
+
+        if not session:
+            raise HTTPException(
+                status_code=404,
+                detail="Attendance session not found",
+            )
+
+        student = conn.execute(
+            "SELECT id FROM students WHERE id = ?",
+            (payload.student_id,),
+        ).fetchone()
+
+        if not student:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        try:
+            cursor = conn.execute(
+                """
+                INSERT INTO attendance_records
+                (session_id, student_id, status, notes)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    session_id,
+                    payload.student_id,
+                    payload.status,
+                    payload.notes,
+                ),
+            )
+        except sqlite3.IntegrityError:
+            raise HTTPException(
+                status_code=409,
+                detail="Attendance already recorded for this student and session",
+            )
+
+        conn.commit()
+
+    return {
+        "status": "recorded",
+        "record_id": cursor.lastrowid,
+        "session_id": session_id,
+        "student_id": payload.student_id,
+        "attendance_status": payload.status,
+    }
+
+
+@app.get("/attendance/sessions")
+def list_attendance_sessions():
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                id,
+                attendance_date,
+                class_name,
+                notes,
+                created_at
+            FROM attendance_sessions
+            ORDER BY attendance_date DESC, id DESC
+            """
+        ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+@app.get("/attendance/sessions/{session_id}")
+def get_attendance_session(session_id: int):
+    with get_db() as conn:
+        session = conn.execute(
+            """
+            SELECT
+                id,
+                attendance_date,
+                class_name,
+                notes,
+                created_at
+            FROM attendance_sessions
+            WHERE id = ?
+            """,
+            (session_id,),
+        ).fetchone()
+
+        if not session:
+            raise HTTPException(
+                status_code=404,
+                detail="Attendance session not found",
+            )
+
+        records = conn.execute(
+            """
+            SELECT
+                ar.id,
+                ar.student_id,
+                s.first_name,
+                s.last_name,
+                ar.status,
+                ar.notes,
+                ar.created_at
+            FROM attendance_records ar
+            JOIN students s ON s.id = ar.student_id
+            WHERE ar.session_id = ?
+            ORDER BY s.last_name, s.first_name
+            """,
+            (session_id,),
+        ).fetchall()
+
+    result = dict(session)
+    result["records"] = [dict(row) for row in records]
+    return result
+
+
 @app.post("/admissions")
 def create_admission(admission: AdmissionCreate):
     conn = get_db()
