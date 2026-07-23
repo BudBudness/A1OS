@@ -27,6 +27,7 @@ class StudentCreate(BaseModel):
     date_of_birth: Optional[str] = None
     gender: Optional[str] = None
     admission_number: Optional[str] = None
+    enrollment_status: str = "active"
 
 def db():
     conn = sqlite3.connect(DB_PATH)
