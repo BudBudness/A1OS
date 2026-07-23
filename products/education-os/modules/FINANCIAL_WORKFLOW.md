@@ -20,7 +20,7 @@ BALANCE UPDATE
 FINANCIAL REPORTING
 
 DEPLOYMENTS:
-  - Little Oaks
+  - Little Oaks Montessori Nursery & Kindergarten
   - Taibah
 
 PLATFORM: A1OS

@@ -18,7 +18,7 @@ Enrollment
 Active Student
 
 DEPLOYMENTS:
-  - Little Oaks
+  - Little Oaks Montessori Nursery & Kindergarten
 
 PLATFORM: A1OS
 CORE STATUS: FROZEN

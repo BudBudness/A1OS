@@ -1,7 +1,7 @@
 School Operations Module
 =========================
 Product: Education OS
-Deployment: Little Oaks
+Deployment: Little Oaks Montessori Nursery & Kindergarten
 Status: PRODUCT IMPLEMENTATION
 
 OPERATIONAL DOMAINS:
