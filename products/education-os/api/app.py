@@ -542,7 +542,7 @@ def get_attendance_session(session_id: int):
 
 @app.post("/admissions")
 def create_admission(admission: AdmissionCreate):
-    conn = get_db()
+    conn = db()
 
     student = conn.execute(
         "SELECT id FROM students WHERE id = ?",
@@ -581,7 +581,7 @@ def create_admission(admission: AdmissionCreate):
 
 @app.get("/admissions")
 def list_admissions():
-    conn = get_db()
+    conn = db()
 
     rows = conn.execute(
         '''
@@ -606,7 +606,7 @@ def list_admissions():
 
 @app.get("/admissions/{admission_id}")
 def get_admission(admission_id: int):
-    conn = get_db()
+    conn = db()
 
     row = conn.execute(
         '''
@@ -635,7 +635,7 @@ def get_admission(admission_id: int):
 
 @app.patch("/admissions/{admission_id}/status")
 def update_admission_status(admission_id: int, status: str):
-    conn = get_db()
+    conn = db()
 
     cur = conn.execute(
         "UPDATE admissions SET status = ? WHERE id = ?",
