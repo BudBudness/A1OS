@@ -1,4 +1,4 @@
-Little Oaks — Education OS Deployment
+Little Oaks Montessori Nursery & Kindergarten — Education OS Deployment
 ======================================
 Deployment: little-oaks
 Product: Education OS v0.1

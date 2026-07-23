@@ -16,7 +16,7 @@ SHARED PRODUCT CAPABILITIES:
   - audit trail
 
 DEPLOYMENTS:
-  - Little Oaks
+  - Little Oaks Montessori Nursery & Kindergarten
 
 ARCHITECTURE:
 A1OS CORE
