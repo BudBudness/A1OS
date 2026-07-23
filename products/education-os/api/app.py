@@ -552,19 +552,37 @@ def create_admission(admission: AdmissionCreate):
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
+    organization = conn.execute(
+        "SELECT id FROM organizations ORDER BY id LIMIT 1"
+    ).fetchone()
+
+    if not organization:
+        raise HTTPException(
+            status_code=500,
+            detail="Organization not configured"
+        )
+
     cur = conn.execute(
-        '''
+        """
         INSERT INTO admissions
-        (student_id, admission_date, class_name, status, notes)
-        VALUES (?, ?, ?, ?, ?)
-        ''',
         (
+            organization_id,
+            student_id,
+            admission_date,
+            class_name,
+            status,
+            notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            organization["id"],
             admission.student_id,
             admission.admission_date,
             admission.class_name,
             admission.status,
             admission.notes,
-        )
+        ),
     )
 
     conn.commit()
