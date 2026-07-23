@@ -85,21 +85,34 @@ def create_student(payload: StudentCreate):
                 detail="Organization not configured",
             )
 
+        if payload.admission_number:
+            admission_number = payload.admission_number
+        else:
+            next_number = conn.execute(
+                """
+                SELECT COALESCE(MAX(id), 0) + 1
+                FROM students
+                """
+            ).fetchone()[0]
+            admission_number = f"LO-{next_number:06d}"
+
         cursor = conn.execute(
             """
             INSERT INTO students
             (
                 organization_id,
+                admission_number,
                 first_name,
                 last_name,
                 date_of_birth,
                 gender,
                 enrollment_status
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 organization["id"],
+                admission_number,
                 payload.first_name,
                 payload.last_name,
                 payload.date_of_birth,
