@@ -68,7 +68,7 @@ def organization():
 
 @app.post("/students", status_code=201)
 def create_student(payload: StudentCreate):
-    with get_db() as conn:
+    with db() as conn:
         organization = conn.execute(
             """
             SELECT id
@@ -202,7 +202,7 @@ def create_school_operation(payload: SchoolOperationCreate):
             detail="title is required",
         )
 
-    with get_db() as conn:
+    with db() as conn:
         cursor = conn.execute(
             """
             INSERT INTO school_operations
@@ -241,7 +241,7 @@ def create_school_operation(payload: SchoolOperationCreate):
 def list_school_operations(
     status: Optional[str] = None,
 ):
-    with get_db() as conn:
+    with db() as conn:
         if status:
             rows = conn.execute(
                 """
@@ -290,7 +290,7 @@ def list_school_operations(
 
 @app.get("/operations/{operation_id}")
 def get_school_operation(operation_id: int):
-    with get_db() as conn:
+    with db() as conn:
         row = conn.execute(
             """
             SELECT
@@ -336,7 +336,7 @@ def update_school_operation_status(
             detail=f"status must be one of: {', '.join(sorted(allowed_statuses))}",
         )
 
-    with get_db() as conn:
+    with db() as conn:
         cursor = conn.execute(
             """
             UPDATE school_operations
@@ -370,7 +370,7 @@ def create_attendance_session(payload: AttendanceSessionCreate):
     if payload.class_name.strip() == "":
         raise HTTPException(status_code=400, detail="class_name is required")
 
-    with get_db() as conn:
+    with db() as conn:
         cursor = conn.execute(
             """
             INSERT INTO attendance_sessions
@@ -407,7 +407,7 @@ def record_attendance(
             detail=f"status must be one of: {', '.join(sorted(allowed))}",
         )
 
-    with get_db() as conn:
+    with db() as conn:
         session = conn.execute(
             "SELECT id FROM attendance_sessions WHERE id = ?",
             (session_id,),
@@ -463,7 +463,7 @@ def record_attendance(
 
 @app.get("/attendance/sessions")
 def list_attendance_sessions():
-    with get_db() as conn:
+    with db() as conn:
         rows = conn.execute(
             """
             SELECT
@@ -482,7 +482,7 @@ def list_attendance_sessions():
 
 @app.get("/attendance/sessions/{session_id}")
 def get_attendance_session(session_id: int):
-    with get_db() as conn:
+    with db() as conn:
         session = conn.execute(
             """
             SELECT
