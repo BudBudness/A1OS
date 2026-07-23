@@ -562,25 +562,37 @@ def create_admission(admission: AdmissionCreate):
             detail="Organization not configured"
         )
 
+    application_reference = f"LO-{admission.student_id:06d}"
+
+    applicant_name = f"{student['first_name']} {student['last_name']}"
+
     cur = conn.execute(
         """
         INSERT INTO admissions
         (
             organization_id,
+            application_reference,
+            applicant_name,
+            requested_class,
+            status,
+            decision_notes,
             student_id,
             admission_date,
             class_name,
-            status,
             notes
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             organization["id"],
+            application_reference,
+            applicant_name,
+            admission.class_name,
+            admission.status,
+            admission.notes,
             admission.student_id,
             admission.admission_date,
             admission.class_name,
-            admission.status,
             admission.notes,
         ),
     )
