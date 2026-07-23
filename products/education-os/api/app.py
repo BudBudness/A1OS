@@ -553,7 +553,7 @@ def create_admission(admission: AdmissionCreate):
         raise HTTPException(status_code=404, detail="Student not found")
 
     organization = conn.execute(
-        "SELECT id FROM organizations ORDER BY id LIMIT 1"
+        "SELECT id FROM organization ORDER BY id LIMIT 1"
     ).fetchone()
 
     if not organization:
