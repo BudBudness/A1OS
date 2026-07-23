@@ -13,6 +13,14 @@ app = FastAPI(
     version="0.1.0",
 )
 
+class AdmissionCreate(BaseModel):
+    student_id: int
+    admission_date: str
+    class_name: str
+    status: str = "pending"
+    notes: str | None = None
+
+
 class StudentCreate(BaseModel):
     first_name: str
     last_name: str
@@ -144,3 +152,117 @@ def get_student(student_id: int):
 
     finally:
         conn.close()
+
+
+@app.post("/admissions")
+def create_admission(admission: AdmissionCreate):
+    conn = get_db()
+
+    student = conn.execute(
+        "SELECT id FROM students WHERE id = ?",
+        (admission.student_id,)
+    ).fetchone()
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    cur = conn.execute(
+        '''
+        INSERT INTO admissions
+        (student_id, admission_date, class_name, status, notes)
+        VALUES (?, ?, ?, ?, ?)
+        ''',
+        (
+            admission.student_id,
+            admission.admission_date,
+            admission.class_name,
+            admission.status,
+            admission.notes,
+        )
+    )
+
+    conn.commit()
+
+    return {
+        "status": "created",
+        "admission_id": cur.lastrowid,
+        "student_id": admission.student_id,
+        "admission_date": admission.admission_date,
+        "class_name": admission.class_name,
+        "admission_status": admission.status,
+    }
+
+
+@app.get("/admissions")
+def list_admissions():
+    conn = get_db()
+
+    rows = conn.execute(
+        '''
+        SELECT
+            a.id,
+            a.student_id,
+            s.first_name,
+            s.last_name,
+            a.admission_date,
+            a.class_name,
+            a.status,
+            a.notes,
+            a.created_at
+        FROM admissions a
+        JOIN students s ON s.id = a.student_id
+        ORDER BY a.created_at DESC
+        '''
+    ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+@app.get("/admissions/{admission_id}")
+def get_admission(admission_id: int):
+    conn = get_db()
+
+    row = conn.execute(
+        '''
+        SELECT
+            a.id,
+            a.student_id,
+            s.first_name,
+            s.last_name,
+            a.admission_date,
+            a.class_name,
+            a.status,
+            a.notes,
+            a.created_at
+        FROM admissions a
+        JOIN students s ON s.id = a.student_id
+        WHERE a.id = ?
+        ''',
+        (admission_id,)
+    ).fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Admission not found")
+
+    return dict(row)
+
+
+@app.patch("/admissions/{admission_id}/status")
+def update_admission_status(admission_id: int, status: str):
+    conn = get_db()
+
+    cur = conn.execute(
+        "UPDATE admissions SET status = ? WHERE id = ?",
+        (status, admission_id)
+    )
+
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Admission not found")
+
+    conn.commit()
+
+    return {
+        "status": "updated",
+        "admission_id": admission_id,
+        "admission_status": status,
+    }
