@@ -166,6 +166,197 @@ class AttendanceRecordCreate(BaseModel):
     notes: Optional[str] = None
 
 
+class SchoolOperationCreate(BaseModel):
+    operation_type: str
+    title: str
+    description: Optional[str] = None
+    assigned_to: Optional[int] = None
+    due_date: Optional[str] = None
+    status: str = "open"
+
+
+@app.post("/operations", status_code=201)
+def create_school_operation(payload: SchoolOperationCreate):
+    allowed_statuses = {"open", "in_progress", "completed", "cancelled"}
+
+    if payload.status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"status must be one of: {', '.join(sorted(allowed_statuses))}",
+        )
+
+    if not payload.operation_type.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="operation_type is required",
+        )
+
+    if not payload.title.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="title is required",
+        )
+
+    with get_db() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO school_operations
+            (
+                operation_type,
+                title,
+                description,
+                assigned_to,
+                due_date,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                payload.operation_type,
+                payload.title,
+                payload.description,
+                payload.assigned_to,
+                payload.due_date,
+                payload.status,
+            ),
+        )
+        operation_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "operation_id": operation_id,
+        "operation_type": payload.operation_type,
+        "title": payload.title,
+        "operation_status": payload.status,
+    }
+
+
+@app.get("/operations")
+def list_school_operations(
+    status: Optional[str] = None,
+):
+    with get_db() as conn:
+        if status:
+            rows = conn.execute(
+                """
+                SELECT
+                    id,
+                    operation_type,
+                    title,
+                    description,
+                    assigned_to,
+                    due_date,
+                    status,
+                    created_at,
+                    updated_at
+                FROM school_operations
+                WHERE status = ?
+                ORDER BY
+                    CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
+                    due_date ASC,
+                    id DESC
+                """,
+                (status,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT
+                    id,
+                    operation_type,
+                    title,
+                    description,
+                    assigned_to,
+                    due_date,
+                    status,
+                    created_at,
+                    updated_at
+                FROM school_operations
+                ORDER BY
+                    CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
+                    due_date ASC,
+                    id DESC
+                """
+            ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+@app.get("/operations/{operation_id}")
+def get_school_operation(operation_id: int):
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                id,
+                operation_type,
+                title,
+                description,
+                assigned_to,
+                due_date,
+                status,
+                created_at,
+                updated_at
+            FROM school_operations
+            WHERE id = ?
+            """,
+            (operation_id,),
+        ).fetchone()
+
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail="School operation not found",
+        )
+
+    return dict(row)
+
+
+@app.patch("/operations/{operation_id}/status")
+def update_school_operation_status(
+    operation_id: int,
+    status: str,
+):
+    allowed_statuses = {
+        "open",
+        "in_progress",
+        "completed",
+        "cancelled",
+    }
+
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"status must be one of: {', '.join(sorted(allowed_statuses))}",
+        )
+
+    with get_db() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE school_operations
+            SET status = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (status, operation_id),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="School operation not found",
+            )
+
+        conn.commit()
+
+    return {
+        "status": "updated",
+        "operation_id": operation_id,
+        "operation_status": status,
+    }
+
+
 @app.post("/attendance/sessions", status_code=201)
 def create_attendance_session(payload: AttendanceSessionCreate):
     if payload.attendance_date.strip() == "":
