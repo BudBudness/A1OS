@@ -67,49 +67,54 @@ def organization():
         conn.close()
 
 @app.post("/students", status_code=201)
-def create_student(student: StudentCreate):
-    conn = db()
+def create_student(payload: StudentCreate):
+    with get_db() as conn:
+        organization = conn.execute(
+            """
+            SELECT id
+            FROM organization
+            ORDER BY id
+            LIMIT 1
+            """
+        ).fetchone()
 
-    try:
+        if not organization:
+            raise HTTPException(
+                status_code=500,
+                detail="Organization not configured",
+            )
+
         cursor = conn.execute(
             """
             INSERT INTO students
             (
+                organization_id,
                 first_name,
                 last_name,
                 date_of_birth,
                 gender,
-                admission_number
+                enrollment_status
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
-                student.first_name,
-                student.last_name,
-                student.date_of_birth,
-                student.gender,
-                student.admission_number,
+                organization["id"],
+                payload.first_name,
+                payload.last_name,
+                payload.date_of_birth,
+                payload.gender,
+                payload.enrollment_status,
             ),
         )
 
         conn.commit()
 
-        row = conn.execute(
-            "SELECT * FROM students WHERE id=?",
-            (cursor.lastrowid,),
-        ).fetchone()
+        return {
+            "status": "created",
+            "student_id": cursor.lastrowid,
+            "organization_id": organization["id"],
+        }
 
-        return dict(row)
-
-    except sqlite3.IntegrityError as exc:
-        conn.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail=str(exc),
-        )
-
-    finally:
-        conn.close()
 
 @app.get("/students")
 def list_students():
