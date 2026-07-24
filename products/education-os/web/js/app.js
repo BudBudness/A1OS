@@ -1,4 +1,6 @@
 import { getRoute, navigate, routeTitle, startRouter } from "./router.js";
+import { api } from "./api.js";
+import { login, logout, verifySession, isAuthenticated, user } from "./auth.js";
 import { renderDashboard } from "../pages/dashboard.js";
 import { renderStudents } from "../pages/students.js";
 import { renderAdmissions } from "../pages/admissions.js";
@@ -17,8 +19,89 @@ const navItems = [
     ["operations", "School Operations"]
 ];
 
+function renderLogin() {
+    app.innerHTML = `
+        <div class="auth-shell">
+            <div class="auth-card">
+                <div class="auth-brand">
+                    <strong>Little Oaks</strong>
+                    <span>Education OS</span>
+                </div>
+
+                <h1>Sign in</h1>
+                <p class="auth-subtitle">
+                    Little Oaks Montessori Nursery & Kindergarten
+                </p>
+
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input
+                            id="login-email"
+                            type="email"
+                            placeholder="you@littleoaks.ug"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input
+                            id="login-password"
+                            type="password"
+                            placeholder="Enter your password"
+                            required
+                        />
+                    </div>
+
+                    <div id="login-error" class="auth-error"></div>
+
+                    <button class="btn btn-primary auth-submit" type="submit">
+                        Sign in
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.querySelector("#login-form").addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const email = document.querySelector("#login-email").value.trim();
+        const password = document.querySelector("#login-password").value;
+        const error = document.querySelector("#login-error");
+        const button = document.querySelector(".auth-submit");
+
+        error.textContent = "";
+        button.disabled = true;
+        button.textContent = "Signing in...";
+
+        try {
+            await login(email, password);
+            await render();
+        } catch (e) {
+            error.textContent = e.message;
+            button.disabled = false;
+            button.textContent = "Sign in";
+        }
+    });
+}
+
 async function render() {
+    if (!isAuthenticated()) {
+        renderLogin();
+        return;
+    }
+
+    try {
+        await verifySession();
+    } catch {
+        renderLogin();
+        return;
+    }
+
     const route = getRoute();
+    const currentUser = user();
 
     app.innerHTML = `
         <div class="app-shell">
@@ -42,6 +125,14 @@ async function render() {
                         )
                         .join("")}
                 </nav>
+
+                <div class="sidebar-user">
+                    <strong>${currentUser?.full_name || "User"}</strong>
+                    <small>${currentUser?.role || ""}</small>
+                    <button id="logout-button" class="logout-button">
+                        Sign out
+                    </button>
+                </div>
             </aside>
 
             <main class="main">
@@ -60,6 +151,8 @@ async function render() {
     document.querySelectorAll("[data-route]").forEach(button => {
         button.addEventListener("click", () => navigate(button.dataset.route));
     });
+
+    document.querySelector("#logout-button").addEventListener("click", logout);
 
     const content = document.querySelector("#page-content");
 

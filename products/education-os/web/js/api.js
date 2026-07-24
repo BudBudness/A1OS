@@ -1,13 +1,24 @@
+import { getToken, clearAuth } from "./auth.js";
+
 const API_BASE = "/api";
 
 async function request(path, options = {}) {
+    const token = getToken();
+
     const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
         headers: {
             "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...(options.headers || {})
-        },
-        ...options
+        }
     });
+
+    if (response.status === 401) {
+        clearAuth();
+        location.reload();
+        throw new Error("Session expired");
+    }
 
     let data = null;
 

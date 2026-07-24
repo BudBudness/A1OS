@@ -1,17 +1,368 @@
+import secrets
 from pathlib import Path
 import sqlite3
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 ROOT = Path(__file__).resolve().parents[3]
 DB_PATH = ROOT / "products" / "education-os" / "deployments" / "little-oaks" / "data" / "education.db"
 
+
+
 app = FastAPI(
+
     title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
     version="0.1.0",
 )
+
+# =========================
+# LITTLE OAKS AUTHENTICATION
+# =========================
+
+import base64
+import hashlib
+import hmac
+import json
+from datetime import datetime, timedelta, timezone
+from fastapi import Header
+
+AUTH_SESSION_DAYS = 30
+
+ROLE_PERMISSIONS = {
+    "director_ceo_teacher": {
+        "*"
+    },
+
+    "head_mistress": {
+        "dashboard.view",
+        "students.view",
+        "students.create",
+        "students.update",
+        "admissions.view",
+        "admissions.review",
+        "attendance.view",
+        "attendance.record",
+        "operations.view",
+        "operations.create",
+        "operations.update",
+        "fees.view",
+        "reports.view",
+        "academic.manage",
+        "staff.view",
+    },
+
+    "staff": {
+        "dashboard.view",
+        "students.view",
+        "attendance.view",
+        "attendance.record",
+        "operations.view",
+        "operations.create",
+    },
+}
+
+
+def _password_hash(password: str) -> str:
+    salt = secrets.token_bytes(16)
+    iterations = 310000
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode(),
+        salt,
+        iterations,
+    )
+    return (
+        f"pbkdf2_sha256$"
+        f"{iterations}$"
+        f"{salt.hex()}$"
+        f"{digest.hex()}"
+    )
+
+
+def _verify_password(password: str, encoded: str) -> bool:
+    try:
+        algorithm, iterations, salt_hex, digest_hex = encoded.split("$")
+        if algorithm != "pbkdf2_sha256":
+            return False
+
+        calculated = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode(),
+            bytes.fromhex(salt_hex),
+            int(iterations),
+        )
+
+        return hmac.compare_digest(
+            calculated.hex(),
+            digest_hex,
+        )
+
+    except Exception:
+        return False
+
+
+def _get_bearer_token(authorization: str | None):
+    if not authorization:
+        return None
+
+    if not authorization.lower().startswith("bearer "):
+        return None
+
+    return authorization[7:].strip()
+
+
+def _current_user(
+    authorization: str | None = Header(default=None),
+):
+    token = _get_bearer_token(authorization)
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+        )
+
+    with db() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                u.id,
+                u.organization_id,
+                u.full_name,
+                u.role,
+                u.email,
+                u.phone,
+                u.active,
+                s.session_token,
+                s.expires_at
+            FROM auth_sessions s
+            JOIN users u ON u.id = s.user_id
+            WHERE s.session_token = ?
+            """,
+            (token,),
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid session",
+            )
+
+        if not row["active"]:
+            raise HTTPException(
+                status_code=403,
+                detail="User account is inactive",
+            )
+
+        expires_at = datetime.fromisoformat(
+            row["expires_at"].replace("Z", "+00:00")
+        )
+
+        if expires_at < datetime.now(timezone.utc):
+            conn.execute(
+                "DELETE FROM auth_sessions WHERE session_token = ?",
+                (token,),
+            )
+            conn.commit()
+
+            raise HTTPException(
+                status_code=401,
+                detail="Session expired",
+            )
+
+        conn.execute(
+            """
+            UPDATE auth_sessions
+            SET last_used_at = CURRENT_TIMESTAMP
+            WHERE session_token = ?
+            """,
+            (token,),
+        )
+
+        conn.commit()
+
+        return dict(row)
+
+
+def _require_permission(
+    permission: str,
+    authorization: str | None = Header(default=None),
+):
+    user = _current_user(authorization)
+
+    permissions = ROLE_PERMISSIONS.get(
+        user["role"],
+        set(),
+    )
+
+    if "*" not in permissions and permission not in permissions:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Permission denied: {permission}",
+        )
+
+    return user
+
+
+@app.post("/auth/login")
+def auth_login(payload: dict):
+    email = str(payload.get("email", "")).strip().lower()
+    password = str(payload.get("password", ""))
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="Email and password are required",
+        )
+
+    with db() as conn:
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE lower(email) = ?
+            AND active = 1
+            LIMIT 1
+            """,
+            (email,),
+        ).fetchone()
+
+        if not user or not user["password_hash"]:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password",
+            )
+
+        if not _verify_password(
+            password,
+            user["password_hash"],
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password",
+            )
+
+        token = secrets.token_urlsafe(48)
+
+        expires_at = (
+            datetime.now(timezone.utc)
+            + timedelta(days=AUTH_SESSION_DAYS)
+        ).isoformat()
+
+        conn.execute(
+            """
+            INSERT INTO auth_sessions
+            (
+                user_id,
+                session_token,
+                expires_at
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                user["id"],
+                token,
+                expires_at,
+            ),
+        )
+
+        conn.execute(
+            """
+            INSERT INTO audit_log
+            (
+                organization_id,
+                actor_user_id,
+                entity_type,
+                entity_id,
+                action,
+                details
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user["organization_id"],
+                user["id"],
+                "auth",
+                user["id"],
+                "login",
+                json.dumps({
+                    "email": user["email"],
+                    "role": user["role"],
+                }),
+            ),
+        )
+
+        conn.commit()
+
+        return {
+            "status": "authenticated",
+            "token": token,
+            "expires_at": expires_at,
+            "user": {
+                "id": user["id"],
+                "full_name": user["full_name"],
+                "role": user["role"],
+                "email": user["email"],
+                "permissions": list(
+                    ROLE_PERMISSIONS.get(
+                        user["role"],
+                        set(),
+                    )
+                ),
+            },
+        }
+
+
+@app.post("/auth/logout")
+def auth_logout(
+    authorization: str | None = Header(default=None),
+):
+    token = _get_bearer_token(authorization)
+
+    if token:
+        with db() as conn:
+            conn.execute(
+                """
+                DELETE FROM auth_sessions
+                WHERE session_token = ?
+                """,
+                (token,),
+            )
+            conn.commit()
+
+    return {
+        "status": "logged_out"
+    }
+
+
+@app.get("/auth/me")
+def auth_me(
+    authorization: str | None = Header(default=None),
+):
+    user = _current_user(authorization)
+
+    return {
+        "authenticated": True,
+        "user": {
+            "id": user["id"],
+            "organization_id": user["organization_id"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+            "email": user["email"],
+            "phone": user["phone"],
+            "permissions": list(
+                ROLE_PERMISSIONS.get(
+                    user["role"],
+                    set(),
+                )
+            ),
+        },
+    }
+
 
 class AdmissionCreate(BaseModel):
     student_id: int
@@ -34,6 +385,15 @@ def db():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
+
+@app.get("/v1/health")
+def v1_health():
+    return {
+        "status": "healthy",
+        "product": "Education OS",
+        "deployment": "Little Oaks Montessori Nursery & Kindergarten",
+        "database": "connected"
+    }
 
 @app.get("/health")
 def health():
