@@ -37,7 +37,7 @@ auth_code, auth_data = request(
     "POST",
     {
         "email": "leticia@littleoaks.ug",
-        "password": "password"
+        "password": "admin@123"
     }
 )
 
