@@ -1,3 +1,4 @@
+import uuid
 import secrets
 from pathlib import Path
 import sqlite3
@@ -6,10 +7,12 @@ from typing import Optional
 from fastapi import FastAPI, Request
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 ROOT = Path(__file__).resolve().parents[3]
 DB_PATH = ROOT / "products" / "education-os" / "deployments" / "little-oaks" / "data" / "education.db"
+WEB_ROOT = ROOT / "products" / "education-os" / "web"
 
 
 
@@ -382,7 +385,7 @@ class StudentCreate(BaseModel):
     enrollment_status: str = "active"
 
 def db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
@@ -403,7 +406,7 @@ _FEES_DB = str(
 )
 
 def _fees_db():
-    conn = _fees_sqlite3.connect(_FEES_DB)
+    conn = _fees_sqlite3.connect(_FEES_DB, timeout=30.0, isolation_level=None)
     conn.row_factory = _fees_sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
@@ -1097,10 +1100,21 @@ def create_school_operation(payload: SchoolOperationCreate):
         )
 
     with db() as conn:
+        organization = conn.execute(
+            "SELECT id FROM organization ORDER BY id LIMIT 1"
+        ).fetchone()
+
+        if not organization:
+            raise HTTPException(
+                status_code=500,
+                detail="Organization not configured",
+            )
+
         cursor = conn.execute(
             """
             INSERT INTO school_operations
             (
+                organization_id,
                 operation_type,
                 title,
                 description,
@@ -1108,9 +1122,10 @@ def create_school_operation(payload: SchoolOperationCreate):
                 due_date,
                 status
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                organization["id"],
                 payload.operation_type,
                 payload.title,
                 payload.description,
@@ -1265,18 +1280,39 @@ def create_attendance_session(payload: AttendanceSessionCreate):
         raise HTTPException(status_code=400, detail="class_name is required")
 
     with db() as conn:
-        cursor = conn.execute(
-            """
-            INSERT INTO attendance_sessions
-            (attendance_date, class_name, notes)
-            VALUES (?, ?, ?)
-            """,
-            (
-                payload.attendance_date,
-                payload.class_name,
-                payload.notes,
-            ),
-        )
+        organization = conn.execute(
+            "SELECT id FROM organization ORDER BY id LIMIT 1"
+        ).fetchone()
+
+        if not organization:
+            raise HTTPException(
+                status_code=500,
+                detail="Organization not configured",
+            )
+
+        try:
+            cursor = conn.execute(
+                """
+                INSERT INTO attendance_sessions
+                (
+                    organization_id,
+                    session_date,
+                    class_level
+                )
+                VALUES (?, ?, ?)
+                """,
+                (
+                    organization["id"],
+                    payload.attendance_date,
+                    payload.class_name,
+                ),
+            )
+        except sqlite3.IntegrityError:
+            raise HTTPException(
+                status_code=409,
+                detail="Attendance session already exists for this organization, date, and class",
+            )
+
         session_id = cursor.lastrowid
         conn.commit()
 
@@ -1362,12 +1398,13 @@ def list_attendance_sessions():
             """
             SELECT
                 id,
-                attendance_date,
-                class_name,
-                notes,
+                organization_id,
+                session_date AS attendance_date,
+                class_level AS class_name,
+                recorded_by,
                 created_at
             FROM attendance_sessions
-            ORDER BY attendance_date DESC, id DESC
+            ORDER BY session_date DESC, id DESC
             """
         ).fetchall()
 
@@ -1381,9 +1418,10 @@ def get_attendance_session(session_id: int):
             """
             SELECT
                 id,
-                attendance_date,
-                class_name,
-                notes,
+                organization_id,
+                session_date AS attendance_date,
+                class_level AS class_name,
+                recorded_by,
                 created_at
             FROM attendance_sessions
             WHERE id = ?
@@ -1449,7 +1487,10 @@ def create_admission(admission: AdmissionCreate):
             detail="Organization not configured"
         )
 
-    application_reference = f"LO-{admission.student_id:06d}"
+    application_reference = (
+        f"LO-{admission.student_id:06d}-"
+        f"{uuid.uuid4().hex[:8].upper()}"
+    )
 
     applicant_name = f"{student['first_name']} {student['last_name']}"
 
@@ -1569,3 +1610,175 @@ def update_admission_status(admission_id: int, status: str):
         "admission_id": admission_id,
         "admission_status": status,
     }
+
+
+# =========================
+# EDUCATION OS FRONTEND
+# =========================
+
+# ============================================================
+# LITTLE OAKS SCHOOL INTELLIGENCE
+# ============================================================
+
+@app.get("/intelligence/summary")
+def intelligence_summary(request: Request):
+    actor = _require_permission(request, "students.view")
+    org_id = actor["organization_id"]
+
+    with get_db() as conn:
+        students = conn.execute("""
+            SELECT COUNT(*) FROM students
+            WHERE organization_id=? AND enrollment_status NOT IN ('withdrawn','inactive')
+        """, (org_id,)).fetchone()[0]
+
+        admissions = conn.execute("""
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN lower(status) IN ('pending','submitted','under_review')
+                    THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN lower(status) IN ('approved','accepted')
+                    THEN 1 ELSE 0 END) AS accepted,
+                SUM(CASE WHEN lower(status) IN ('rejected','declined')
+                    THEN 1 ELSE 0 END) AS rejected
+            FROM admissions
+            WHERE organization_id=?
+        """, (org_id,)).fetchone()
+
+        fees = conn.execute("""
+            SELECT
+                COALESCE(SUM(amount),0) AS billed,
+                COALESCE(SUM(amount_paid),0) AS collected,
+                COALESCE(SUM(MAX(amount-COALESCE(amount_paid,0),0)),0) AS outstanding,
+                COALESCE(SUM(
+                    CASE
+                        WHEN due_date IS NOT NULL
+                         AND date(due_date)<date('now')
+                         AND COALESCE(amount_paid,0)<amount
+                        THEN amount-COALESCE(amount_paid,0)
+                        ELSE 0
+                    END
+                ),0) AS overdue
+            FROM fee_obligations
+            WHERE organization_id=?
+        """, (org_id,)).fetchone()
+
+        attendance = conn.execute("""
+            SELECT
+                COUNT(ar.id) AS records,
+                SUM(CASE WHEN lower(ar.status)='present' THEN 1 ELSE 0 END) AS present,
+                SUM(CASE WHEN lower(ar.status)='absent' THEN 1 ELSE 0 END) AS absent,
+                SUM(CASE WHEN lower(ar.status) IN ('late','tardy')
+                    THEN 1 ELSE 0 END) AS late
+            FROM attendance_sessions s
+            LEFT JOIN attendance_records ar ON ar.session_id=s.id
+            WHERE s.organization_id=?
+        """, (org_id,)).fetchone()
+
+        operations = conn.execute("""
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN lower(status) IN ('open','pending','todo')
+                    THEN 1 ELSE 0 END) AS open,
+                SUM(CASE WHEN lower(status) IN ('in_progress','progress')
+                    THEN 1 ELSE 0 END) AS in_progress,
+                SUM(CASE WHEN lower(status) IN ('completed','complete','done')
+                    THEN 1 ELSE 0 END) AS completed,
+                SUM(CASE
+                    WHEN due_date IS NOT NULL
+                     AND date(due_date)<date('now')
+                     AND lower(status) NOT IN ('completed','complete','done')
+                    THEN 1 ELSE 0 END) AS overdue
+            FROM school_operations
+            WHERE organization_id=?
+        """, (org_id,)).fetchone()
+
+        alerts = conn.execute("""
+            SELECT 'fee_overdue' AS type,
+                   'Overdue fee balance' AS title,
+                   CAST(id AS TEXT) AS reference,
+                   amount-COALESCE(amount_paid,0) AS value
+            FROM fee_obligations
+            WHERE organization_id=?
+              AND due_date IS NOT NULL
+              AND date(due_date)<date('now')
+              AND COALESCE(amount_paid,0)<amount
+            UNION ALL
+            SELECT 'operation_overdue',
+                   'Overdue school operation',
+                   CAST(id AS TEXT),
+                   0
+            FROM school_operations
+            WHERE organization_id=?
+              AND due_date IS NOT NULL
+              AND date(due_date)<date('now')
+              AND lower(status) NOT IN ('completed','complete','done')
+            ORDER BY type, reference
+            LIMIT 20
+        """, (org_id, org_id)).fetchall()
+
+        activity = conn.execute("""
+            SELECT action, entity_type, entity_id, details, created_at
+            FROM audit_log
+            WHERE organization_id=?
+            ORDER BY id DESC
+            LIMIT 10
+        """, (org_id,)).fetchall()
+
+    total_attendance = (attendance["present"] or 0) + \
+                       (attendance["absent"] or 0) + \
+                       (attendance["late"] or 0)
+
+    attendance_rate = (
+        round(((attendance["present"] or 0) +
+               (attendance["late"] or 0)) * 100 / total_attendance, 1)
+        if total_attendance else 0
+    )
+
+    return {
+        "students": students,
+        "admissions": dict(admissions),
+        "fees": dict(fees),
+        "attendance": {
+            **dict(attendance),
+            "attendance_rate": attendance_rate
+        },
+        "operations": dict(operations),
+        "alerts": [dict(x) for x in alerts],
+        "recent_activity": [dict(x) for x in activity]
+    }
+
+@app.get("/staff")
+def list_staff(request: Request):
+    actor = _require_permission(request, "operations.view")
+    with get_db() as conn:
+        rows = conn.execute("""
+            SELECT id, full_name, role, email
+            FROM users
+            WHERE organization_id=? AND active=1
+            ORDER BY full_name
+        """, (actor["organization_id"],)).fetchall()
+    return {"staff": [dict(x) for x in rows]}
+
+
+@app.get("/", include_in_schema=False)
+def education_os_index():
+    from fastapi.responses import FileResponse
+    return FileResponse(WEB_ROOT / "index.html")
+
+app.mount(
+    "/js",
+    StaticFiles(directory=WEB_ROOT / "js"),
+    name="education-os-js",
+)
+
+app.mount(
+    "/pages",
+    StaticFiles(directory=WEB_ROOT / "pages"),
+    name="education-os-pages",
+)
+
+app.mount(
+    "/css",
+    StaticFiles(directory=WEB_ROOT / "css"),
+    name="education-os-css",
+)

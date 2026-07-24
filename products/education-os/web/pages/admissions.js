@@ -32,8 +32,8 @@ export async function renderAdmissions() {
                                             a => `
                                                 <tr>
                                                     <td>${a.application_reference || "—"}</td>
-                                                    <td>${a.applicant_name || "—"}</td>
-                                                    <td>${a.requested_class || a.class_name || "—"}</td>
+                                                    <td>${[a.first_name, a.last_name].filter(Boolean).join(" ") || a.applicant_name || "—"}</td>
+                                                    <td>${a.class_name || a.requested_class || "—"}</td>
                                                     <td>
                                                         <span class="status status-success">
                                                             ${a.status || "submitted"}
