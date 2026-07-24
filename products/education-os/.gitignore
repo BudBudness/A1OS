@@ -1,0 +1,28 @@
+# Secrets and environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# SQLite databases and runtime database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+
+# Backups
+deployments/little-oaks/backups/
+
+# Runtime logs
+*.log
+__pycache__/
+*.py[cod]
+
+# Local runtime state
+.runtime/
+tmp/
