@@ -3,7 +3,7 @@ from pathlib import Path
 import sqlite3
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -189,9 +189,10 @@ def _current_user(
 
 
 def _require_permission(
+    request: Request,
     permission: str,
-    authorization: str | None = Header(default=None),
 ):
+    authorization = request.headers.get("Authorization")
     user = _current_user(authorization)
 
     permissions = ROLE_PERMISSIONS.get(
@@ -385,6 +386,525 @@ def db():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
+
+
+
+# ============================================================
+# FEES / PAYMENTS / AUDIT API
+# ============================================================
+
+import json as _fees_json
+import sqlite3 as _fees_sqlite3
+from datetime import datetime as _fees_datetime, timezone as _fees_timezone
+
+_FEES_DB = str(
+    __import__("pathlib").Path(__file__).resolve().parents[1]
+    / "deployments/little-oaks/data/education.db"
+)
+
+def _fees_db():
+    conn = _fees_sqlite3.connect(_FEES_DB)
+    conn.row_factory = _fees_sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+def _fees_audit(conn, actor, entity_type, entity_id, action, details=None):
+    actor = actor or {}
+    conn.execute(
+        """
+        INSERT INTO audit_log
+        (organization_id, actor_user_id, entity_type, entity_id, action, details)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            actor.get("organization_id"),
+            actor.get("id"),
+            entity_type,
+            entity_id,
+            action,
+            _fees_json.dumps(details or {}, default=str),
+        ),
+    )
+
+def _fees_status(amount, amount_paid):
+    amount = float(amount or 0)
+    amount_paid = float(amount_paid or 0)
+
+    if amount_paid <= 0:
+        return "outstanding"
+    if amount_paid < amount:
+        return "partially_paid"
+    return "paid"
+
+@app.post("/fees", status_code=201)
+def create_fee(payload: dict, request: Request):
+    actor = _require_permission(request, "fees.create")
+
+    required = ["student_id", "academic_period", "fee_type", "amount"]
+    missing = [x for x in required if payload.get(x) in (None, "")]
+
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"missing_fields": missing},
+        )
+
+    amount = float(payload["amount"])
+
+    if amount <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="amount must be greater than zero",
+        )
+
+    conn = _fees_db()
+
+    student = conn.execute(
+        """
+        SELECT id
+        FROM students
+        WHERE id = ? AND organization_id = ?
+        """,
+        (payload["student_id"], actor["organization_id"]),
+    ).fetchone()
+
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    cur = conn.execute(
+        """
+        INSERT INTO fee_obligations
+        (
+            organization_id,
+            student_id,
+            academic_period,
+            fee_type,
+            amount,
+            amount_paid,
+            due_date,
+            status
+        )
+        VALUES (?, ?, ?, ?, ?, 0, ?, 'outstanding')
+        """,
+        (
+            actor["organization_id"],
+            payload["student_id"],
+            payload["academic_period"],
+            payload["fee_type"],
+            amount,
+            payload.get("due_date"),
+        ),
+    )
+
+    fee_id = cur.lastrowid
+
+    _fees_audit(
+        conn,
+        actor,
+        "fee_obligation",
+        fee_id,
+        "created",
+        {
+            "student_id": payload["student_id"],
+            "amount": amount,
+            "fee_type": payload["fee_type"],
+        },
+    )
+
+    conn.commit()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM fee_obligations
+        WHERE id = ?
+        """,
+        (fee_id,),
+    ).fetchone()
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.get("/fees")
+def list_fees(request: Request):
+    actor = _require_permission(request, "fees.view")
+
+    conn = _fees_db()
+
+    rows = conn.execute(
+        """
+        SELECT
+            f.*,
+            s.first_name,
+            s.last_name
+        FROM fee_obligations f
+        LEFT JOIN students s ON s.id = f.student_id
+        WHERE f.organization_id = ?
+        ORDER BY f.created_at DESC, f.id DESC
+        """,
+        (actor["organization_id"],),
+    ).fetchall()
+
+    result = [dict(row) for row in rows]
+    conn.close()
+    return result
+
+
+@app.get("/fees/{fee_id}")
+def get_fee(fee_id: int, request: Request):
+    actor = _require_permission(request, "fees.view")
+
+    conn = _fees_db()
+
+    row = conn.execute(
+        """
+        SELECT
+            f.*,
+            s.first_name,
+            s.last_name
+        FROM fee_obligations f
+        LEFT JOIN students s ON s.id = f.student_id
+        WHERE f.id = ?
+          AND f.organization_id = ?
+        """,
+        (fee_id, actor["organization_id"]),
+    ).fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Fee obligation not found")
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.patch("/fees/{fee_id}")
+def update_fee(fee_id: int, payload: dict, request: Request):
+    actor = _require_permission(request, "fees.update")
+
+    allowed = {
+        "academic_period",
+        "fee_type",
+        "amount",
+        "due_date",
+    }
+
+    updates = {
+        key: value
+        for key, value in payload.items()
+        if key in allowed
+    }
+
+    if not updates:
+        raise HTTPException(
+            status_code=422,
+            detail="No editable fields supplied",
+        )
+
+    conn = _fees_db()
+
+    current = conn.execute(
+        """
+        SELECT *
+        FROM fee_obligations
+        WHERE id = ?
+          AND organization_id = ?
+        """,
+        (fee_id, actor["organization_id"]),
+    ).fetchone()
+
+    if not current:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Fee obligation not found")
+
+    if "amount" in updates:
+        updates["amount"] = float(updates["amount"])
+        if updates["amount"] <= 0:
+            conn.close()
+            raise HTTPException(
+                status_code=422,
+                detail="amount must be greater than zero",
+            )
+
+    assignments = ", ".join(f"{key} = ?" for key in updates)
+    values = list(updates.values())
+
+    conn.execute(
+        f"""
+        UPDATE fee_obligations
+        SET {assignments},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+          AND organization_id = ?
+        """,
+        values + [fee_id, actor["organization_id"]],
+    )
+
+    _fees_audit(
+        conn,
+        actor,
+        "fee_obligation",
+        fee_id,
+        "updated",
+        {"fields": list(updates.keys())},
+    )
+
+    conn.commit()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM fee_obligations
+        WHERE id = ?
+        """,
+        (fee_id,),
+    ).fetchone()
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.post("/payments", status_code=201)
+def create_payment(payload: dict, request: Request):
+    actor = _require_permission(request, "payments.create")
+
+    required = [
+        "student_id",
+        "amount",
+        "payment_method",
+        "payment_reference",
+    ]
+
+    missing = [x for x in required if payload.get(x) in (None, "")]
+
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"missing_fields": missing},
+        )
+
+    amount = float(payload["amount"])
+
+    if amount <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="amount must be greater than zero",
+        )
+
+    conn = _fees_db()
+
+    student = conn.execute(
+        """
+        SELECT id
+        FROM students
+        WHERE id = ?
+          AND organization_id = ?
+        """,
+        (payload["student_id"], actor["organization_id"]),
+    ).fetchone()
+
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    obligation_id = payload.get("fee_obligation_id")
+
+    if obligation_id:
+        obligation = conn.execute(
+            """
+            SELECT *
+            FROM fee_obligations
+            WHERE id = ?
+              AND student_id = ?
+              AND organization_id = ?
+            """,
+            (
+                obligation_id,
+                payload["student_id"],
+                actor["organization_id"],
+            ),
+        ).fetchone()
+
+        if not obligation:
+            conn.close()
+            raise HTTPException(
+                status_code=404,
+                detail="Fee obligation not found",
+            )
+
+        outstanding = float(obligation["amount"]) - float(
+            obligation["amount_paid"] or 0
+        )
+
+        if amount > outstanding:
+            conn.close()
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": "Payment exceeds outstanding balance",
+                    "outstanding": outstanding,
+                },
+            )
+
+    cur = conn.execute(
+        """
+        INSERT INTO payments
+        (
+            organization_id,
+            student_id,
+            fee_obligation_id,
+            payment_reference,
+            amount,
+            payment_method,
+            transaction_reference,
+            verification_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            actor["organization_id"],
+            payload["student_id"],
+            obligation_id,
+            payload["payment_reference"],
+            amount,
+            payload["payment_method"],
+            payload.get("transaction_reference"),
+            payload.get("verification_status", "verified"),
+        ),
+    )
+
+    payment_id = cur.lastrowid
+
+    if obligation_id:
+        conn.execute(
+            """
+            UPDATE fee_obligations
+            SET
+                amount_paid = amount_paid + ?,
+                status = CASE
+                    WHEN amount_paid + ? >= amount THEN 'paid'
+                    WHEN amount_paid + ? > 0 THEN 'partially_paid'
+                    ELSE 'outstanding'
+                END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+              AND organization_id = ?
+            """,
+            (
+                amount,
+                amount,
+                amount,
+                obligation_id,
+                actor["organization_id"],
+            ),
+        )
+
+    _fees_audit(
+        conn,
+        actor,
+        "payment",
+        payment_id,
+        "created",
+        {
+            "student_id": payload["student_id"],
+            "amount": amount,
+            "payment_method": payload["payment_method"],
+            "fee_obligation_id": obligation_id,
+        },
+    )
+
+    conn.commit()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM payments
+        WHERE id = ?
+        """,
+        (payment_id,),
+    ).fetchone()
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.get("/payments")
+def list_payments(request: Request):
+    actor = _require_permission(request, "payments.view")
+
+    conn = _fees_db()
+
+    rows = conn.execute(
+        """
+        SELECT *
+        FROM payments
+        WHERE organization_id = ?
+        ORDER BY paid_at DESC, id DESC
+        """,
+        (actor["organization_id"],),
+    ).fetchall()
+
+    result = [dict(row) for row in rows]
+    conn.close()
+    return result
+
+
+@app.get("/payments/{payment_id}")
+def get_payment(payment_id: int, request: Request):
+    actor = _require_permission(request, "payments.view")
+
+    conn = _fees_db()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM payments
+        WHERE id = ?
+          AND organization_id = ?
+        """,
+        (payment_id, actor["organization_id"]),
+    ).fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.get("/audit")
+def list_audit_logs(request: Request):
+    actor = _require_permission(request, "audit.view")
+
+    conn = _fees_db()
+
+    rows = conn.execute(
+        """
+        SELECT
+            a.*,
+            u.full_name AS actor_name,
+            u.email AS actor_email
+        FROM audit_log a
+        LEFT JOIN users u ON u.id = a.actor_user_id
+        WHERE a.organization_id = ?
+        ORDER BY a.created_at DESC, a.id DESC
+        LIMIT 500
+        """,
+        (actor["organization_id"],),
+    ).fetchall()
+
+    result = [dict(row) for row in rows]
+    conn.close()
+    return result
+
 
 @app.get("/v1/health")
 def v1_health():
