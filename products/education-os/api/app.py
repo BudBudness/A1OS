@@ -1227,10 +1227,14 @@ def get_school_operation(operation_id: int):
     return dict(row)
 
 
+class SchoolOperationStatusUpdate(BaseModel):
+    status: str
+
+
 @app.patch("/operations/{operation_id}/status")
 def update_school_operation_status(
     operation_id: int,
-    status: str,
+    payload: SchoolOperationStatusUpdate,
 ):
     allowed_statuses = {
         "open",
@@ -1238,6 +1242,8 @@ def update_school_operation_status(
         "completed",
         "cancelled",
     }
+
+    status = payload.status
 
     if status not in allowed_statuses:
         raise HTTPException(
@@ -1625,7 +1631,7 @@ def intelligence_summary(request: Request):
     actor = _require_permission(request, "students.view")
     org_id = actor["organization_id"]
 
-    with get_db() as conn:
+    with db() as conn:
         students = conn.execute("""
             SELECT COUNT(*) FROM students
             WHERE organization_id=? AND enrollment_status NOT IN ('withdrawn','inactive')
