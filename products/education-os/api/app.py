@@ -1753,6 +1753,292 @@ def intelligence_summary(request: Request):
         "recent_activity": [dict(x) for x in activity]
     }
 
+
+class StaffCreate(BaseModel):
+    full_name: str
+    role: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    password: str
+
+
+class StaffUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+
+class StaffStatusUpdate(BaseModel):
+    active: bool
+
+
+class StaffRoleUpdate(BaseModel):
+    role: str
+
+
+class StaffPasswordReset(BaseModel):
+    password: str
+
+
+STAFF_ALLOWED_ROLES = {
+    "director_ceo_teacher",
+    "head_mistress",
+    "staff",
+}
+
+
+@app.get("/staff/{staff_id}")
+def get_staff_member(staff_id: int, request: Request):
+    user = _require_user(request)
+    _require_permission(user, "staff.view")
+
+    with db() as conn:
+        row = conn.execute(
+            """
+            SELECT id, organization_id, full_name, role, email, phone,
+                   active, created_at
+            FROM users
+            WHERE id = ? AND organization_id = ?
+            """,
+            (staff_id, user["organization_id"]),
+        ).fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+
+    return dict(row)
+
+
+@app.post("/staff", status_code=201)
+def create_staff_member(payload: StaffCreate, request: Request):
+    actor = _require_user(request)
+    _require_permission(actor, "staff.manage")
+
+    if payload.role not in STAFF_ALLOWED_ROLES:
+        raise HTTPException(status_code=400, detail="Invalid staff role")
+
+    with db() as conn:
+        existing = conn.execute(
+            """
+            SELECT id FROM users
+            WHERE organization_id = ? AND email = ?
+            """,
+            (actor["organization_id"], payload.email),
+        ).fetchone()
+
+        if existing:
+            raise HTTPException(status_code=409, detail="Staff email already exists")
+
+        password_hash = _hash_password(payload.password)
+
+        cursor = conn.execute(
+            """
+            INSERT INTO users
+            (organization_id, full_name, role, email, phone, active, password_hash)
+            VALUES (?, ?, ?, ?, ?, 1, ?)
+            """,
+            (
+                actor["organization_id"],
+                payload.full_name,
+                payload.role,
+                payload.email,
+                payload.phone,
+                password_hash,
+            ),
+        )
+
+        staff_id = cursor.lastrowid
+
+        _audit(
+            conn,
+            actor,
+            "staff",
+            staff_id,
+            "staff_created",
+            {
+                "full_name": payload.full_name,
+                "role": payload.role,
+                "email": payload.email,
+            },
+        )
+
+    return {"status": "created", "staff_id": staff_id}
+
+
+@app.patch("/staff/{staff_id}")
+def update_staff_member(
+    staff_id: int,
+    payload: StaffUpdate,
+    request: Request,
+):
+    actor = _require_user(request)
+    _require_permission(actor, "staff.manage")
+
+    updates = []
+    values = []
+
+    if payload.full_name is not None:
+        updates.append("full_name = ?")
+        values.append(payload.full_name)
+
+    if payload.email is not None:
+        updates.append("email = ?")
+        values.append(payload.email)
+
+    if payload.phone is not None:
+        updates.append("phone = ?")
+        values.append(payload.phone)
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    values.extend([staff_id, actor["organization_id"]])
+
+    with db() as conn:
+        cursor = conn.execute(
+            f"""
+            UPDATE users
+            SET {", ".join(updates)}
+            WHERE id = ? AND organization_id = ?
+            """,
+            values,
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+
+        _audit(
+            conn,
+            actor,
+            "staff",
+            staff_id,
+            "staff_updated",
+            {"fields": list(payload.model_dump(exclude_none=True).keys())},
+        )
+
+    return {"status": "updated", "staff_id": staff_id}
+
+
+@app.patch("/staff/{staff_id}/status")
+def update_staff_status(
+    staff_id: int,
+    payload: StaffStatusUpdate,
+    request: Request,
+):
+    actor = _require_user(request)
+    _require_permission(actor, "staff.manage")
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE users
+            SET active = ?
+            WHERE id = ? AND organization_id = ?
+            """,
+            (1 if payload.active else 0, staff_id, actor["organization_id"]),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+
+        action = "staff_activated" if payload.active else "staff_deactivated"
+
+        _audit(
+            conn,
+            actor,
+            "staff",
+            staff_id,
+            action,
+            {"active": payload.active},
+        )
+
+    return {
+        "status": "updated",
+        "staff_id": staff_id,
+        "active": payload.active,
+    }
+
+
+@app.patch("/staff/{staff_id}/role")
+def update_staff_role(
+    staff_id: int,
+    payload: StaffRoleUpdate,
+    request: Request,
+):
+    actor = _require_user(request)
+    _require_permission(actor, "staff.manage")
+
+    if payload.role not in STAFF_ALLOWED_ROLES:
+        raise HTTPException(status_code=400, detail="Invalid staff role")
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE users
+            SET role = ?
+            WHERE id = ? AND organization_id = ?
+            """,
+            (payload.role, staff_id, actor["organization_id"]),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+
+        _audit(
+            conn,
+            actor,
+            "staff",
+            staff_id,
+            "staff_role_changed",
+            {"role": payload.role},
+        )
+
+    return {"status": "updated", "staff_id": staff_id, "role": payload.role}
+
+
+@app.post("/staff/{staff_id}/reset-password")
+def reset_staff_password(
+    staff_id: int,
+    payload: StaffPasswordReset,
+    request: Request,
+):
+    actor = _require_user(request)
+    _require_permission(actor, "staff.manage")
+
+    if len(payload.password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 8 characters",
+        )
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ? AND organization_id = ?
+            """,
+            (_hash_password(payload.password), staff_id, actor["organization_id"]),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Staff member not found")
+
+        conn.execute(
+            "DELETE FROM auth_sessions WHERE user_id = ?",
+            (staff_id,),
+        )
+
+        _audit(
+            conn,
+            actor,
+            "staff",
+            staff_id,
+            "staff_password_reset",
+        )
+
+    return {"status": "password_reset", "staff_id": staff_id}
+
 @app.get("/staff")
 def list_staff(request: Request):
     actor = _require_permission(request, "operations.view")
