@@ -1201,7 +1201,8 @@ def health():
         conn.close()
 
 @app.get("/organization")
-def organization():
+def organization(request: Request):
+    _require_permission(request, "dashboard.view")
     conn = db()
     try:
         row = conn.execute(
@@ -1219,7 +1220,8 @@ def organization():
         conn.close()
 
 @app.post("/students", status_code=201)
-def create_student(payload: StudentCreate):
+def create_student(payload: StudentCreate, request: Request):
+    _require_permission(request, "students.create")
     with db() as conn:
         organization = conn.execute(
             """
@@ -1348,7 +1350,8 @@ class SchoolOperationCreate(BaseModel):
 
 
 @app.post("/operations", status_code=201)
-def create_school_operation(payload: SchoolOperationCreate):
+def create_school_operation(payload: SchoolOperationCreate, request: Request):
+    _require_permission(request, "operations.create")
     allowed_statuses = {"open", "in_progress", "completed", "cancelled"}
 
     if payload.status not in allowed_statuses:
@@ -1419,7 +1422,9 @@ def create_school_operation(payload: SchoolOperationCreate):
 @app.get("/operations")
 def list_school_operations(
     status: Optional[str] = None,
+    request: Request = None,
 ):
+    _require_permission(request, "operations.view")
     with db() as conn:
         if status:
             rows = conn.execute(
@@ -1468,7 +1473,8 @@ def list_school_operations(
 
 
 @app.get("/operations/{operation_id}")
-def get_school_operation(operation_id: int):
+def get_school_operation(operation_id: int, request: Request):
+    _require_permission(request, "operations.view")
     with db() as conn:
         row = conn.execute(
             """
@@ -1505,7 +1511,9 @@ class SchoolOperationStatusUpdate(BaseModel):
 def update_school_operation_status(
     operation_id: int,
     payload: SchoolOperationStatusUpdate,
+    request: Request,
 ):
+    _require_permission(request, "operations.update")
     allowed_statuses = {
         "open",
         "in_progress",
@@ -1576,7 +1584,8 @@ def list_attendance(request: Request):
 
 
 @app.post("/attendance/sessions", status_code=201)
-def create_attendance_session(payload: AttendanceSessionCreate):
+def create_attendance_session(payload: AttendanceSessionCreate, request: Request):
+    _require_permission(request, "attendance.record")
     if payload.attendance_date.strip() == "":
         raise HTTPException(status_code=400, detail="attendance_date is required")
 
@@ -1632,7 +1641,9 @@ def create_attendance_session(payload: AttendanceSessionCreate):
 def record_attendance(
     session_id: int,
     payload: AttendanceRecordCreate,
+    request: Request,
 ):
+    _require_permission(request, "attendance.record")
     allowed = {"present", "absent", "late", "excused"}
 
     if payload.status not in allowed:
@@ -1696,7 +1707,8 @@ def record_attendance(
 
 
 @app.get("/attendance/sessions")
-def list_attendance_sessions():
+def list_attendance_sessions(request: Request):
+    _require_permission(request, "attendance.view")
     with db() as conn:
         rows = conn.execute(
             """
@@ -1716,7 +1728,8 @@ def list_attendance_sessions():
 
 
 @app.get("/attendance/sessions/{session_id}")
-def get_attendance_session(session_id: int):
+def get_attendance_session(session_id: int, request: Request):
+    _require_permission(request, "attendance.view")
     with db() as conn:
         session = conn.execute(
             """
@@ -1763,7 +1776,8 @@ def get_attendance_session(session_id: int):
 
 
 @app.post("/admissions")
-def create_admission(admission: AdmissionCreate):
+def create_admission(admission: AdmissionCreate, request: Request):
+    _require_permission(request, "admissions.review")
     conn = db()
 
     student = conn.execute(
@@ -1842,7 +1856,8 @@ def create_admission(admission: AdmissionCreate):
 
 
 @app.get("/admissions")
-def list_admissions():
+def list_admissions(request: Request):
+    _require_permission(request, "admissions.view")
     conn = db()
 
     rows = conn.execute(
@@ -1867,7 +1882,8 @@ def list_admissions():
 
 
 @app.get("/admissions/{admission_id}")
-def get_admission(admission_id: int):
+def get_admission(admission_id: int, request: Request):
+    _require_permission(request, "admissions.view")
     conn = db()
 
     row = conn.execute(
@@ -1896,7 +1912,8 @@ def get_admission(admission_id: int):
 
 
 @app.patch("/admissions/{admission_id}/status")
-def update_admission_status(admission_id: int, status: str):
+def update_admission_status(admission_id: int, status: str, request: Request):
+    _require_permission(request, "admissions.review")
     conn = db()
 
     cur = conn.execute(

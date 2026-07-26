@@ -79,7 +79,11 @@ function renderLogin() {
 
         try {
             await login(email, password);
-            await render();
+            if (bootApp) {
+            const status = document.querySelector("#boot-status");
+            if (status) status.textContent = "Application modules loaded. Verifying session...";
+        }
+        await render();
         } catch (e) {
             error.textContent = e.message;
             button.disabled = false;
@@ -204,6 +208,14 @@ window.addEventListener("unhandledrejection", event => {
 
 
 async function boot() {
+    const bootApp = document.querySelector("#app");
+    if (bootApp) {
+        bootApp.innerHTML = `
+            <div style="padding:40px;font-family:system-ui;background:#f8fafc;min-height:100vh">
+                <h1 style="color:#14532d">Little Oaks Education OS</h1>
+                <p id="boot-status">Loading application modules...</p>
+            </div>`;
+    }
     const app = document.querySelector("#app");
 
     try {
@@ -214,6 +226,10 @@ async function boot() {
             </div>
         `;
 
+        if (bootApp) {
+            const status = document.querySelector("#boot-status");
+            if (status) status.textContent = "Application modules loaded. Verifying session...";
+        }
         await render();
         startRouter(render);
 

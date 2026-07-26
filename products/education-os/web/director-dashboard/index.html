@@ -448,7 +448,7 @@ document.addEventListener(
 window.renderLiveDirectorDashboard = renderLiveDirectorDashboard;
 
 
-const API_BASE = window.location.origin;
+const API_BASE = "/api";
 const TOKEN_KEY = "little_oaks_education_os_token";
 
 function getToken() {
@@ -612,7 +612,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
   async function loadStudents() {
     status.textContent = "Loading students…";
 
-    const response = await fetch("/students", {
+    const response = await fetch("/api/students", {
       headers: headers(),
     });
 
@@ -648,7 +648,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 
     status.textContent = "Creating student…";
 
-    const response = await fetch("/students", {
+    const response = await fetch("/api/students", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -722,7 +722,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
   async function loadAdmissions() {
     status.textContent = "Loading admissions…";
 
-    const response = await fetch("/admissions", {
+    const response = await fetch("/api/admissions", {
       headers: authHeaders(),
     });
 
@@ -761,7 +761,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 
     status.textContent = "Creating admission…";
 
-    const response = await fetch("/admissions", {
+    const response = await fetch("/api/admissions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -835,7 +835,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
   async function loadAttendance() {
     status.textContent = "Loading attendance…";
 
-    const response = await fetch("/attendance", {
+    const response = await fetch("/api/attendance", {
       headers: authHeaders(),
     });
 
@@ -875,7 +875,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 
     status.textContent = "Recording attendance…";
 
-    const response = await fetch("/attendance", {
+    const response = await fetch("/api/attendance", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -974,7 +974,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
   async function loadFees() {
     status.textContent = "Loading billing records…";
 
-    const response = await fetch("/fees", {
+    const response = await fetch("/api/fees", {
       headers: authHeaders(),
     });
 
@@ -1039,7 +1039,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 
     status.textContent = "Creating fee record…";
 
-    const response = await fetch("/fees", {
+    const response = await fetch("/api/fees", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1148,7 +1148,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
   async function loadGuardians() {
     status.textContent = "Loading parents and guardians…";
 
-    const response = await fetch("/parents", {
+    const response = await fetch("/api/parents", {
       headers: authHeaders(),
     });
 
@@ -1226,7 +1226,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
       status.textContent =
         "Creating parent/guardian record…";
 
-      const response = await fetch("/parents", {
+      const response = await fetch("/api/parents", {
         method: "POST",
 
         headers: {
@@ -1549,7 +1549,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 <script>
 /* STAGE_4_REPORTS_WORKFLOW_V1 */
 (function () {
-  const API_BASE = window.API_BASE || "";
+  const API_BASE = window.API_BASE || "/api";
   const token = localStorage.getItem("a1os_token") ||
                 localStorage.getItem("access_token") ||
                 localStorage.getItem("token");
@@ -1694,7 +1694,7 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 <script>
 /* STAGE_4_ALERTS_WORKFLOW_V1 */
 (function () {
-  const API_BASE = window.API_BASE || "";
+  const API_BASE = window.API_BASE || "/api";
   const token = localStorage.getItem("a1os_token") ||
                 localStorage.getItem("access_token") ||
                 localStorage.getItem("token");
@@ -1875,8 +1875,8 @@ async function loadDirectorIntelligence() {
     };
 
     const [summaryResponse, insightsResponse] = await Promise.all([
-        fetch("/intelligence/summary", { headers }),
-        fetch("/intelligence/insights", { headers })
+        fetch("/api/intelligence/summary", { headers }),
+        fetch("/api/intelligence/insights", { headers })
     ]);
 
     if (!summaryResponse.ok || !insightsResponse.ok) {
