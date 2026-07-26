@@ -758,6 +758,30 @@ def reports(request: Request):
         },
     }
 
+@app.get("/parents")
+def list_parents(request: Request):
+    actor = _require_permission(request, "parents.view")
+
+    conn = db()
+    try:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM parents_guardians
+            WHERE organization_id=?
+            ORDER BY created_at DESC, id DESC
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+
+        return {
+            "count": len(rows),
+            "parents": [dict(row) for row in rows],
+        }
+    finally:
+        conn.close()
+
+
 @app.get("/fees")
 def list_fees(request: Request):
     actor = _require_permission(request, "fees.view")
