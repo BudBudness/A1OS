@@ -2039,10 +2039,368 @@ def reset_staff_password(
 
     return {"status": "password_reset", "staff_id": staff_id}
 
+
+# ============================================================
+# ACADEMIC OPERATIONS
+# ============================================================
+
+class AcademicYearCreate(BaseModel):
+    name: str
+    start_date: str
+    end_date: str
+
+
+class AcademicYearUpdate(BaseModel):
+    name: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    status: Optional[str] = None
+
+
+class AcademicPeriodCreate(BaseModel):
+    academic_year_id: int
+    name: str
+    start_date: str
+    end_date: str
+
+
+class AcademicPeriodUpdate(BaseModel):
+    name: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    status: Optional[str] = None
+
+
+class ClassLevelCreate(BaseModel):
+    name: str
+    code: Optional[str] = None
+    display_order: int = 0
+
+
+class ClassLevelUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    display_order: Optional[int] = None
+    active: Optional[int] = None
+
+
+@app.get("/academic/years")
+def list_academic_years(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM academic_years
+            WHERE organization_id=?
+            ORDER BY start_date DESC, id DESC
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+
+    return {"academic_years": [dict(row) for row in rows]}
+
+
+@app.post("/academic/years", status_code=201)
+def create_academic_year(payload: AcademicYearCreate, request: Request):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO academic_years
+                (organization_id, name, start_date, end_date)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                actor["organization_id"],
+                payload.name,
+                payload.start_date,
+                payload.end_date,
+            ),
+        )
+        year_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "academic_year_id": year_id,
+    }
+
+
+@app.patch("/academic/years/{year_id}")
+def update_academic_year(
+    year_id: int,
+    payload: AcademicYearUpdate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    fields = []
+    values = []
+
+    for field in ("name", "start_date", "end_date", "status"):
+        value = getattr(payload, field)
+        if value is not None:
+            fields.append(f"{field}=?")
+            values.append(value)
+
+    if not fields:
+        raise HTTPException(
+            status_code=400,
+            detail="No update fields supplied",
+        )
+
+    values.extend([year_id, actor["organization_id"]])
+
+    with db() as conn:
+        cursor = conn.execute(
+            f"""
+            UPDATE academic_years
+            SET {", ".join(fields)}
+            WHERE id=? AND organization_id=?
+            """,
+            values,
+        )
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Academic year not found",
+            )
+
+    return {"status": "updated", "academic_year_id": year_id}
+
+
+@app.get("/academic/periods")
+def list_academic_periods(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT ap.*, ay.name AS academic_year_name
+            FROM academic_periods ap
+            JOIN academic_years ay
+              ON ay.id = ap.academic_year_id
+            WHERE ap.organization_id=?
+            ORDER BY ap.start_date ASC, ap.id ASC
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+
+    return {"academic_periods": [dict(row) for row in rows]}
+
+
+@app.post("/academic/periods", status_code=201)
+def create_academic_period(
+    payload: AcademicPeriodCreate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        year = conn.execute(
+            """
+            SELECT id
+            FROM academic_years
+            WHERE id=? AND organization_id=?
+            """,
+            (payload.academic_year_id, actor["organization_id"]),
+        ).fetchone()
+
+        if not year:
+            raise HTTPException(
+                status_code=404,
+                detail="Academic year not found",
+            )
+
+        cursor = conn.execute(
+            """
+            INSERT INTO academic_periods
+                (
+                    organization_id,
+                    academic_year_id,
+                    name,
+                    start_date,
+                    end_date
+                )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                actor["organization_id"],
+                payload.academic_year_id,
+                payload.name,
+                payload.start_date,
+                payload.end_date,
+            ),
+        )
+
+        period_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "academic_period_id": period_id,
+    }
+
+
+@app.patch("/academic/periods/{period_id}")
+def update_academic_period(
+    period_id: int,
+    payload: AcademicPeriodUpdate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    fields = []
+    values = []
+
+    for field in ("name", "start_date", "end_date", "status"):
+        value = getattr(payload, field)
+        if value is not None:
+            fields.append(f"{field}=?")
+            values.append(value)
+
+    if not fields:
+        raise HTTPException(
+            status_code=400,
+            detail="No update fields supplied",
+        )
+
+    values.extend([period_id, actor["organization_id"]])
+
+    with db() as conn:
+        cursor = conn.execute(
+            f"""
+            UPDATE academic_periods
+            SET {", ".join(fields)}
+            WHERE id=? AND organization_id=?
+            """,
+            values,
+        )
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Academic period not found",
+            )
+
+    return {
+        "status": "updated",
+        "academic_period_id": period_id,
+    }
+
+
+@app.get("/academic/class-levels")
+def list_class_levels(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM class_levels
+            WHERE organization_id=?
+            ORDER BY display_order ASC, name ASC
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+
+    return {"class_levels": [dict(row) for row in rows]}
+
+
+@app.post("/academic/class-levels", status_code=201)
+def create_class_level(
+    payload: ClassLevelCreate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO class_levels
+                (
+                    organization_id,
+                    name,
+                    code,
+                    display_order
+                )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                actor["organization_id"],
+                payload.name,
+                payload.code,
+                payload.display_order,
+            ),
+        )
+
+        class_level_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "class_level_id": class_level_id,
+    }
+
+
+@app.patch("/academic/class-levels/{class_level_id}")
+def update_class_level(
+    class_level_id: int,
+    payload: ClassLevelUpdate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    fields = []
+    values = []
+
+    for field in ("name", "code", "display_order", "active"):
+        value = getattr(payload, field)
+        if value is not None:
+            fields.append(f"{field}=?")
+            values.append(value)
+
+    if not fields:
+        raise HTTPException(
+            status_code=400,
+            detail="No update fields supplied",
+        )
+
+    values.extend([class_level_id, actor["organization_id"]])
+
+    with db() as conn:
+        cursor = conn.execute(
+            f"""
+            UPDATE class_levels
+            SET {", ".join(fields)}
+            WHERE id=? AND organization_id=?
+            """,
+            values,
+        )
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Class level not found",
+            )
+
+    return {
+        "status": "updated",
+        "class_level_id": class_level_id,
+    }
+
+
 @app.get("/staff")
 def list_staff(request: Request):
     actor = _require_permission(request, "operations.view")
-    with get_db() as conn:
+    with db() as conn:
         rows = conn.execute("""
             SELECT id, full_name, role, email
             FROM users
