@@ -1241,7 +1241,8 @@ def create_student(payload: StudentCreate):
 
 
 @app.get("/students")
-def list_students():
+def list_students(request: Request):
+    _require_permission(request, "students.view")
     conn = db()
 
     try:
@@ -1262,7 +1263,8 @@ def list_students():
         conn.close()
 
 @app.get("/students/{student_id}")
-def get_student(student_id: int):
+def get_student(student_id: int, request: Request):
+    _require_permission(request, "students.view")
     conn = db()
 
     try:
