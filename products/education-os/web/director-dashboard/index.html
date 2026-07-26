@@ -287,6 +287,167 @@ loadDashboard();
 <script>
 /* DIRECTOR_DASHBOARD_AUTH_INTEGRATION */
 
+/* LIVE_DASHBOARD_RENDERING_V1 */
+
+function extractCollection(payload, keys = []) {
+    if (Array.isArray(payload)) return payload;
+
+    for (const key of keys) {
+        if (Array.isArray(payload?.[key])) {
+            return payload[key];
+        }
+    }
+
+    return [];
+}
+
+function setText(selectors, value) {
+    for (const selector of selectors) {
+        document.querySelectorAll(selector).forEach((element) => {
+            element.textContent = value;
+        });
+    }
+}
+
+function renderLiveDirectorDashboard(data) {
+    const students = extractCollection(
+        data.students,
+        ["students", "items", "data"]
+    );
+
+    const parents = extractCollection(
+        data.parents,
+        ["parents_guardians", "parents", "guardians", "items", "data"]
+    );
+
+    const years = extractCollection(
+        data.years,
+        ["academic_years", "years", "items", "data"]
+    );
+
+    const periods = extractCollection(
+        data.periods,
+        ["academic_periods", "periods", "items", "data"]
+    );
+
+    const classLevels = extractCollection(
+        data.classLevels,
+        ["class_levels", "classLevels", "items", "data"]
+    );
+
+    const activeYear =
+        years.find(
+            item =>
+                item.is_current ||
+                item.is_active ||
+                item.current
+        ) || years[0];
+
+    const activePeriod =
+        periods.find(
+            item =>
+                item.is_current ||
+                item.is_active ||
+                item.current
+        ) || periods[0];
+
+    setText(
+        [
+            "[data-metric='students']",
+            "[data-metric='student-count']",
+            "#student-count",
+            ".student-count"
+        ],
+        students.length
+    );
+
+    setText(
+        [
+            "[data-metric='parents']",
+            "[data-metric='guardians']",
+            "[data-metric='parent-count']",
+            "#parent-count",
+            ".parent-count"
+        ],
+        parents.length
+    );
+
+    setText(
+        [
+            "[data-metric='class-levels']",
+            "[data-metric='class-level-count']",
+            "#class-level-count"
+        ],
+        classLevels.length
+    );
+
+    setText(
+        [
+            "[data-metric='academic-year']",
+            "#academic-year",
+            ".academic-year"
+        ],
+        activeYear?.name ||
+        activeYear?.year ||
+        activeYear?.label ||
+        "—"
+    );
+
+    setText(
+        [
+            "[data-metric='academic-period']",
+            "#academic-period",
+            ".academic-period"
+        ],
+        activePeriod?.name ||
+        activePeriod?.period ||
+        activePeriod?.label ||
+        "—"
+    );
+
+    setText(
+        [
+            "[data-user='name']",
+            "#director-name",
+            ".director-name"
+        ],
+        data.me?.full_name ||
+        data.me?.name ||
+        data.me?.user?.full_name ||
+        "Director"
+    );
+
+    document.body.dataset.liveDashboard = "true";
+
+    document.dispatchEvent(
+        new CustomEvent(
+            "little-oaks-live-dashboard-rendered",
+            {
+                detail: {
+                    ...data,
+                    counts: {
+                        students: students.length,
+                        parents: parents.length,
+                        years: years.length,
+                        periods: periods.length,
+                        classLevels: classLevels.length
+                    }
+                }
+            }
+        )
+    );
+}
+
+document.addEventListener(
+    "little-oaks-dashboard-data-loaded",
+    (event) => {
+        renderLiveDirectorDashboard(event.detail);
+    }
+);
+
+window.renderLiveDirectorDashboard = renderLiveDirectorDashboard;
+
+
 const API_BASE = window.location.origin;
 const TOKEN_KEY = "little_oaks_education_os_token";
 
