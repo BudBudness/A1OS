@@ -1871,7 +1871,7 @@ def director_intelligence_summary(request: Request):
         parents = conn.execute(
             """
             SELECT COUNT(*)
-            FROM parents
+            FROM parents_guardians
             WHERE organization_id=?
             """,
             (organization_id,),
