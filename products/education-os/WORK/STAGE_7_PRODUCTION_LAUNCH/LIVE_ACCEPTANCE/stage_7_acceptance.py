@@ -4,7 +4,7 @@ import subprocess
 import sys
 import requests
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[5]
 API = ROOT / "products/education-os/api/app.py"
 STAGE4 = ROOT / "products/education-os/WORK/STAGE_4_PRODUCTION_UI_AND_WORKFLOWS/LIVE_ACCEPTANCE/stage_4_acceptance.py"
 STAGE5 = ROOT / "products/education-os/WORK/STAGE_5_DIRECTOR_INTELLIGENCE/LIVE_ACCEPTANCE/stage_5_acceptance.py"

@@ -1,4 +1,4 @@
-import { api } from "../js/api.js";
+import { api } from "../js/education-api.js";
 import { error, loading } from "../js/components/ui.js";
 
 const money = value =>

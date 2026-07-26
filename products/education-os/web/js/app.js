@@ -1,5 +1,5 @@
 import { getRoute, navigate, routeTitle, startRouter } from "./router.js";
-import { api } from "./api.js";
+import { api } from "./education-api.js";
 import { login, logout, verifySession, isAuthenticated, user } from "./auth.js";
 import { renderDashboard } from "../pages/dashboard.js";
 import { renderStudents } from "../pages/students.js";
@@ -94,13 +94,6 @@ async function render() {
         return;
     }
 
-    try {
-        await verifySession();
-    } catch {
-        renderLogin();
-        return;
-    }
-
     const route = getRoute();
     const currentUser = user();
 
@@ -183,5 +176,57 @@ async function render() {
     }
 }
 
-startRouter(render);
-render();
+window.addEventListener("error", event => {
+    const app = document.querySelector("#app");
+    if (app) {
+        app.innerHTML = `
+            <div style="padding:40px;font-family:system-ui;color:#b91c1c">
+                <h1>Little Oaks Frontend Error</h1>
+                <pre style="white-space:pre-wrap">${event.error?.stack || event.message}</pre>
+            </div>
+        `;
+    }
+    console.error("Little Oaks runtime error:", event.error || event.message);
+});
+
+window.addEventListener("unhandledrejection", event => {
+    const app = document.querySelector("#app");
+    if (app) {
+        app.innerHTML = `
+            <div style="padding:40px;font-family:system-ui;color:#b91c1c">
+                <h1>Little Oaks Frontend Error</h1>
+                <pre style="white-space:pre-wrap">${event.reason?.stack || event.reason}</pre>
+            </div>
+        `;
+    }
+    console.error("Little Oaks unhandled rejection:", event.reason);
+});
+
+
+async function boot() {
+    const app = document.querySelector("#app");
+
+    try {
+        app.innerHTML = `
+            <div style="padding:40px;font-family:system-ui">
+                <h1>Little Oaks Education OS</h1>
+                <p>Initializing application...</p>
+            </div>
+        `;
+
+        await render();
+        startRouter(render);
+
+    } catch (error) {
+        console.error("BOOT ERROR:", error);
+
+        app.innerHTML = `
+            <div style="padding:40px;font-family:system-ui;color:#b91c1c">
+                <h1>Little Oaks Frontend Error</h1>
+                <pre style="white-space:pre-wrap">${error.stack || error.message}</pre>
+            </div>
+        `;
+    }
+}
+
+boot();
