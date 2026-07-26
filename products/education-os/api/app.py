@@ -545,6 +545,119 @@ def create_fee(payload: dict, request: Request):
     return result
 
 
+
+@app.get("/reports")
+def reports(request: Request):
+    actor = _require_permission(request, "reports.view")
+
+    organization_id = actor["organization_id"]
+
+    with db() as conn:
+        students = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM students
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        parents = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM parents_guardians
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        attendance = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS total_records,
+                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) AS present,
+                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) AS absent,
+                SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) AS late
+            FROM attendance
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()
+
+        academic_years = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM academic_years
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        academic_periods = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM academic_periods
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        class_levels = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM class_levels
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+    fees_conn = _fees_db()
+
+    fees = fees_conn.execute(
+        """
+        SELECT
+            COALESCE(SUM(amount), 0) AS total_billed,
+            COALESCE(SUM(amount_paid), 0) AS total_paid,
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN amount > amount_paid
+                        THEN amount - amount_paid
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS total_outstanding,
+            COUNT(*) AS total_records
+        FROM fee_obligations
+        WHERE organization_id = ?
+        """,
+        (organization_id,),
+    ).fetchone()
+
+    fees_conn.close()
+
+    return {
+        "students": {
+            "total": students,
+        },
+        "parents_guardians": {
+            "total": parents,
+        },
+        "attendance": dict(attendance),
+        "fees": {
+            "total_billed_ugx": float(fees["total_billed"] or 0),
+            "total_paid_ugx": float(fees["total_paid"] or 0),
+            "total_outstanding_ugx": float(fees["total_outstanding"] or 0),
+            "total_records": fees["total_records"],
+        },
+        "academic": {
+            "years": academic_years,
+            "periods": academic_periods,
+            "class_levels": class_levels,
+        },
+    }
+
 @app.get("/fees")
 def list_fees(request: Request):
     actor = _require_permission(request, "fees.view")
