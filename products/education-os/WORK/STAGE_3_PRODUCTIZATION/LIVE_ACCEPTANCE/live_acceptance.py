@@ -40,6 +40,16 @@ login = session.post(
 )
 expect(login, {200}, "authentication")
 
+login_data = login.json()
+token = (
+    login_data.get("access_token")
+    or login_data.get("token")
+    or login_data.get("accessToken")
+)
+
+if token:
+    session.headers.update({"Authorization": f"Bearer {token}"})
+
 me = session.get(f"{BASE}/auth/me", timeout=10)
 expect(me, {200}, "authenticated session")
 
