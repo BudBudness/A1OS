@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Little Oaks — Director Dashboard</title>
+<style>
+:root {
+  --bg:#f5f7fb;
+  --card:#ffffff;
+  --text:#172033;
+  --muted:#687386;
+  --border:#e5e9f0;
+  --primary:#1f6f5c;
+  --danger:#b42318;
+  --warning:#b54708;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+header {
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:18px 22px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+}
+.brand h1 { margin:0; font-size:20px; }
+.brand p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+.status {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  color:var(--primary);
+}
+.dot {
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--primary);
+}
+main {
+  max-width:1400px;
+  margin:0 auto;
+  padding:24px;
+}
+.section-title {
+  margin:0 0 16px;
+  font-size:18px;
+}
+.grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:16px;
+}
+.card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+  box-shadow:0 2px 8px rgba(20,30,50,.04);
+}
+.metric-label {
+  color:var(--muted);
+  font-size:13px;
+}
+.metric-value {
+  margin-top:10px;
+  font-size:30px;
+  font-weight:700;
+}
+.metric-note {
+  margin-top:8px;
+  color:var(--muted);
+  font-size:12px;
+}
+.dashboard-grid {
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:16px;
+  margin-top:24px;
+}
+.list {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.row {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+  font-size:14px;
+}
+.row:last-child { border-bottom:0; }
+.badge {
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:600;
+}
+.badge.ok { background:#e7f5ef; color:#146c4e; }
+.badge.warn { background:#fff1df; color:var(--warning); }
+.badge.danger { background:#fdecec; color:var(--danger); }
+.loading { color:var(--muted); }
+.error { color:var(--danger); }
+@media (max-width:900px) {
+  .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .dashboard-grid { grid-template-columns:1fr; }
+}
+@media (max-width:560px) {
+  header { align-items:flex-start; flex-direction:column; }
+  main { padding:16px; }
+  .grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Little Oaks Montessori</h1>
+    <p>Director Operations Dashboard</p>
+  </div>
+  <div class="status">
+    <span class="dot"></span>
+    <span id="systemStatus">Connecting to Education OS...</span>
+  </div>
+</header>
+
+<main>
+  <h2 class="section-title">Operational Overview</h2>
+
+  <section class="grid">
+    <div class="card">
+      <div class="metric-label">Students</div>
+      <div class="metric-value" id="studentsMetric">—</div>
+      <div class="metric-note">Registered student records</div>
+    </div>
+
+    <div class="card">
+      <div class="metric-label">Parents / Guardians</div>
+      <div class="metric-value" id="guardiansMetric">—</div>
+      <div class="metric-note">Registered guardian records</div>
+    </div>
+
+    <div class="card">
+      <div class="metric-label">Academic Years</div>
+      <div class="metric-value" id="yearsMetric">—</div>
+      <div class="metric-note">Configured academic years</div>
+    </div>
+
+    <div class="card">
+      <div class="metric-label">Academic Periods</div>
+      <div class="metric-value" id="periodsMetric">—</div>
+      <div class="metric-note">Configured school periods</div>
+    </div>
+  </section>
+
+  <section class="dashboard-grid">
+    <div class="card">
+      <h2 class="section-title">Academic Operations</h2>
+      <div id="academicList" class="list">
+        <div class="loading">Loading academic data...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">System Status</h2>
+      <div id="systemList" class="list">
+        <div class="loading">Checking API...</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const API = window.location.origin;
+
+async function api(path, options = {}) {
+  const response = await fetch(API + path, {
+    credentials: "include",
+    ...options,
+    headers: {
+      "Accept": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+function countCollection(data, keys) {
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) return data[key].length;
+  }
+  return 0;
+}
+
+async function loadDashboard() {
+  try {
+    const [health, years, periods, classLevels, students, guardians] =
+      await Promise.all([
+        api("/v1/health"),
+        api("/academic/years"),
+        api("/academic/periods"),
+        api("/academic/class-levels"),
+        api("/students"),
+        api("/parents")
+      ]);
+
+    const yearCount = countCollection(years, ["academic_years", "years"]);
+    const periodCount = countCollection(periods, ["academic_periods", "periods"]);
+    const classCount = countCollection(classLevels, ["class_levels", "classes"]);
+    const studentCount = countCollection(students, ["students"]);
+    const guardianCount = countCollection(guardians, ["parents_guardians", "parents", "guardians"]);
+
+    document.getElementById("studentsMetric").textContent = studentCount;
+    document.getElementById("guardiansMetric").textContent = guardianCount;
+    document.getElementById("yearsMetric").textContent = yearCount;
+    document.getElementById("periodsMetric").textContent = periodCount;
+
+    document.getElementById("systemStatus").textContent = "Education OS operational";
+
+    document.getElementById("academicList").innerHTML = `
+      <div class="row">
+        <span>Academic years</span>
+        <span class="badge ok">${yearCount} configured</span>
+      </div>
+      <div class="row">
+        <span>Academic periods</span>
+        <span class="badge ok">${periodCount} configured</span>
+      </div>
+      <div class="row">
+        <span>Class levels</span>
+        <span class="badge ok">${classCount} configured</span>
+      </div>
+      <div class="row">
+        <span>Student records</span>
+        <span class="badge ok">${studentCount} loaded</span>
+      </div>
+      <div class="row">
+        <span>Guardian records</span>
+        <span class="badge ok">${guardianCount} loaded</span>
+      </div>
+    `;
+
+    document.getElementById("systemList").innerHTML = `
+      <div class="row">
+        <span>API</span>
+        <span class="badge ok">HEALTHY</span>
+      </div>
+      <div class="row">
+        <span>Database</span>
+        <span class="badge ok">${health.database || "CONNECTED"}</span>
+      </div>
+      <div class="row">
+        <span>Deployment</span>
+        <span>${health.deployment || "Little Oaks Montessori"}</span>
+      </div>
+      <div class="row">
+        <span>Product</span>
+        <span>${health.product || "Education OS"}</span>
+      </div>
+    `;
+  } catch (error) {
+    document.getElementById("systemStatus").textContent = "Dashboard API unavailable";
+    document.getElementById("systemList").innerHTML =
+      `<div class="error">Dashboard data unavailable: ${error.message}</div>`;
+  }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
