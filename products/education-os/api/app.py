@@ -2582,6 +2582,143 @@ def update_enrollment(
     }
 
 
+
+
+# ============================================================
+# ATTENDANCE OPERATIONS
+# ============================================================
+
+class AttendanceCreate(BaseModel):
+    student_id: int
+    attendance_date: str
+    status: str
+    notes: str | None = None
+
+
+@app.get("/attendance")
+def list_attendance(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                a.*,
+                s.full_name AS student_name
+            FROM attendance a
+            JOIN students s
+                ON s.id = a.student_id
+            WHERE a.organization_id=?
+            ORDER BY a.attendance_date DESC, s.full_name ASC
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+
+    return {"attendance": [dict(row) for row in rows]}
+
+
+@app.post("/attendance", status_code=201)
+def create_attendance(
+    payload: AttendanceCreate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        student = conn.execute(
+            """
+            SELECT id
+            FROM students
+            WHERE id=? AND organization_id=?
+            """,
+            (
+                payload.student_id,
+                actor["organization_id"],
+            ),
+        ).fetchone()
+
+        if not student:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        cursor = conn.execute(
+            """
+            INSERT INTO attendance
+                (
+                    organization_id,
+                    student_id,
+                    attendance_date,
+                    status,
+                    notes,
+                    created_at,
+                    updated_at
+                )
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            (
+                actor["organization_id"],
+                payload.student_id,
+                payload.attendance_date,
+                payload.status,
+                payload.notes,
+            ),
+        )
+
+        attendance_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "attendance_id": attendance_id,
+    }
+
+
+@app.patch("/attendance/{attendance_id}")
+def update_attendance(
+    attendance_id: int,
+    payload: AttendanceCreate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE attendance
+            SET
+                student_id=?,
+                attendance_date=?,
+                status=?,
+                notes=?,
+                updated_at=CURRENT_TIMESTAMP
+            WHERE id=? AND organization_id=?
+            """,
+            (
+                payload.student_id,
+                payload.attendance_date,
+                payload.status,
+                payload.notes,
+                attendance_id,
+                actor["organization_id"],
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Attendance record not found",
+            )
+
+        conn.commit()
+
+    return {
+        "status": "updated",
+        "attendance_id": attendance_id,
+    }
+
+
 @app.get("/staff")
 def list_staff(request: Request):
     actor = _require_permission(request, "operations.view")
