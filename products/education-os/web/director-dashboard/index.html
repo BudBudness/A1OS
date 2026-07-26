@@ -1863,3 +1863,40 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 
 </body>
 </html>
+
+<script>
+/* STAGE_5_DIRECTOR_INTELLIGENCE_V1 */
+async function loadDirectorIntelligence() {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return;
+
+    const headers = {
+        "Authorization": `Bearer ${token}`
+    };
+
+    const [summaryResponse, insightsResponse] = await Promise.all([
+        fetch("/intelligence/summary", { headers }),
+        fetch("/intelligence/insights", { headers })
+    ]);
+
+    if (!summaryResponse.ok || !insightsResponse.ok) {
+        throw new Error("Director intelligence unavailable");
+    }
+
+    const summary = await summaryResponse.json();
+    const insights = await insightsResponse.json();
+
+    window.littleOaksDirectorIntelligence = {
+        summary,
+        insights,
+        loadedAt: new Date().toISOString()
+    };
+
+    document.dispatchEvent(new CustomEvent(
+        "little-oaks-director-intelligence-loaded",
+        { detail: window.littleOaksDirectorIntelligence }
+    ));
+}
+
+window.loadDirectorIntelligence = loadDirectorIntelligence;
+</script>
