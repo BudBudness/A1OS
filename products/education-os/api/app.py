@@ -17,8 +17,12 @@ WEB_ROOT = ROOT / "products" / "education-os" / "web"
 
 
 
-from pathlib import Path
 from fastapi.responses import HTMLResponse
+
+app = FastAPI(
+    title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
+    version="0.1.0",
+)
 
 DIRECTOR_DASHBOARD_HTML = (
     Path(__file__).resolve().parents[1]
@@ -31,12 +35,6 @@ DIRECTOR_DASHBOARD_HTML = (
 @app.get("/director-dashboard/", response_class=HTMLResponse)
 def director_dashboard():
     return DIRECTOR_DASHBOARD_HTML
-
-app = FastAPI(
-
-    title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
-    version="0.1.0",
-)
 
 # =========================
 # LITTLE OAKS AUTHENTICATION
@@ -2620,12 +2618,12 @@ def list_attendance(request: Request):
             """
             SELECT
                 a.*,
-                s.full_name AS student_name
+                (s.first_name || ' ' || s.last_name) AS student_name
             FROM attendance a
             JOIN students s
                 ON s.id = a.student_id
             WHERE a.organization_id=?
-            ORDER BY a.attendance_date DESC, s.full_name ASC
+            ORDER BY a.attendance_date DESC, s.first_name ASC, s.last_name ASC
             """,
             (actor["organization_id"],),
         ).fetchall()
