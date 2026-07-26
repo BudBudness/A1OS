@@ -2110,8 +2110,8 @@ def create_academic_year(payload: AcademicYearCreate, request: Request):
         cursor = conn.execute(
             """
             INSERT INTO academic_years
-                (organization_id, name, start_date, end_date, created_at)
-            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                (organization_id, name, start_date, end_date, created_at, updated_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             """,
             (
                 actor["organization_id"],
