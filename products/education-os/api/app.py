@@ -19,10 +19,27 @@ WEB_ROOT = ROOT / "products" / "education-os" / "web"
 
 from fastapi.responses import HTMLResponse
 
+
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class StripAPIPrefixMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        path = request.scope["path"]
+        if path == "/api":
+            request.scope["path"] = "/"
+            request.scope["raw_path"] = b"/"
+        elif path.startswith("/api/"):
+            new_path = path[4:]
+            request.scope["path"] = new_path
+            request.scope["raw_path"] = new_path.encode()
+        return await call_next(request)
+
 app = FastAPI(
-    title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
+title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
     version="0.1.0",
 )
+app.add_middleware(StripAPIPrefixMiddleware)
+
 
 DIRECTOR_DASHBOARD_HTML = (
     Path(__file__).resolve().parents[1]

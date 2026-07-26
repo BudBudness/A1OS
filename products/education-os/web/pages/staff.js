@@ -1,4 +1,4 @@
-import { api } from "../js/api.js";
+import { api } from "../js/education-api.js";
 import { user, can } from "../js/auth.js";
 
 export async function renderStaffPage() {

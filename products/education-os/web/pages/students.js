@@ -1,4 +1,4 @@
-import { api } from "../js/api.js";
+import { api } from "../js/education-api.js";
 
 export async function renderStudents() {
     const students = await api.students.list();

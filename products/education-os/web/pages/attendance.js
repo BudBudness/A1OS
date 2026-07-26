@@ -1,4 +1,4 @@
-import { api } from "../js/api.js";
+import { api } from "../js/education-api.js";
 import { error } from "../js/components/ui.js";
 
 export async function renderAttendance() {
