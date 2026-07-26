@@ -8,6 +8,7 @@ import { renderFees } from "../pages/fees.js";
 import { renderAttendance } from "../pages/attendance.js";
 import { renderOperations } from "../pages/operations.js";
 
+import { renderStaffPage } from "../pages/staff.js";
 const app = document.querySelector("#app");
 
 const navItems = [
