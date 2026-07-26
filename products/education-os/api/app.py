@@ -546,6 +546,106 @@ def create_fee(payload: dict, request: Request):
 
 
 
+
+@app.get("/alerts")
+def list_alerts(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    organization_id = actor["organization_id"]
+    alerts = []
+
+    with db() as conn:
+        outstanding_students = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM students s
+            WHERE s.organization_id = ?
+              AND s.enrollment_status = 'active'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM attendance a
+                  WHERE a.student_id = s.id
+                    AND a.organization_id = s.organization_id
+              )
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        guardian_coverage = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM students
+            WHERE organization_id = ?
+              AND (
+                  guardian_name IS NULL
+                  OR TRIM(guardian_name) = ''
+                  OR guardian_phone IS NULL
+                  OR TRIM(guardian_phone) = ''
+              )
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        attendance_absences = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM attendance
+            WHERE organization_id = ?
+              AND status = 'absent'
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+    if outstanding_students:
+        alerts.append({
+            "type": "attendance",
+            "severity": "warning",
+            "title": "Attendance coverage requires attention",
+            "message": (
+                f"{outstanding_students} active student(s) have no attendance "
+                "record yet."
+            ),
+            "count": outstanding_students,
+        })
+
+    if guardian_coverage:
+        alerts.append({
+            "type": "guardian_coverage",
+            "severity": "warning",
+            "title": "Guardian information incomplete",
+            "message": (
+                f"{guardian_coverage} student(s) have incomplete guardian "
+                "contact information."
+            ),
+            "count": guardian_coverage,
+        })
+
+    if attendance_absences:
+        alerts.append({
+            "type": "attendance_absence",
+            "severity": "info",
+            "title": "Attendance absences recorded",
+            "message": (
+                f"{attendance_absences} absence record(s) require operational "
+                "visibility."
+            ),
+            "count": attendance_absences,
+        })
+
+    if not alerts:
+        alerts.append({
+            "type": "system",
+            "severity": "success",
+            "title": "Operations healthy",
+            "message": "No operational alerts detected.",
+            "count": 0,
+        })
+
+    return {
+        "alerts": alerts,
+        "total": len(alerts),
+    }
+
 @app.get("/reports")
 def reports(request: Request):
     actor = _require_permission(request, "reports.view")
