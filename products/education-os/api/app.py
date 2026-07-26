@@ -2399,6 +2399,189 @@ def update_class_level(
     }
 
 
+
+
+# ============================================================
+# ENROLLMENT / CLASS PLACEMENT OPERATIONS
+# ============================================================
+
+class EnrollmentCreate(BaseModel):
+    student_id: int
+    class_level_id: int
+    academic_year_id: int | None = None
+    enrollment_date: str
+    status: str = "active"
+
+
+@app.get("/enrollment")
+def list_enrollments(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                e.*,
+                s.full_name AS student_name,
+                cl.name AS class_level_name,
+                ay.name AS academic_year_name
+            FROM enrollments e
+            JOIN students s
+                ON s.id = e.student_id
+            JOIN class_levels cl
+                ON cl.id = e.class_level_id
+            LEFT JOIN academic_years ay
+                ON ay.id = e.academic_year_id
+            WHERE e.organization_id=?
+            ORDER BY e.enrollment_date DESC, e.id DESC
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+
+    return {"enrollments": [dict(row) for row in rows]}
+
+
+@app.post("/enrollment", status_code=201)
+def create_enrollment(
+    payload: EnrollmentCreate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        student = conn.execute(
+            """
+            SELECT id
+            FROM students
+            WHERE id=? AND organization_id=?
+            """,
+            (
+                payload.student_id,
+                actor["organization_id"],
+            ),
+        ).fetchone()
+
+        if not student:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        class_level = conn.execute(
+            """
+            SELECT id
+            FROM class_levels
+            WHERE id=? AND organization_id=?
+            """,
+            (
+                payload.class_level_id,
+                actor["organization_id"],
+            ),
+        ).fetchone()
+
+        if not class_level:
+            raise HTTPException(
+                status_code=404,
+                detail="Class level not found",
+            )
+
+        if payload.academic_year_id is not None:
+            academic_year = conn.execute(
+                """
+                SELECT id
+                FROM academic_years
+                WHERE id=? AND organization_id=?
+                """,
+                (
+                    payload.academic_year_id,
+                    actor["organization_id"],
+                ),
+            ).fetchone()
+
+            if not academic_year:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Academic year not found",
+                )
+
+        cursor = conn.execute(
+            """
+            INSERT INTO enrollments
+                (
+                    organization_id,
+                    student_id,
+                    class_level_id,
+                    academic_year_id,
+                    enrollment_date,
+                    status,
+                    created_at,
+                    updated_at
+                )
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            (
+                actor["organization_id"],
+                payload.student_id,
+                payload.class_level_id,
+                payload.academic_year_id,
+                payload.enrollment_date,
+                payload.status,
+            ),
+        )
+
+        enrollment_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "enrollment_id": enrollment_id,
+    }
+
+
+@app.patch("/enrollment/{enrollment_id}")
+def update_enrollment(
+    enrollment_id: int,
+    payload: EnrollmentCreate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE enrollments
+            SET
+                class_level_id=?,
+                academic_year_id=?,
+                enrollment_date=?,
+                status=?,
+                updated_at=CURRENT_TIMESTAMP
+            WHERE id=? AND organization_id=?
+            """,
+            (
+                payload.class_level_id,
+                payload.academic_year_id,
+                payload.enrollment_date,
+                payload.status,
+                enrollment_id,
+                actor["organization_id"],
+            ),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="Enrollment not found",
+            )
+
+        conn.commit()
+
+    return {
+        "status": "updated",
+        "enrollment_id": enrollment_id,
+    }
+
+
 @app.get("/staff")
 def list_staff(request: Request):
     actor = _require_permission(request, "operations.view")
