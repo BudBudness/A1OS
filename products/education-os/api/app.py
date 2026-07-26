@@ -1530,6 +1530,34 @@ def update_school_operation_status(
     }
 
 
+@app.get("/attendance")
+def list_attendance(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    conn = db()
+    try:
+        rows = conn.execute(
+            """
+            SELECT
+                a.*,
+                (s.first_name || ' ' || s.last_name) AS student_name
+            FROM attendance a
+            JOIN students s
+                ON s.id = a.student_id
+            WHERE a.organization_id=?
+            ORDER BY a.attendance_date DESC, a.id DESC
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+
+        return {
+            "count": len(rows),
+            "attendance": [dict(row) for row in rows],
+        }
+    finally:
+        conn.close()
+
+
 @app.post("/attendance/sessions", status_code=201)
 def create_attendance_session(payload: AttendanceSessionCreate):
     if payload.attendance_date.strip() == "":
