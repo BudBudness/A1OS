@@ -2754,3 +2754,230 @@ app.mount(
     StaticFiles(directory=WEB_ROOT / "css"),
     name="education-os-css",
 )
+
+
+# ==================== PARENTS / GUARDIANS ====================
+
+class ParentGuardianCreate(BaseModel):
+    full_name: str
+    relationship: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    address: str | None = None
+    emergency_contact: bool = False
+
+
+class StudentGuardianCreate(BaseModel):
+    guardian_id: int
+    relationship: str | None = None
+    is_primary: bool = False
+
+
+@app.get("/parents")
+def list_parents_guardians(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM parents_guardians
+            WHERE organization_id=?
+            ORDER BY full_name ASC
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+
+    return {
+        "parents_guardians": [dict(row) for row in rows],
+    }
+
+
+@app.post("/parents", status_code=201)
+def create_parent_guardian(
+    payload: ParentGuardianCreate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO parents_guardians
+                (
+                    organization_id,
+                    full_name,
+                    relationship,
+                    phone,
+                    email,
+                    address,
+                    emergency_contact,
+                    created_at,
+                    updated_at
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            (
+                actor["organization_id"],
+                payload.full_name,
+                payload.relationship,
+                payload.phone,
+                payload.email,
+                payload.address,
+                int(payload.emergency_contact),
+            ),
+        )
+
+        guardian_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "guardian_id": guardian_id,
+    }
+
+
+@app.get("/students/{student_id}/guardians")
+def list_student_guardians(
+    student_id: int,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.view")
+
+    with db() as conn:
+        student = conn.execute(
+            """
+            SELECT id
+            FROM students
+            WHERE id=? AND organization_id=?
+            """,
+            (
+                student_id,
+                actor["organization_id"],
+            ),
+        ).fetchone()
+
+        if not student:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        rows = conn.execute(
+            """
+            SELECT
+                sg.*,
+                pg.full_name,
+                pg.phone,
+                pg.email,
+                pg.address,
+                pg.emergency_contact
+            FROM student_guardians sg
+            JOIN parents_guardians pg
+                ON pg.id=sg.guardian_id
+            WHERE
+                sg.student_id=?
+                AND sg.organization_id=?
+            ORDER BY sg.is_primary DESC, pg.full_name ASC
+            """,
+            (
+                student_id,
+                actor["organization_id"],
+            ),
+        ).fetchall()
+
+    return {
+        "guardians": [dict(row) for row in rows],
+    }
+
+
+@app.post("/students/{student_id}/guardians", status_code=201)
+def link_student_guardian(
+    student_id: int,
+    payload: StudentGuardianCreate,
+    request: Request,
+):
+    actor = _require_permission(request, "operations.manage")
+
+    with db() as conn:
+        student = conn.execute(
+            """
+            SELECT id
+            FROM students
+            WHERE id=? AND organization_id=?
+            """,
+            (
+                student_id,
+                actor["organization_id"],
+            ),
+        ).fetchone()
+
+        if not student:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        guardian = conn.execute(
+            """
+            SELECT id
+            FROM parents_guardians
+            WHERE id=? AND organization_id=?
+            """,
+            (
+                payload.guardian_id,
+                actor["organization_id"],
+            ),
+        ).fetchone()
+
+        if not guardian:
+            raise HTTPException(
+                status_code=404,
+                detail="Parent or guardian not found",
+            )
+
+        if payload.is_primary:
+            conn.execute(
+                """
+                UPDATE student_guardians
+                SET is_primary=0,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE
+                    student_id=?
+                    AND organization_id=?
+                """,
+                (
+                    student_id,
+                    actor["organization_id"],
+                ),
+            )
+
+        cursor = conn.execute(
+            """
+            INSERT INTO student_guardians
+                (
+                    organization_id,
+                    student_id,
+                    guardian_id,
+                    relationship,
+                    is_primary,
+                    created_at,
+                    updated_at
+                )
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            """,
+            (
+                actor["organization_id"],
+                student_id,
+                payload.guardian_id,
+                payload.relationship,
+                int(payload.is_primary),
+            ),
+        )
+
+        conn.commit()
+
+    return {
+        "status": "created",
+        "student_guardian_id": cursor.lastrowid,
+    }
