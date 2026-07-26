@@ -16,6 +16,22 @@ WEB_ROOT = ROOT / "products" / "education-os" / "web"
 
 
 
+
+from pathlib import Path
+from fastapi.responses import HTMLResponse
+
+DIRECTOR_DASHBOARD_HTML = (
+    Path(__file__).resolve().parents[1]
+    / "web"
+    / "director-dashboard"
+    / "index.html"
+).read_text()
+
+@app.get("/director-dashboard", response_class=HTMLResponse)
+@app.get("/director-dashboard/", response_class=HTMLResponse)
+def director_dashboard():
+    return DIRECTOR_DASHBOARD_HTML
+
 app = FastAPI(
 
     title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
