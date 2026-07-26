@@ -1499,5 +1499,158 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 </script>
 <!-- END STAGE_4_ACADEMIC_OPERATIONS_WORKFLOW_V1 -->
 
+
+<!-- STAGE_4_REPORTS_WORKFLOW_V1 -->
+<section id="reports-workflow" class="workflow-panel">
+  <div class="section-header">
+    <div>
+      <div class="eyebrow">REPORTING</div>
+      <h2>Reports &amp; Intelligence</h2>
+      <p>Generate operational summaries from live Education OS data.</p>
+    </div>
+    <button id="reports-refresh" class="secondary-button">Refresh reports</button>
+  </div>
+
+  <div class="metric-grid">
+    <article class="metric-card">
+      <span class="metric-label">Students</span>
+      <strong id="report-student-count">—</strong>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Parents / Guardians</span>
+      <strong id="report-guardian-count">—</strong>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Attendance Records</span>
+      <strong id="report-attendance-count">—</strong>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Outstanding Fees</span>
+      <strong id="report-outstanding-fees">UGX —</strong>
+    </article>
+  </div>
+
+  <div class="report-grid">
+    <article class="report-card">
+      <h3>Academic Structure</h3>
+      <div id="report-academic-summary">Loading academic structure…</div>
+    </article>
+
+    <article class="report-card">
+      <h3>Operational Summary</h3>
+      <div id="report-operational-summary">Loading operational summary…</div>
+    </article>
+  </div>
+
+  <div id="reports-status" class="workflow-status" aria-live="polite"></div>
+</section>
+
+
+<script>
+/* STAGE_4_REPORTS_WORKFLOW_V1 */
+(function () {
+  const API_BASE = window.API_BASE || "";
+  const token = localStorage.getItem("a1os_token") ||
+                localStorage.getItem("access_token") ||
+                localStorage.getItem("token");
+
+  const headers = token
+    ? { "Authorization": "Bearer " + token }
+    : {};
+
+  async function getJSON(path) {
+    const response = await fetch(API_BASE + path, { headers });
+    if (!response.ok) throw new Error(path + " HTTP " + response.status);
+    return response.json();
+  }
+
+  function items(data) {
+    if (Array.isArray(data)) return data;
+    return data.items || data.data || data.results || [];
+  }
+
+  function money(value) {
+    return "UGX " + Number(value || 0).toLocaleString("en-UG");
+  }
+
+  async function loadReports() {
+    const status = document.getElementById("reports-status");
+    if (status) status.textContent = "Loading live reports…";
+
+    try {
+      const [students, guardians, attendance, fees, years, periods, levels] =
+        await Promise.all([
+          getJSON("/students"),
+          getJSON("/parents"),
+          getJSON("/attendance"),
+          getJSON("/fees"),
+          getJSON("/academic/years"),
+          getJSON("/academic/periods"),
+          getJSON("/academic/class-levels")
+        ]);
+
+      const studentItems = items(students);
+      const guardianItems = items(guardians);
+      const attendanceItems = items(attendance);
+      const feeItems = items(fees);
+
+      const outstanding = feeItems
+        .filter(x => String(x.status || "").toLowerCase() !== "paid")
+        .reduce((sum, x) => sum + Number(
+          x.outstanding_amount ?? x.balance ?? x.amount ?? 0
+        ), 0);
+
+      const studentCount = document.getElementById("report-student-count");
+      const guardianCount = document.getElementById("report-guardian-count");
+      const attendanceCount = document.getElementById("report-attendance-count");
+      const outstandingFees = document.getElementById("report-outstanding-fees");
+
+      if (studentCount) studentCount.textContent = studentItems.length;
+      if (guardianCount) guardianCount.textContent = guardianItems.length;
+      if (attendanceCount) attendanceCount.textContent = attendanceItems.length;
+      if (outstandingFees) outstandingFees.textContent = money(outstanding);
+
+      const academic = document.getElementById("report-academic-summary");
+      if (academic) {
+        academic.innerHTML =
+          "<strong>" + items(years).length + "</strong> academic years · " +
+          "<strong>" + items(periods).length + "</strong> periods · " +
+          "<strong>" + items(levels).length + "</strong> class levels";
+      }
+
+      const operational = document.getElementById("report-operational-summary");
+      if (operational) {
+        operational.innerHTML =
+          "<strong>" + studentItems.length + "</strong> students · " +
+          "<strong>" + guardianItems.length + "</strong> guardians · " +
+          "<strong>" + attendanceItems.length + "</strong> attendance records · " +
+          "<strong>" + money(outstanding) + "</strong> outstanding fees";
+      }
+
+      document.dispatchEvent(new CustomEvent(
+        "little-oaks-reports-loaded",
+        { detail: { students: studentItems.length } }
+      ));
+
+      if (status) status.textContent = "Live reports loaded.";
+    } catch (error) {
+      console.error("Reports workflow failed:", error);
+      if (status) status.textContent = "Unable to load live reports.";
+    }
+  }
+
+  document.getElementById("reports-refresh")
+    ?.addEventListener("click", loadReports);
+
+  window.loadReports = loadReports;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadReports);
+  } else {
+    loadReports();
+  }
+})();
+</script>
+
 </body>
 </html>
