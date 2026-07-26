@@ -1070,5 +1070,256 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 })();
 </script>
 
+
+<!-- LITTLE_OAKS_STAGE_4_PARENTS_GUARDIANS_WORKFLOW -->
+<section id="parents-guardians" data-workflow="parents-guardians">
+  <header>
+    <h2>Parents & Guardians</h2>
+    <button id="parents-refresh" type="button">Refresh contacts</button>
+  </header>
+
+  <form id="guardian-create-form">
+    <input name="full_name" placeholder="Full name" required>
+    <input name="phone" placeholder="Phone number" required>
+    <input name="email" type="email" placeholder="Email">
+    <input name="address" placeholder="Address">
+    <label>
+      <input name="emergency_contact" type="checkbox">
+      Emergency contact
+    </label>
+    <button type="submit">Create guardian</button>
+  </form>
+
+  <div id="parents-operation-status" role="status"></div>
+  <div id="parents-list" aria-live="polite"></div>
+
+  <form id="guardian-link-form">
+    <h3>Link guardian to student</h3>
+    <input name="student_id" type="number" placeholder="Student ID" required>
+    <input name="guardian_id" type="number" placeholder="Guardian ID" required>
+    <input name="relationship" placeholder="Relationship">
+    <label>
+      <input name="is_primary" type="checkbox">
+      Primary guardian
+    </label>
+    <button type="submit">Link guardian</button>
+  </form>
+
+  <div id="guardian-link-status" role="status"></div>
+</section>
+
+<script>
+(function () {
+  const PARENTS_GUARDIANS_WORKFLOW_MARKER =
+    "PARENTS_GUARDIANS_WORKFLOW_V1";
+
+  const TOKEN_KEY = "little_oaks_access_token";
+
+  const status = document.getElementById(
+    "parents-operation-status"
+  );
+
+  const list = document.getElementById("parents-list");
+
+  const refresh = document.getElementById(
+    "parents-refresh"
+  );
+
+  const createForm = document.getElementById(
+    "guardian-create-form"
+  );
+
+  const linkForm = document.getElementById(
+    "guardian-link-form"
+  );
+
+  const linkStatus = document.getElementById(
+    "guardian-link-status"
+  );
+
+  function authHeaders() {
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    return token
+      ? { Authorization: `Bearer ${token}` }
+      : {};
+  }
+
+  async function loadGuardians() {
+    status.textContent = "Loading parents and guardians…";
+
+    const response = await fetch("/parents", {
+      headers: authHeaders(),
+    });
+
+    if (!response.ok) {
+      status.textContent =
+        `Unable to load parents and guardians (${response.status})`;
+
+      return;
+    }
+
+    const payload = await response.json();
+
+    const guardians = Array.isArray(payload)
+      ? payload
+      : (
+          payload.items ||
+          payload.parents ||
+          payload.guardians ||
+          []
+        );
+
+    list.innerHTML = guardians.map(guardian => `
+      <article class="guardian-record">
+        <strong>
+          ${guardian.full_name || guardian.name || "Unnamed guardian"}
+        </strong>
+
+        <span>
+          ${guardian.phone || "No phone"}
+        </span>
+
+        <small>
+          ${guardian.email || ""}
+          ${guardian.address ? ` — ${guardian.address}` : ""}
+        </small>
+
+        ${
+          guardian.emergency_contact
+            ? "<b>Emergency contact</b>"
+            : ""
+        }
+      </article>
+    `).join("") || "<p>No parents or guardians found.</p>";
+
+    status.textContent =
+      `${guardians.length} parent/guardian record(s) loaded.`;
+
+    window.dispatchEvent(new CustomEvent(
+      "little-oaks-parents-guardians-loaded",
+      {
+        detail: {
+          count: guardians.length,
+        },
+      }
+    ));
+  }
+
+  createForm?.addEventListener(
+    "submit",
+    async function (event) {
+      event.preventDefault();
+
+      const formData =
+        Object.fromEntries(new FormData(createForm).entries());
+
+      const payload = {
+        full_name: formData.full_name,
+        phone: formData.phone,
+        email: formData.email || null,
+        address: formData.address || null,
+        emergency_contact:
+          createForm.elements.emergency_contact.checked,
+      };
+
+      status.textContent =
+        "Creating parent/guardian record…";
+
+      const response = await fetch("/parents", {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders(),
+        },
+
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        status.textContent =
+          `Parent/guardian creation failed (${response.status})`;
+
+        return;
+      }
+
+      createForm.reset();
+
+      status.textContent =
+        "Parent/guardian created successfully.";
+
+      await loadGuardians();
+    }
+  );
+
+  linkForm?.addEventListener(
+    "submit",
+    async function (event) {
+      event.preventDefault();
+
+      const formData =
+        Object.fromEntries(new FormData(linkForm).entries());
+
+      const studentId = formData.student_id;
+
+      const payload = {
+        guardian_id: Number(formData.guardian_id),
+
+        relationship:
+          formData.relationship || null,
+
+        is_primary:
+          linkForm.elements.is_primary.checked,
+      };
+
+      linkStatus.textContent =
+        "Linking guardian to student…";
+
+      const response = await fetch(
+        `/students/${studentId}/guardians`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeaders(),
+          },
+
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        linkStatus.textContent =
+          `Guardian linking failed (${response.status})`;
+
+        return;
+      }
+
+      linkForm.reset();
+
+      linkStatus.textContent =
+        "Guardian linked to student successfully.";
+    }
+  );
+
+  refresh?.addEventListener(
+    "click",
+    loadGuardians
+  );
+
+  window.LITTLE_OAKS_STAGE_4_PARENTS_GUARDIANS_WORKFLOW =
+    true;
+
+  window.LITTLE_OAKS_PARENTS_GUARDIANS_WORKFLOW_MARKER =
+    PARENTS_GUARDIANS_WORKFLOW_MARKER;
+
+  if (localStorage.getItem(TOKEN_KEY)) {
+    loadGuardians();
+  }
+})();
+</script>
+
 </body>
 </html>
