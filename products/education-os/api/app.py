@@ -3208,3 +3208,116 @@ def link_student_guardian(
         "status": "created",
         "student_guardian_id": cursor.lastrowid,
     }
+
+
+# ============================================================
+# STAGE 5 — DIRECTOR INTELLIGENCE
+# ============================================================
+
+@app.get("/intelligence/summary")
+def director_intelligence_summary(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    with db() as conn:
+        students = conn.execute(
+            "SELECT COUNT(*) FROM students WHERE organization_id=?",
+            (organization_id,),
+        ).fetchone()[0]
+
+        parents = conn.execute(
+            "SELECT COUNT(*) FROM parents WHERE organization_id=?",
+            (organization_id,),
+        ).fetchone()[0]
+
+        attendance = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+            FROM attendance
+            WHERE organization_id=?
+            """,
+            (organization_id,),
+        ).fetchone()
+
+    total_attendance = int(attendance["total"] or 0)
+    present = int(attendance["present"] or 0)
+    absent = int(attendance["absent"] or 0)
+
+    attendance_rate = (
+        round((present / total_attendance) * 100, 2)
+        if total_attendance else 0
+    )
+
+    return {
+        "organization_id": organization_id,
+        "students": students,
+        "parents": parents,
+        "attendance": {
+            "total": total_attendance,
+            "present": present,
+            "absent": absent,
+            "attendance_rate": attendance_rate,
+        },
+        "intelligence": {
+            "system_state": "healthy",
+            "priority": "normal",
+        },
+    }
+
+
+@app.get("/intelligence/insights")
+def director_intelligence_insights(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    insights = []
+
+    with db() as conn:
+        attendance = conn.execute(
+            """
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+            FROM attendance
+            WHERE organization_id=?
+            """,
+            (organization_id,),
+        ).fetchone()
+
+        total = int(attendance["total"] or 0)
+        absent = int(attendance["absent"] or 0)
+
+    if total:
+        absence_rate = (absent / total) * 100
+
+        if absence_rate >= 20:
+            insights.append({
+                "severity": "high",
+                "category": "attendance",
+                "title": "Attendance requires attention",
+                "message": f"Absence rate is {absence_rate:.1f}%.",
+            })
+        elif absence_rate >= 10:
+            insights.append({
+                "severity": "medium",
+                "category": "attendance",
+                "title": "Attendance trend detected",
+                "message": f"Absence rate is {absence_rate:.1f}%.",
+            })
+
+    if not insights:
+        insights.append({
+            "severity": "healthy",
+            "category": "system",
+            "title": "Operations are healthy",
+            "message": "No critical operational intelligence signals detected.",
+        })
+
+    return {
+        "insights": insights,
+        "count": len(insights),
+    }
