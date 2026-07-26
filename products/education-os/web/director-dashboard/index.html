@@ -554,5 +554,23 @@ document.addEventListener(
     }
 );
 </script>
+
+<!-- LITTLE_OAKS_STAGE_4_NAVIGATION_SHELL -->
+<nav id="little-oaks-production-navigation" aria-label="Primary navigation">
+  <a href="/director-dashboard">Director Dashboard</a>
+  <a href="/director-dashboard#students">Students</a>
+  <a href="/director-dashboard#admissions">Admissions</a>
+  <a href="/director-dashboard#attendance">Attendance</a>
+  <a href="/director-dashboard#fees">Fees &amp; Billing</a>
+  <a href="/director-dashboard#parents">Parents &amp; Guardians</a>
+  <a href="/director-dashboard#academic">Academic Operations</a>
+  <a href="/director-dashboard#reports">Reports</a>
+  <a href="/director-dashboard#alerts">Alerts</a>
+</nav>
+<script>
+window.LITTLE_OAKS_STAGE_4_NAVIGATION_SHELL = true;
+window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"));
+</script>
+
 </body>
 </html>
