@@ -283,5 +283,115 @@ async function loadDashboard() {
 
 loadDashboard();
 </script>
+
+<script>
+/* DIRECTOR_DASHBOARD_AUTH_INTEGRATION */
+
+const API_BASE = window.location.origin;
+const TOKEN_KEY = "little_oaks_education_os_token";
+
+function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+function authHeaders() {
+    const token = getToken();
+    return token
+        ? {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        }
+        : {
+            "Content-Type": "application/json"
+        };
+}
+
+async function api(path, options = {}) {
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers: {
+            ...authHeaders(),
+            ...(options.headers || {})
+        }
+    });
+
+    if (response.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        window.location.href = "/login";
+        throw new Error("Authentication required");
+    }
+
+    if (!response.ok) {
+        throw new Error(`${path}: HTTP ${response.status}`);
+    }
+
+    return response.json();
+}
+
+async function loadDirectorDashboardData() {
+    const [
+        me,
+        years,
+        periods,
+        classLevels,
+        students,
+        parents
+    ] = await Promise.all([
+        api("/auth/me"),
+        api("/academic/years"),
+        api("/academic/periods"),
+        api("/academic/class-levels"),
+        api("/students"),
+        api("/parents")
+    ]);
+
+    window.LITTLE_OAKS_DASHBOARD_DATA = {
+        me,
+        years,
+        periods,
+        classLevels,
+        students,
+        parents,
+        loadedAt: new Date().toISOString()
+    };
+
+    document.dispatchEvent(
+        new CustomEvent(
+            "little-oaks-dashboard-data-loaded",
+            {
+                detail: window.LITTLE_OAKS_DASHBOARD_DATA
+            }
+        )
+    );
+
+    console.log(
+        "Little Oaks Director Dashboard data loaded",
+        window.LITTLE_OAKS_DASHBOARD_DATA
+    );
+
+    return window.LITTLE_OAKS_DASHBOARD_DATA;
+}
+
+window.loadDirectorDashboardData = loadDirectorDashboardData;
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+        if (!getToken()) {
+            window.location.href = "/login";
+            return;
+        }
+
+        try {
+            await loadDirectorDashboardData();
+        } catch (error) {
+            console.error(
+                "Director Dashboard data integration failed:",
+                error
+            );
+        }
+    }
+);
+</script>
 </body>
 </html>
