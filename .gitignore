@@ -1,62 +1,58 @@
+# Logs
+*.log
+*.log.*
+
+# Python
 __pycache__/
-*.py[cod]
+*.pyc
 *.pyo
-*.so
-*.log
-*.pid
-*.db
-*.sqlite*
-*.tmp
-*.swp
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-.venv/
 venv/
-.env
-.env.*
-logs/
-backups/
-data/*.db
-data/**/*.db
-data/cache/
-data/queue/
-data/assets/
-data/**/state.json
-tunnel.log
-state.log
-app.log
-a1os_state.db*
-__pycache__/
-*.log
-.env
+env/
+.venv/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Temp files
+*.tmp
+*.temp
+*.lock
+*.pid
+*.swp
+*.swo
+*~
 
 # Secrets
 .env
 .env.*
-!.env.example
 *.key
 *.pem
 *.crt
-*.secret
-*credentials*
+*.jks
 
-# Runtime
-__pycache__/
-*.py[cod]
-.pytest_cache/
-*.log
-
-# Databases and runtime state
+# Databases (except schema)
 *.db
 *.sqlite
 *.sqlite3
-data/
-backups/
 
-# Temporary files
-*.tmp
-*.swp
+# Backups
+*.tar.gz
+*.tgz
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Project specific
+a1os_*.db
+billions.db
+*.a1os.db
+
+# Expose protection
+.exposed.*
