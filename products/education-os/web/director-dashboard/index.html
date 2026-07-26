@@ -1652,5 +1652,214 @@ window.dispatchEvent(new CustomEvent("little-oaks-production-navigation-ready"))
 })();
 </script>
 
+
+<!-- STAGE_4_ALERTS_WORKFLOW_V1 -->
+<section id="alerts-workflow" class="workflow-panel">
+  <div class="section-header">
+    <div>
+      <div class="eyebrow">OPERATIONS</div>
+      <h2>Operational Alerts</h2>
+      <p>Surface issues requiring director attention from live school data.</p>
+    </div>
+    <button id="alerts-refresh" class="secondary-button">Refresh alerts</button>
+  </div>
+
+  <div class="metric-grid">
+    <article class="metric-card">
+      <span class="metric-label">Open Alerts</span>
+      <strong id="open-alert-count">—</strong>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Outstanding Fees</span>
+      <strong id="alert-outstanding-fees">UGX —</strong>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Attendance Records</span>
+      <strong id="alert-attendance-count">—</strong>
+    </article>
+    <article class="metric-card">
+      <span class="metric-label">Alert State</span>
+      <strong id="alert-system-state">Checking…</strong>
+    </article>
+  </div>
+
+  <div id="alerts-list" class="alerts-list">
+    <div class="empty-state">Loading operational alerts…</div>
+  </div>
+
+  <div id="alerts-status" class="workflow-status" aria-live="polite"></div>
+</section>
+
+
+<script>
+/* STAGE_4_ALERTS_WORKFLOW_V1 */
+(function () {
+  const API_BASE = window.API_BASE || "";
+  const token = localStorage.getItem("a1os_token") ||
+                localStorage.getItem("access_token") ||
+                localStorage.getItem("token");
+
+  const headers = token
+    ? { "Authorization": "Bearer " + token }
+    : {};
+
+  async function getJSON(path) {
+    const response = await fetch(API_BASE + path, { headers });
+    if (!response.ok) throw new Error(path + " HTTP " + response.status);
+    return response.json();
+  }
+
+  function items(data) {
+    if (Array.isArray(data)) return data;
+    return data.items || data.data || data.results || [];
+  }
+
+  function money(value) {
+    return "UGX " + Number(value || 0).toLocaleString("en-UG");
+  }
+
+  function createAlert(type, severity, title, detail) {
+    return { type, severity, title, detail };
+  }
+
+  async function loadAlerts() {
+    const status = document.getElementById("alerts-status");
+    const list = document.getElementById("alerts-list");
+
+    if (status) status.textContent = "Checking live operational conditions…";
+
+    try {
+      const [students, attendance, fees, guardians] =
+        await Promise.all([
+          getJSON("/students"),
+          getJSON("/attendance"),
+          getJSON("/fees"),
+          getJSON("/parents")
+        ]);
+
+      const studentItems = items(students);
+      const attendanceItems = items(attendance);
+      const feeItems = items(fees);
+      const guardianItems = items(guardians);
+
+      const alerts = [];
+
+      const outstanding = feeItems
+        .filter(x => String(x.status || "").toLowerCase() !== "paid")
+        .reduce((sum, x) => sum + Number(
+          x.outstanding_amount ?? x.balance ?? x.amount ?? 0
+        ), 0);
+
+      if (outstanding > 0) {
+        alerts.push(createAlert(
+          "billing",
+          "attention",
+          "Outstanding fees require follow-up",
+          money(outstanding) + " currently outstanding across billing records."
+        ));
+      }
+
+      if (studentItems.length === 0) {
+        alerts.push(createAlert(
+          "students",
+          "warning",
+          "No students currently registered",
+          "Student records should be reviewed."
+        ));
+      }
+
+      if (guardianItems.length < studentItems.length && studentItems.length > 0) {
+        alerts.push(createAlert(
+          "guardians",
+          "attention",
+          "Guardian coverage requires review",
+          "There are fewer guardian records than student records."
+        ));
+      }
+
+      if (attendanceItems.length === 0 && studentItems.length > 0) {
+        alerts.push(createAlert(
+          "attendance",
+          "warning",
+          "No attendance records found",
+          "Attendance recording may require director attention."
+        ));
+      }
+
+      if (alerts.length === 0) {
+        alerts.push(createAlert(
+          "system",
+          "healthy",
+          "No operational alerts detected",
+          "Current school data is within the configured alert conditions."
+        ));
+      }
+
+      const openAlerts = alerts.filter(x => x.severity !== "healthy").length;
+
+      const openCount = document.getElementById("open-alert-count");
+      const outstandingFees = document.getElementById("alert-outstanding-fees");
+      const attendanceCount = document.getElementById("alert-attendance-count");
+      const systemState = document.getElementById("alert-system-state");
+
+      if (openCount) openCount.textContent = openAlerts;
+      if (outstandingFees) outstandingFees.textContent = money(outstanding);
+      if (attendanceCount) attendanceCount.textContent = attendanceItems.length;
+      if (systemState) {
+        systemState.textContent = openAlerts ? "Attention required" : "Healthy";
+      }
+
+      if (list) {
+        list.innerHTML = alerts.map(alert => `
+          <article class="alert-card alert-${alert.severity}">
+            <div class="alert-card-header">
+              <strong>${alert.title}</strong>
+              <span class="alert-severity">${alert.severity}</span>
+            </div>
+            <p>${alert.detail}</p>
+            <small>${alert.type}</small>
+          </article>
+        `).join("");
+      }
+
+      document.dispatchEvent(new CustomEvent(
+        "little-oaks-alerts-loaded",
+        { detail: { openAlerts } }
+      ));
+
+      if (status) {
+        status.textContent =
+          openAlerts
+            ? openAlerts + " operational alert(s) require attention."
+            : "No operational alerts detected.";
+      }
+    } catch (error) {
+      console.error("Alerts workflow failed:", error);
+
+      const systemState = document.getElementById("alert-system-state");
+      const list = document.getElementById("alerts-list");
+
+      if (systemState) systemState.textContent = "Unavailable";
+      if (list) {
+        list.innerHTML =
+          '<div class="empty-state">Unable to load operational alerts.</div>';
+      }
+      if (status) status.textContent = "Alert system unavailable.";
+    }
+  }
+
+  document.getElementById("alerts-refresh")
+    ?.addEventListener("click", loadAlerts);
+
+  window.loadAlerts = loadAlerts;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadAlerts);
+  } else {
+    loadAlerts();
+  }
+})();
+</script>
+
 </body>
 </html>
