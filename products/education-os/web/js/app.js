@@ -9,6 +9,7 @@ import { renderAttendance } from "../pages/attendance.js";
 import { renderOperations } from "../pages/operations.js";
 
 import { renderStaffPage } from "../pages/staff.js";
+import { renderDirectorSuite } from "../pages/director/index.js";
 const app = document.querySelector("#app");
 
 const navItems = [
@@ -169,6 +170,8 @@ async function render() {
             content.innerHTML = await renderFees();
         } else if (route === "attendance") {
             content.innerHTML = await renderAttendance();
+        } else if (route === "director") {
+            content.innerHTML = await renderDirectorSuite();
         } else if (route === "operations") {
             content.innerHTML = await renderOperations();
         } else {
