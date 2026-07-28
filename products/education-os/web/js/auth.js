@@ -89,7 +89,7 @@ export function can(permission) {
 
     const role = String(current.role || "").toLowerCase();
 
-    if (role === "director" || role === "director_ceo" || role === "ceo") {
+    if (role === "director" || role === "director_ceo" || role === "director_ceo_teacher" || role === "ceo") {
         return true;
     }
 
