@@ -1,6 +1,6 @@
 import { getRoute, navigate, routeTitle, startRouter } from "./router.js";
 import { api } from "./education-api.js";
-import { login, logout, verifySession, isAuthenticated, user } from "./auth.js";
+import { login, logout, verifySession, isAuthenticated, can, user } from "./auth.js";
 import { renderDashboard } from "../pages/dashboard.js";
 import { renderStudents } from "../pages/students.js";
 import { renderAdmissions } from "../pages/admissions.js";
@@ -80,6 +80,10 @@ function renderLogin() {
         try {
             await login(email, password);
             if (bootApp) {
+            const status = document.querySelector("#boot-status");
+            if (status) status.textContent = "Application modules loaded. Verifying session...";
+        }
+        if (bootApp) {
             const status = document.querySelector("#boot-status");
             if (status) status.textContent = "Application modules loaded. Verifying session...";
         }
@@ -208,40 +212,33 @@ window.addEventListener("unhandledrejection", event => {
 
 
 async function boot() {
-    const bootApp = document.querySelector("#app");
-    if (bootApp) {
-        bootApp.innerHTML = `
-            <div style="padding:40px;font-family:system-ui;background:#f8fafc;min-height:100vh">
-                <h1 style="color:#14532d">Little Oaks Education OS</h1>
-                <p id="boot-status">Loading application modules...</p>
-            </div>`;
-    }
     const app = document.querySelector("#app");
 
     try {
-        app.innerHTML = `
-            <div style="padding:40px;font-family:system-ui">
-                <h1>Little Oaks Education OS</h1>
-                <p>Initializing application...</p>
-            </div>
-        `;
-
-        if (bootApp) {
-            const status = document.querySelector("#boot-status");
-            if (status) status.textContent = "Application modules loaded. Verifying session...";
+        if (app) {
+            app.innerHTML = `
+                <div style="padding:40px;font-family:system-ui;background:#f8fafc;min-height:100vh">
+                    <h1 style="color:#14532d">Little Oaks Education OS</h1>
+                    <p>Initializing application...</p>
+                </div>
+            `;
         }
+
         await render();
         startRouter(render);
 
     } catch (error) {
         console.error("BOOT ERROR:", error);
 
-        app.innerHTML = `
-            <div style="padding:40px;font-family:system-ui;color:#b91c1c">
-                <h1>Little Oaks Frontend Error</h1>
-                <pre style="white-space:pre-wrap">${error.stack || error.message}</pre>
-            </div>
-        `;
+        if (app) {
+            app.innerHTML = `
+                <div style="padding:40px;font-family:system-ui;background:#fef2f2;min-height:100vh;color:#991b1b">
+                    <h1>Little Oaks Education OS</h1>
+                    <h2>Frontend module failed to load</h2>
+                    <pre style="white-space:pre-wrap">${error?.stack || error?.message || error}</pre>
+                </div>
+            `;
+        }
     }
 }
 
