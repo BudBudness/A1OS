@@ -105,7 +105,7 @@ export const api = {
 };
 
 
-export const intelligence = {
+api.intelligence = {
   summary: () => request("/intelligence/summary"),
   staff: async () => {
     const data = await request("/staff");

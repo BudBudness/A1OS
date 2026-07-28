@@ -1,5 +1,5 @@
 export async function loadReports(api) {
-  const response = await api.get("/reports");
+  const response = await api.operations.list();
   if (!response.ok) throw new Error("Failed to load reports");
   return response.json();
 }

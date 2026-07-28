@@ -1941,6 +1941,27 @@ def update_admission_status(admission_id: int, status: str, request: Request):
 # LITTLE OAKS SCHOOL INTELLIGENCE
 # ============================================================
 
+@app.get("/staff")
+def list_staff(request: Request):
+    actor = _require_permission(request, "staff.view")
+    organization_id = actor["organization_id"]
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, full_name, email, role
+            FROM users
+            WHERE organization_id=?
+            ORDER BY full_name
+            """,
+            (organization_id,),
+        ).fetchall()
+
+    return {
+        "staff": [dict(row) for row in rows]
+    }
+
+
 @app.get("/intelligence/summary")
 def director_intelligence_summary(request: Request):
     actor = _require_permission(request, "reports.view")
@@ -1994,8 +2015,29 @@ def director_intelligence_summary(request: Request):
             "total": total_attendance,
             "present": present,
             "absent": absent,
+            "late": 0,
             "attendance_rate": attendance_rate,
         },
+        "fees": {
+            "billed": 0,
+            "collected": 0,
+            "outstanding": 0,
+            "overdue": 0,
+        },
+        "admissions": {
+            "total": 0,
+            "pending": 0,
+            "accepted": 0,
+            "rejected": 0,
+        },
+        "operations": {
+            "open": 0,
+            "in_progress": 0,
+            "completed": 0,
+            "overdue": 0,
+        },
+        "alerts": [],
+        "recent_activity": [],
         "intelligence": {
             "system_state": "healthy",
             "priority": "normal",
@@ -2056,3 +2098,11 @@ def director_intelligence_insights(request: Request):
         "insights": insights,
         "count": len(insights),
     }
+
+
+from pathlib import Path as _Path
+
+_WEB = _Path(__file__).resolve().parent.parent / "web"
+
+if _WEB.exists():
+    app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")

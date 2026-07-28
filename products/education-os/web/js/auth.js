@@ -81,3 +81,36 @@ export function logout() {
     clearAuth();
     location.reload();
 }
+
+
+export function can(permission) {
+    const current = user();
+    if (!current) return false;
+
+    const role = String(current.role || "").toLowerCase();
+
+    if (role === "director" || role === "director_ceo" || role === "ceo") {
+        return true;
+    }
+
+    const permissions = {
+        "head_mistress": [
+            "academic",
+            "operations",
+            "students",
+            "admissions",
+            "attendance",
+            "staff",
+            "reports"
+        ],
+        "staff": [
+            "students",
+            "attendance",
+            "operations"
+        ]
+    };
+
+    return (permissions[role] || []).some(
+        item => permission === item || permission.startsWith(item + ".")
+    );
+}
