@@ -5,7 +5,7 @@ import sqlite3
 from typing import Optional
 
 from fastapi import FastAPI
-from modules.director.profile.routes import router as director_profile_router, Request
+from modules.director.profile.routes import router as director_profile_router
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
