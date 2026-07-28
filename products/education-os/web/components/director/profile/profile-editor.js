@@ -1,21 +1,31 @@
-export function renderProfileEditor(org = {}) {
+import { api } from "../../../js/education-api.js";
+
+export async function renderProfileEditor() {
+
+    const profile = await api.directorProfile.get();
+
     return `
-    <div class="director-profile-editor">
-        <h2>School Profile</h2>
+    <div class="profile-editor">
+        <h2>School Profile Editor</h2>
 
         <label>
             School Name
-            <input id="school-name" value="${org.name || ""}">
+            <input id="school_name" value="${profile.school_name || ""}">
         </label>
 
         <label>
-            Motto
-            <input id="school-motto" value="${org.motto || ""}">
+            Slogan
+            <input id="slogan" value="${profile.slogan || ""}">
         </label>
 
         <label>
-            Address
-            <input id="school-address" value="${org.address || ""}">
+            Location
+            <input id="location" value="${profile.location || ""}">
+        </label>
+
+        <label>
+            Description
+            <textarea id="description">${profile.description || ""}</textarea>
         </label>
 
         <button id="save-profile">
