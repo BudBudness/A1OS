@@ -4,7 +4,8 @@ from pathlib import Path
 import sqlite3
 from typing import Optional
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
+from modules.director.profile.routes import router as director_profile_router, Request
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -2106,3 +2107,11 @@ _WEB = _Path(__file__).resolve().parent.parent / "web"
 
 if _WEB.exists():
     app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
+
+
+# Little Oaks Education OS v1.1.0 Director Suite
+app.include_router(
+    director_profile_router,
+    prefix="/director/profile",
+    tags=["Director Profile"]
+)
