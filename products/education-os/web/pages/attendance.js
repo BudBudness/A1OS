@@ -1,3 +1,4 @@
+import { loadWorkflow } from "../workflows/attendance.js";
 import { api } from "../js/education-api.js";
 import { error } from "../js/components/ui.js";
 
@@ -81,3 +82,5 @@ export async function renderAttendance() {
     return error(err.message);
   }
 }
+
+

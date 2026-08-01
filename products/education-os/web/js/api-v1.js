@@ -1,4 +1,4 @@
-import { getToken, clearAuth } from "./auth.js";
+import { getToken, clearAuth } from "./auth.js?v=1785434576";
 
 const API_BASE = "/api";
 

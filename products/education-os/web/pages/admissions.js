@@ -1,6 +1,31 @@
+
 import { api } from "../js/education-api.js";
 
+import { loadWorkflow } from "../workflows/admissions.js";
+
 export async function renderAdmissions() {
+
+    queueMicrotask(() => {
+        const workflowRoot=document.querySelector("#workflow-root");
+        if (typeof loadWorkflow==="function" && workflowRoot) {
+            loadWorkflow(workflowRoot);
+        }
+
+        const ids={
+            renderStudents:"#register-student",
+            renderAdmissions:"#new-admission",
+            renderFees:"#record-payment",
+            renderOperations:"#new-operation"
+        };
+
+        const id=ids[renderAdmissions];
+
+        if(id){
+            document.querySelector(id)?.addEventListener("click",()=>{}, {once:true});
+        }
+    });
+
+
     const admissions = await api.admissions.list();
 
     return `
@@ -53,3 +78,6 @@ export async function renderAdmissions() {
         </section>
     `;
 }
+
+
+
