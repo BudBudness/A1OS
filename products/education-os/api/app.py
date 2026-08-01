@@ -1,3 +1,4 @@
+from api.modules.live_operations.observability_api import router as observability_router
 from api.modules.live_operations.feature_api import router as feature_router
 from api.modules.live_operations.health_api import router as health_system_router
 from api.modules.live_operations.integration_api import router as integration_router
@@ -59,6 +60,7 @@ title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
 
 app.include_router(health_system_router)
 app.include_router(feature_router)
+app.include_router(observability_router)
 
 
 
