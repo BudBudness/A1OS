@@ -28,3 +28,7 @@ __pycache__/
 tmp/
 
 products/education-os/api/*.pre_*
+
+*.db-shm
+*.db-wal
+nohup.out
