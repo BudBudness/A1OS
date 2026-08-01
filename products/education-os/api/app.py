@@ -1,4 +1,5 @@
 from api.modules.live_operations.finance_dashboard import router as finance_dashboard_router
+from api.modules.live_operations.finance_operations import router as finance_operations_router
 from api.modules.live_operations.auth import router as auth_router
 import uuid
 import secrets
@@ -2160,3 +2161,5 @@ app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web"
 app.include_router(auth_router)
 
 app.include_router(finance_dashboard_router)
+
+app.include_router(finance_operations_router)
