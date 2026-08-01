@@ -1,3 +1,4 @@
+from api.modules.live_operations.parent_engagement_api import router as parent_engagement_router
 from api.modules.live_operations.ai_assistant_api import router as ai_router
 from api.modules.live_operations.school_intelligence_api import router as intelligence_router
 from api.modules.live_operations.executive_intelligence_api import router as executive_router
@@ -77,6 +78,7 @@ app.include_router(operations_router)
 app.include_router(executive_router)
 app.include_router(intelligence_router)
 app.include_router(ai_router)
+app.include_router(parent_engagement_router)
 
 
 
