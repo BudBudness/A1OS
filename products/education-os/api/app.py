@@ -1,3 +1,4 @@
+from api.modules.live_operations.production_readiness_api import router as readiness_router
 from api.modules.live_operations.disaster_recovery_api import router as recovery_router
 from api.modules.live_operations.observability_api import router as observability_router
 from api.modules.live_operations.feature_api import router as feature_router
@@ -63,6 +64,7 @@ app.include_router(health_system_router)
 app.include_router(feature_router)
 app.include_router(observability_router)
 app.include_router(recovery_router)
+app.include_router(readiness_router)
 
 
 
