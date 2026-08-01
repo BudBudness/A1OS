@@ -1,5 +1,6 @@
 from api.modules.live_operations.finance_dashboard import router as finance_dashboard_router
 from api.modules.live_operations.finance_operations import router as finance_operations_router
+from api.modules.live_operations.finance_workflows import router as finance_workflows_router
 from api.modules.live_operations.auth import router as auth_router
 import uuid
 import secrets
@@ -2159,6 +2160,7 @@ app.include_router(dashboard_router)
 app.include_router(student_parents_router)
 
 app.include_router(finance_operations_router)
+app.include_router(finance_workflows_router)
 
 app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
 
