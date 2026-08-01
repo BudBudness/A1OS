@@ -4,8 +4,8 @@ from pathlib import Path
 import sqlite3
 from typing import Optional
 
-from fastapi import FastAPI
-from modules.director.profile.routes import router as director_profile_router
+from fastapi import FastAPI, Request
+from api.modules.director.profile.routes import router as director_profile_router
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -36,9 +36,12 @@ class StripAPIPrefixMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 app = FastAPI(
+
 title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
     version="0.1.0",
 )
+
+app.include_router(director_profile_router)
 app.add_middleware(StripAPIPrefixMiddleware)
 
 
@@ -172,11 +175,11 @@ def _current_user(
                 u.email,
                 u.phone,
                 u.active,
-                s.session_token,
+                s.token,
                 s.expires_at
             FROM auth_sessions s
             JOIN users u ON u.id = s.user_id
-            WHERE s.session_token = ?
+            WHERE s.token = ?
             """,
             (token,),
         ).fetchone()
@@ -199,7 +202,7 @@ def _current_user(
 
         if expires_at < datetime.now(timezone.utc):
             conn.execute(
-                "DELETE FROM auth_sessions WHERE session_token = ?",
+                "DELETE FROM auth_sessions WHERE token = ?",
                 (token,),
             )
             conn.commit()
@@ -213,7 +216,7 @@ def _current_user(
             """
             UPDATE auth_sessions
             SET last_used_at = CURRENT_TIMESTAMP
-            WHERE session_token = ?
+            WHERE token = ?
             """,
             (token,),
         )
@@ -294,7 +297,7 @@ def auth_login(payload: dict):
             INSERT INTO auth_sessions
             (
                 user_id,
-                session_token,
+                token,
                 expires_at
             )
             VALUES (?, ?, ?)
@@ -364,7 +367,7 @@ def auth_logout(
             conn.execute(
                 """
                 DELETE FROM auth_sessions
-                WHERE session_token = ?
+                WHERE token = ?
                 """,
                 (token,),
             )
@@ -689,18 +692,20 @@ def reports(request: Request):
             (organization_id,),
         ).fetchone()["total"]
 
-        attendance = conn.execute(
-            """
-            SELECT
-                COUNT(*) AS total_records,
-                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) AS present,
-                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) AS absent,
-                SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) AS late
-            FROM attendance
-            WHERE organization_id = ?
-            """,
-            (organization_id,),
-        ).fetchone()
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
 
         academic_years = conn.execute(
             """
@@ -1978,26 +1983,32 @@ def director_intelligence_summary(request: Request):
             (organization_id,),
         ).fetchone()[0]
 
-        parents = conn.execute(
-            """
-            SELECT COUNT(*)
-            FROM parents_guardians
-            WHERE organization_id=?
-            """,
-            (organization_id,),
-        ).fetchone()[0]
+        try:
+            parents = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM parents_guardians
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()[0]
+        except Exception:
+            parents = 0
 
-        attendance = conn.execute(
-            """
-            SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
-                SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
-            FROM attendance
-            WHERE organization_id=?
-            """,
-            (organization_id,),
-        ).fetchone()
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
 
     total_attendance = int(attendance["total"] or 0)
     present = int(attendance["present"] or 0)
@@ -2054,17 +2065,20 @@ def director_intelligence_insights(request: Request):
     insights = []
 
     with db() as conn:
-        attendance = conn.execute(
-            """
-            SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
-                SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
-            FROM attendance
-            WHERE organization_id=?
-            """,
-            (organization_id,),
-        ).fetchone()
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
 
         total = int(attendance["total"] or 0)
         absent = int(attendance["absent"] or 0)
@@ -2105,13 +2119,10 @@ from pathlib import Path as _Path
 
 _WEB = _Path(__file__).resolve().parent.parent / "web"
 
-if _WEB.exists():
-    app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
+
+
+app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
 
 
 # Little Oaks Education OS v1.1.0 Director Suite
-app.include_router(
-    director_profile_router,
-    prefix="/director/profile",
-    tags=["Director Profile"]
-)
+# v1.1.0 Director Editing Suite
