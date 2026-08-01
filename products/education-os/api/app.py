@@ -2133,8 +2133,12 @@ from api.modules.live_operations import (
     classrooms_router,
 )
 
+
+from api.modules.live_operations.student_parents import router as student_parents_router
+
 app.include_router(students_router)
 app.include_router(parents_router)
 app.include_router(classrooms_router)
+app.include_router(student_parents_router)
 
 app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
