@@ -2126,3 +2126,6 @@ app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web"
 
 # Little Oaks Education OS v1.1.0 Director Suite
 # v1.1.0 Director Editing Suite
+
+from api.modules.live_operations import students_router
+app.include_router(students_router)
