@@ -2156,3 +2156,7 @@ app.include_router(dashboard_router)
 app.include_router(student_parents_router)
 
 app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
+
+app.include_router(auth_router)
+
+app.include_router(finance_dashboard_router)
