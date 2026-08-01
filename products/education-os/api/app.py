@@ -1,3 +1,4 @@
+from api.modules.live_operations.go_live_api import router as golive_router
 from api.modules.live_operations.release_api import router as release_router
 from api.modules.live_operations.production_readiness_api import router as readiness_router
 from api.modules.live_operations.disaster_recovery_api import router as recovery_router
@@ -67,6 +68,7 @@ app.include_router(observability_router)
 app.include_router(recovery_router)
 app.include_router(readiness_router)
 app.include_router(release_router)
+app.include_router(golive_router)
 
 
 
