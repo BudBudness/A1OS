@@ -1,3 +1,5 @@
+from api.modules.live_operations.feature_api import router as feature_router
+from api.modules.live_operations.health_api import router as health_system_router
 from api.modules.live_operations.integration_api import router as integration_router
 from api.modules.live_operations.backup_api import router as backup_router
 from api.modules.live_operations.monitoring_api import router as monitoring_router
@@ -2182,6 +2184,8 @@ app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web"
 app.include_router(auth_router)
 
 app.include_router(finance_dashboard_router)
+app.include_router(feature_router)
+app.include_router(health_system_router)
 app.include_router(integration_router)
 app.include_router(backup_router)
 app.include_router(monitoring_router)
