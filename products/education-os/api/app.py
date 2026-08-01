@@ -1,3 +1,10 @@
+from api.modules.live_operations.rbac import router as rbac_router
+from api.modules.live_operations.role_dashboard import router as role_dashboard_router
+from api.modules.live_operations.staff_api import router as staff_router
+from api.modules.live_operations.inventory_api import router as inventory_router
+from api.modules.live_operations.notifications_api import router as notifications_router
+from api.modules.live_operations.parent_portal import router as parent_portal_router
+from api.modules.live_operations.production_api import router as production_router
 from api.modules.live_operations.finance_dashboard import router as finance_dashboard_router
 from api.modules.live_operations.finance_operations import router as finance_operations_router
 from api.modules.live_operations.finance_workflows import router as finance_workflows_router
@@ -2162,11 +2169,21 @@ app.include_router(student_parents_router)
 app.include_router(finance_operations_router)
 app.include_router(finance_workflows_router)
 
+app.include_router(role_dashboard_router)
+app.include_router(rbac_router)
+from api.security_layer import router as security_router
+app.include_router(security_router)
+
 app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
 
 app.include_router(auth_router)
 
 app.include_router(finance_dashboard_router)
+app.include_router(staff_router)
+app.include_router(inventory_router)
+app.include_router(notifications_router)
+app.include_router(parent_portal_router)
+app.include_router(production_router)
 
 
 
