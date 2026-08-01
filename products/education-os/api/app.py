@@ -2166,4 +2166,6 @@ app.include_router(finance_dashboard_router)
 
 
 # Little Oaks v1.4 Finance Operations Router
+
+from api.modules.live_operations.finance_operations import router as finance_operations_router
 app.include_router(finance_operations_router)
