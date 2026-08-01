@@ -1,3 +1,5 @@
+from api.modules.live_operations.finance_dashboard import router as finance_dashboard_router
+from api.modules.live_operations.auth import router as auth_router
 import uuid
 import secrets
 from pathlib import Path
