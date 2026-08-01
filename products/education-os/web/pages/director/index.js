@@ -1,5 +1,5 @@
 import { api } from "../../js/education-api.js";
-import { user, can } from "../../js/auth.js";
+import { user, can } from "../../js/auth.js?v=1785434576";
 
 export async function renderDirectorSuite() {
     const current = user();

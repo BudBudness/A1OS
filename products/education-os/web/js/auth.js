@@ -51,31 +51,10 @@ export async function login(email, password) {
 }
 
 export async function verifySession() {
-    const token = getToken();
-
-    if (!token) return null;
-
-    const response = await fetch("/api/auth/me", {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-
-    if (!response.ok) {
-        clearAuth();
-        return null;
-    }
-
-    const data = await response.json();
-
-    const current = getAuth();
-    setAuth({
-        ...current,
-        user: data.user
-    });
-
-    return data;
+    const auth = getAuth();
+    return auth && auth.token ? auth : null;
 }
+
 
 export function logout() {
     clearAuth();
@@ -96,7 +75,12 @@ export function can(permission) {
     const permissions = {
         "head_mistress": [
             "academic",
+            "headmistress",
+            "curriculum.manage",
+            "lesson.review",
             "operations",
+            "staff.manage",
+            "staff.view",
             "students",
             "admissions",
             "attendance",

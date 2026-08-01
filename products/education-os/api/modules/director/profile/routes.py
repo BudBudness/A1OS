@@ -1,10 +1,13 @@
-
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/director/profile", tags=["Director Profile"])
+router = APIRouter(
+    prefix="/director/profile",
+    tags=["Director Profile"]
+)
 
+@router.get("/")
 @router.get("")
-def director_profile():
+def get_profile():
     return {
         "status": "ok",
         "module": "Director School Profile Editor",
@@ -20,9 +23,11 @@ def director_profile():
         ]
     }
 
+@router.post("/")
 @router.post("")
-def update_director_profile(payload: dict):
+def save_profile(payload: dict):
     return {
         "status": "saved",
+        "editable": True,
         "profile": payload
     }

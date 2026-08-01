@@ -1,4 +1,4 @@
-import { getToken, clearAuth } from "./auth.js";
+import { getToken, clearAuth } from "./auth.js?v=1785434576";
 
 const API_BASE = "/api";
 
@@ -42,6 +42,43 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  students: {
+    create: async (payload) => request("/students", {
+      method:"POST",
+      body: JSON.stringify(payload)
+    })
+  },
+  admissions: {
+    create: async (payload) => request("/admissions", {
+      method:"POST",
+      body: JSON.stringify(payload)
+    })
+  },
+  fees: {
+    create: async (payload) => request("/fees", {
+      method:"POST",
+      body: JSON.stringify(payload)
+    })
+  },
+  payments: {
+    create: async (payload) => request("/payments", {
+      method:"POST",
+      body: JSON.stringify(payload)
+    })
+  },
+  attendance: {
+    createSession: async (payload) => request("/attendance/sessions", {
+      method:"POST",
+      body: JSON.stringify(payload)
+    })
+  },
+  operations: {
+    create: async (payload) => request("/operations", {
+      method:"POST",
+      body: JSON.stringify(payload)
+    })
+  },
+
     health: () => request("/health"),
 
     organization: {

@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<pre id="o">START</pre>
+<script type="module">
+const o=document.querySelector("#o");
+
+window.onerror=(m,s,l,c,e)=>{
+ o.textContent += "\nERROR\n"+(e?.stack||m);
+};
+
+window.onunhandledrejection=e=>{
+ o.textContent += "\nREJECTION\n"+(e.reason?.stack||e.reason);
+};
+
+try {
+ await import("./js/app.js?v="+Date.now());
+ o.textContent += "\nAPP IMPORT OK";
+} catch(e) {
+ o.textContent += "\nIMPORT FAIL\n"+e.stack;
+}
+
+setTimeout(()=>{
+ o.textContent += "\n\nDOM APP:\n"+!!document.querySelector("#app");
+ o.textContent += "\nLOGIN:\n"+!!document.querySelector("#login-form");
+ o.textContent += "\nPAGE:\n"+!!document.querySelector("#page-content");
+},3000);
+</script>
