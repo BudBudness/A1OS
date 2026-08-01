@@ -44,6 +44,8 @@ title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
     version="0.1.0",
 )
 
+
+
 app.include_router(director_profile_router)
 app.add_middleware(StripAPIPrefixMiddleware)
 
@@ -2156,6 +2158,8 @@ app.include_router(school_operations_router)
 app.include_router(dashboard_router)
 app.include_router(student_parents_router)
 
+app.include_router(finance_operations_router)
+
 app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
 
 app.include_router(auth_router)
@@ -2167,5 +2171,5 @@ app.include_router(finance_dashboard_router)
 
 # Little Oaks v1.4 Finance Operations Router
 
-from api.modules.live_operations.finance_operations import router as finance_operations_router
-app.include_router(finance_operations_router)
+
+# Little Oaks v1.4 finance operations final registration
