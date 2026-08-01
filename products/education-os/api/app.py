@@ -1,3 +1,4 @@
+from api.modules.live_operations.governance_security_api import router as governance_router
 from api.modules.live_operations.academic_intelligence_api import router as academic_router
 from api.modules.live_operations.parent_engagement_api import router as parent_engagement_router
 from api.modules.live_operations.ai_assistant_api import router as ai_router
@@ -79,6 +80,7 @@ app.include_router(operations_router)
 app.include_router(executive_router)
 app.include_router(intelligence_router)
 app.include_router(ai_router)
+app.include_router(governance_router)
 app.include_router(parent_engagement_router)
 app.include_router(academic_router)
 
