@@ -2141,7 +2141,10 @@ app.include_router(parents_router)
 from api.modules.live_operations.attendance import router as attendance_router
 
 app.include_router(classrooms_router)
+from api.modules.live_operations.attendance_sessions import router as attendance_sessions_router
+
 app.include_router(attendance_router)
+app.include_router(attendance_sessions_router)
 app.include_router(student_parents_router)
 
 app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
