@@ -31,5 +31,6 @@ def summary():
         "students": students,
         "total_invoiced": invoiced,
         "total_paid": paid,
-        "outstanding": invoiced - paid
+        "outstanding": invoiced - paid,
+        "invoice_count": cur.execute("SELECT COUNT(*) FROM finance_invoices").fetchone()[0]
     }
