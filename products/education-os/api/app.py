@@ -1,3 +1,6 @@
+from api.modules.live_operations.integration_api import router as integration_router
+from api.modules.live_operations.backup_api import router as backup_router
+from api.modules.live_operations.monitoring_api import router as monitoring_router
 from api.modules.live_operations.rbac import router as rbac_router
 from api.modules.live_operations.role_dashboard import router as role_dashboard_router
 from api.modules.live_operations.staff_api import router as staff_router
@@ -2179,6 +2182,9 @@ app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web"
 app.include_router(auth_router)
 
 app.include_router(finance_dashboard_router)
+app.include_router(integration_router)
+app.include_router(backup_router)
+app.include_router(monitoring_router)
 app.include_router(staff_router)
 app.include_router(inventory_router)
 app.include_router(notifications_router)
