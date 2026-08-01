@@ -59,3 +59,14 @@ def reports():
     }
     conn.close()
     return data
+
+
+@router.get("/audit")
+def audit():
+    conn=db()
+    cur=conn.cursor()
+    rows=cur.execute(
+        "SELECT * FROM finance_audit_log ORDER BY id DESC"
+    ).fetchall()
+    conn.close()
+    return {"audit": rows}
