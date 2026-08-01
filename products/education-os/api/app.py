@@ -57,6 +57,10 @@ title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
     version="0.1.0",
 )
 
+app.include_router(health_system_router)
+app.include_router(feature_router)
+
+
 
 
 app.include_router(director_profile_router)
@@ -2184,8 +2188,6 @@ app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web"
 app.include_router(auth_router)
 
 app.include_router(finance_dashboard_router)
-app.include_router(feature_router)
-app.include_router(health_system_router)
 app.include_router(integration_router)
 app.include_router(backup_router)
 app.include_router(monitoring_router)
