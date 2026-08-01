@@ -8,7 +8,7 @@ DB = "deployments/little-oaks/data/education.db"
 def db():
     return sqlite3.connect(DB)
 
-@router.get("/summary")
+@router.get("/summary", include_in_schema=True)
 def summary():
     conn = db()
     cur = conn.cursor()
