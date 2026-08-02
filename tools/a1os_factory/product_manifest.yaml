@@ -1,0 +1,16 @@
+product: example-os
+version: "1.0"
+
+layers:
+  - core
+  - intelligence
+  - api
+  - web
+  - deployments
+  - docs
+
+modules:
+  - identity
+  - governance
+  - analytics
+  - automation
