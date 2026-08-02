@@ -1,0 +1,18 @@
+version: "4.5"
+
+plane:
+  name: observability_reliability
+  status: frozen
+
+capabilities:
+  - telemetry
+  - metrics
+  - logs
+  - traces
+  - alerts
+  - incidents
+  - reliability
+  - self_healing
+
+outputs:
+  - OBSERVABILITY_RELIABILITY_MANIFEST.json
