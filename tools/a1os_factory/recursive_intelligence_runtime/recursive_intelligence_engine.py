@@ -76,10 +76,10 @@ manifest = {
 
     "execution_hooks": {
         "scan_factory_knowledge": True,
-        generate_intelligence_reports": True,
-        recommend_actions": True,
-        predict_future_states": True,
-        improve_factory_behavior": True
+        "generate_intelligence_reports": True,
+        "recommend_actions": True,
+        "predict_future_states": True,
+        "improve_factory_behavior": True
     },
 
     "next_stage": [
