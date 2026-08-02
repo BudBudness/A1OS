@@ -1,0 +1,41 @@
+factory:
+  version: "3.2"
+  name: "A1OS Security & Compliance Automation Plane"
+
+pipeline:
+  - security_baseline_generation
+  - zero_trust_generation
+  - rbac_policy_generation
+  - compliance_mapping
+  - audit_generation
+  - vulnerability_checks
+  - data_protection_validation
+
+capabilities:
+
+  security:
+    - zero_trust
+    - hardening_baseline
+    - vulnerability_scanning
+    - security_policies
+
+  identity:
+    - rbac
+    - roles
+    - permissions
+    - access_reviews
+
+  compliance:
+    - audit_controls
+    - policy_mapping
+    - compliance_reports
+
+  data_protection:
+    - encryption_templates
+    - retention_policies
+    - privacy_controls
+
+  monitoring:
+    - security_events
+    - audit_logs
+    - anomaly_detection
