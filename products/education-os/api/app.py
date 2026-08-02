@@ -35,6 +35,7 @@ import sqlite3
 from typing import Optional
 
 from fastapi import FastAPI, Request
+from api.a1os_core.a1os_router import router as a1os_core_router
 from api.modules.director.profile.routes import router as director_profile_router
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -86,6 +87,7 @@ app.include_router(governance_router)
 app.include_router(reporting_router)
 app.include_router(parent_engagement_router)
 app.include_router(academic_router)
+app.include_router(a1os_core_router)
 
 
 
