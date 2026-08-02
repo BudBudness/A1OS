@@ -1,3 +1,4 @@
+from api.a1os_core.intelligence.engine import system_insights
 from api.modules.live_operations.reporting_intelligence_api import router as reporting_router
 from api.modules.live_operations.governance_security_api import router as governance_router
 from api.modules.live_operations.academic_intelligence_api import router as academic_router
@@ -2230,3 +2231,18 @@ app.include_router(production_router)
 
 
 # Little Oaks v1.4 finance operations final registration
+
+
+@app.get("/v1/a1os/core/status")
+def a1os_core_status():
+    return {
+        "platform":"A1OS Core",
+        "version":"1.0",
+        "source":"Little Oaks v4.8",
+        "status":"operational"
+    }
+
+
+@app.get("/v1/a1os/intelligence/status")
+def a1os_intelligence_status():
+    return system_insights()
