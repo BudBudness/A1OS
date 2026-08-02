@@ -74,7 +74,7 @@ manifest = {
         "audit_visibility": True,
         "decision_history": True,
         "approval_controls": True,
-        compliance_alignment": True
+        "compliance_alignment": True
     },
 
     "execution_hooks": {
