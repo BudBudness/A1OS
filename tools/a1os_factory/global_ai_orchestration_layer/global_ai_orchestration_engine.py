@@ -78,10 +78,10 @@ manifest = {
 
     "execution_hooks": {
         "observe_factory_state": True,
-        coordinate_agents": True,
-        optimize_execution": True,
-        generate_orchestration_reports": True,
-        recommend_actions": True
+        "coordinate_agents": True,
+        "optimize_execution": True,
+        "generate_orchestration_reports": True,
+        "recommend_actions": True
     },
 
     "next_stage": [
