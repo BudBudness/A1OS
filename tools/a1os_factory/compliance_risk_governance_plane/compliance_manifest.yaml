@@ -1,0 +1,26 @@
+version: "4.7"
+
+plane:
+  name: compliance_risk_governance
+  status: frozen
+
+capabilities:
+  compliance:
+    - regulatory_mapping
+    - framework_alignment
+    - evidence_management
+
+  risk:
+    - risk_scoring
+    - risk_assessments
+    - mitigation_tracking
+
+  governance:
+    - policy_management
+    - control_management
+    - audit_management
+
+  intelligence:
+    - compliance_analytics
+    - governance_reporting
+    - assurance_dashboards
