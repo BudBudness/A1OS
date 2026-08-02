@@ -1,0 +1,26 @@
+version: "6.2"
+
+plane:
+  name: customer_deployment_automation
+  status: frozen
+
+capabilities:
+
+  provisioning:
+    - tenant_creation
+    - environment_generation
+    - deployment_automation
+
+  initialization:
+    - database_bootstrap
+    - identity_setup
+    - configuration_management
+
+  operations:
+    - monitoring_activation
+    - onboarding
+    - deployment_audit
+
+  intelligence:
+    - deployment_analytics
+    - lifecycle_tracking
