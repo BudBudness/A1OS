@@ -1,16 +1,27 @@
-# A1OS Product DNA Engine v1.2
+# A1OS Multi-Domain Product DNA Engine v1.4
 
-Profiles:
+Supported OS families:
 
-education
-media
-finance
-business
+- Education OS
+- NGO OS
+- Legal OS
+- Media OS
+- Finance OS
+- Business OS
 
-Usage:
+Each profile injects:
 
-python3 dna_engine.py product-name profile
+- Core architecture
+- Intelligence modules
+- API capabilities
+- Web interfaces
+- Deployment structure
+- Documentation
 
 Example:
 
-python3 dna_engine.py school-os education
+python3 dna_engine.py charity-os ngo
+
+python3 dna_engine.py legal-platform legal
+
+python3 dna_engine.py creator-os media
