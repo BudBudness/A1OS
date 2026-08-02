@@ -1,0 +1,71 @@
+{
+  "runtime": "singularity_control_layer",
+  "version": "11.5",
+  "generated": "2026-08-02T15:08:08.940799+00:00",
+  "product": "little-oaks",
+  "status": "singularity_control_initialized",
+  "capabilities": [
+    "factory_state_awareness",
+    "runtime_synchronization",
+    "intelligence_arbitration",
+    "global_decision_authority",
+    "autonomous_control_policies",
+    "cross_runtime_optimization",
+    "system_equilibrium_monitoring",
+    "strategic_execution_planning",
+    "human_override_framework",
+    "singularity_state_reporting"
+  ],
+  "control_domains": [
+    "ai",
+    "agents",
+    "products",
+    "infrastructure",
+    "business",
+    "security",
+    "governance",
+    "operations"
+  ],
+  "state_intelligence": {
+    "global_state_observation": true,
+    "runtime_health_tracking": true,
+    "dependency_awareness": true,
+    "system_memory": true
+  },
+  "decision_engine": {
+    "priority_resolution": true,
+    "strategic_decisions": true,
+    "optimization_selection": true,
+    "risk_balancing": true
+  },
+  "control_framework": {
+    "autonomous_actions": true,
+    "policy_enforcement": true,
+    "safety_boundaries": true,
+    "human_intervention": true
+  },
+  "optimization_system": {
+    "resource_balance": true,
+    "performance_balance": true,
+    "cost_balance": true,
+    "growth_balance": true
+  },
+  "governance": {
+    "audit_visibility": true,
+    "decision_history": true,
+    "approval_controls": true,
+    "compliance_alignment": true
+  },
+  "execution_hooks": {
+    "observe_factory": true,
+    "coordinate_all_runtimes": true,
+    "evaluate_system_state": true,
+    "generate_control_reports": true,
+    "recommend_actions": true
+  },
+  "next_stage": [
+    "autonomous_economic_engine",
+    "factory_evolution_runtime",
+    "global_product_network_runtime"
+  ]
+}
