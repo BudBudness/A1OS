@@ -9,74 +9,65 @@ root = Path("factory_runs") / product / "global_product_network"
 root.mkdir(parents=True, exist_ok=True)
 
 capabilities = [
-    "global_product_registry",
-    "product_federation",
-    "cross_region_visibility",
-    "marketplace_synchronization",
-    "product_intelligence_exchange",
-    "shared_capability_discovery",
-    "network_topology_analysis",
-    "global_operations_analytics",
-    "product_relationship_mapping",
-    "expansion_intelligence"
-]
-
-network_domains = [
-    "products",
-    "regions",
-    "customers",
-    "tenants",
-    "marketplaces",
-    "agents",
-    "infrastructure",
-    "business_units"
+    "product_network_federation",
+    "cross_product_intelligence",
+    "shared_capability_exchange",
+    "product_dependency_mapping",
+    "ecosystem_analytics",
+    "network_growth_analysis",
+    "collective_learning",
+    "resource_sharing",
+    "product_relationship_management",
+    "global_product_reporting"
 ]
 
 manifest = {
     "runtime": "global_product_network_runtime",
-    "version": "10.7",
+    "version": "11.8",
     "generated": datetime.now(timezone.utc).isoformat(),
     "product": product,
     "status": "global_product_network_initialized",
-    "architecture": "federated_product_network_layer",
-    "capabilities": capabilities,
-    "network_domains": network_domains,
 
-    "federation_model": {
-        "product_registration": True,
-        "cross_product_visibility": True,
-        "shared_intelligence": True,
-        "network_coordination": True,
-        "regional_operations": True
+    "capabilities": capabilities,
+
+    "network_intelligence": {
+        "product_discovery": True,
+        "relationship_mapping": True,
+        "dependency_analysis": True,
+        "ecosystem_visibility": True
     },
 
-    "intelligence_functions": {
-        "map_product_relationships": True,
-        "identify_network_patterns": True,
-        "analyze_growth_paths": True,
-        "detect_expansion_opportunities": True,
-        "generate_network_reports": True
+    "knowledge_exchange": {
+        "shared_learning": True,
+        "capability_exchange": True,
+        "pattern_transfer": True,
+        "collective_optimization": True
+    },
+
+    "product_operations": {
+        "fleet_monitoring": True,
+        "cross_product_metrics": True,
+        "growth_tracking": True,
+        "portfolio_analysis": True
     },
 
     "governance": {
-        "network_policies": True,
-        "product_access_control": True,
+        "network_policy_management": True,
+        "access_controls": True,
         "audit_tracking": True,
-        "federation_security": True
+        "change_visibility": True
     },
 
     "execution_hooks": {
-        "register_products": True,
-        "monitor_network_state": True,
-        "analyze_connections": True,
-        "optimize_network": True,
-        "report_global_health": True
+        "analyze_product_network": True,
+        "generate_ecosystem_reports": True,
+        "optimize_product_relationships": True,
+        "track_network_evolution": True
     },
 
     "next_stage": [
-        "factory_recursive_intelligence",
-        "autonomous_marketplace_network",
-        "global_ai_governance_runtime"
+        "autonomous_governance_layer",
+        "a1os_v12_ecosystem_runtime"
     ]
 }
 
@@ -85,7 +76,7 @@ manifest = {
 )
 
 print("=" * 70)
-print("A1OS FACTORY GLOBAL PRODUCT NETWORK RUNTIME v10.7")
+print("A1OS FACTORY GLOBAL PRODUCT NETWORK RUNTIME v11.8")
 print("=" * 70)
 print(f"Product: {product}")
 
