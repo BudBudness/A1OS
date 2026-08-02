@@ -1,0 +1,44 @@
+factory:
+  version: "1.3"
+  name: "A1OS Autonomous Product Composer"
+
+pipeline:
+  - select_profile
+  - generate_structure
+  - inject_core
+  - inject_intelligence
+  - inject_modules
+  - create_manifest
+
+profiles:
+  education:
+    base: education-os
+    intelligence:
+      - academic
+      - finance
+      - parent
+      - governance
+
+  media:
+    base: media-os
+    intelligence:
+      - content
+      - audience
+      - analytics
+      - automation
+
+  finance:
+    base: finance-os
+    intelligence:
+      - transactions
+      - compliance
+      - reporting
+      - risk
+
+  business:
+    base: business-os
+    intelligence:
+      - crm
+      - operations
+      - analytics
+      - automation
