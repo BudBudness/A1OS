@@ -1,0 +1,27 @@
+version: "4.9"
+
+plane:
+  name: finops_resource_optimization
+  status: frozen
+
+capabilities:
+
+  cost_intelligence:
+    - spend_tracking
+    - cost_analysis
+    - anomaly_detection
+
+  optimization:
+    - resource_optimization
+    - capacity_planning
+    - efficiency_scoring
+
+  governance:
+    - budget_controls
+    - financial_policies
+    - roi_reporting
+
+  intelligence:
+    - forecasting
+    - recommendations
+    - unit_economics
