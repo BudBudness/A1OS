@@ -1,0 +1,26 @@
+version: "6.3"
+
+plane:
+  name: customer_success_lifecycle_intelligence
+  status: frozen
+
+capabilities:
+
+  intelligence:
+    - customer_health_scoring
+    - adoption_tracking
+    - lifecycle_analytics
+
+  engagement:
+    - support_intelligence
+    - success_playbooks
+    - feedback_loops
+
+  revenue:
+    - renewal_prediction
+    - expansion_detection
+    - customer_growth
+
+  governance:
+    - customer_reporting
+    - lifecycle_audit
