@@ -1,0 +1,40 @@
+factory:
+  version: "3.1"
+  name: "A1OS Infrastructure Automation Engine"
+
+pipeline:
+  - infrastructure_detection
+  - terraform_generation
+  - ansible_generation
+  - kubernetes_generation
+  - environment_generation
+  - secret_management
+  - infrastructure_validation
+
+capabilities:
+  terraform:
+    - providers
+    - networking
+    - compute
+    - storage
+
+  ansible:
+    - server_bootstrap
+    - package_management
+    - service_configuration
+
+  kubernetes:
+    - namespaces
+    - deployments
+    - services
+    - ingress
+
+  environments:
+    - development
+    - staging
+    - production
+
+  security:
+    - secrets_templates
+    - access_control
+    - hardening_baseline
