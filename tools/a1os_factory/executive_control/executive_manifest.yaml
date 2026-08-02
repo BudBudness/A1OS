@@ -1,0 +1,35 @@
+factory:
+  version: "2.3"
+  name: "A1OS Autonomous Executive Control Plane"
+
+executive:
+
+  portfolio:
+    - inventory
+    - lifecycle
+    - versions
+
+  strategy:
+    - roadmap
+    - recommendations
+    - priorities
+
+  intelligence:
+    - product_health
+    - risk_analysis
+    - anomaly_detection
+
+  governance:
+    - compliance
+    - audit
+    - security
+
+  operations:
+    - deployment_status
+    - monitoring
+    - recovery
+
+  reporting:
+    - executive_dashboard
+    - portfolio_report
+    - kpi_summary
