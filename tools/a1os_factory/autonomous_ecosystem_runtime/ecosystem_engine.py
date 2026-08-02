@@ -63,10 +63,10 @@ manifest = {
     },
     "execution_hooks": {
         "monitor_ecosystem_state": True,
-        analyze_relationships": True,
-        optimize_connections": True,
-        generate_ecosystem_reports": True,
-        recommend_expansion": True
+        "analyze_relationships": True,
+        "optimize_connections": True,
+        "generate_ecosystem_reports": True,
+        "recommend_expansion": True
     },
     "next_stage": [
         "global_product_network_runtime",
