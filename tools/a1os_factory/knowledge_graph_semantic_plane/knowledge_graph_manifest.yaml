@@ -1,0 +1,26 @@
+version: "5.6"
+
+plane:
+  name: knowledge_graph_semantic_intelligence
+  status: frozen
+
+capabilities:
+
+  knowledge:
+    - entity_graph
+    - relationship_mapping
+    - ontology_management
+
+  intelligence:
+    - semantic_search
+    - context_reasoning
+    - retrieval_intelligence
+
+  ai:
+    - agent_knowledge_substrate
+    - decision_reasoning
+    - knowledge_federation
+
+  governance:
+    - knowledge_control
+    - lineage_tracking
