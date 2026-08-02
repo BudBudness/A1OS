@@ -1,0 +1,77 @@
+{
+  "factory_version": "2.2",
+  "generated": "2026-08-02T06:48:42.195991",
+  "command_center": "active",
+  "products_monitored": 8,
+  "products": [
+    {
+      "product": "education-os",
+      "intelligence_layer": true,
+      "operations_layer": false,
+      "agents": "available",
+      "workflows": "available",
+      "status": "monitored"
+    },
+    {
+      "product": "business-os",
+      "intelligence_layer": true,
+      "operations_layer": false,
+      "agents": "available",
+      "workflows": "available",
+      "status": "monitored"
+    },
+    {
+      "product": "charity-os",
+      "intelligence_layer": false,
+      "operations_layer": false,
+      "agents": "not_detected",
+      "workflows": "not_detected",
+      "status": "monitored"
+    },
+    {
+      "product": "music-label-os",
+      "intelligence_layer": false,
+      "operations_layer": false,
+      "agents": "not_detected",
+      "workflows": "not_detected",
+      "status": "monitored"
+    },
+    {
+      "product": "media-os",
+      "intelligence_layer": true,
+      "operations_layer": false,
+      "agents": "available",
+      "workflows": "available",
+      "status": "monitored"
+    },
+    {
+      "product": "finance-os",
+      "intelligence_layer": true,
+      "operations_layer": false,
+      "agents": "available",
+      "workflows": "available",
+      "status": "monitored"
+    },
+    {
+      "product": "templates",
+      "intelligence_layer": false,
+      "operations_layer": false,
+      "agents": "not_detected",
+      "workflows": "not_detected",
+      "status": "monitored"
+    },
+    {
+      "product": "legal-os",
+      "intelligence_layer": true,
+      "operations_layer": true,
+      "agents": "available",
+      "workflows": "available",
+      "status": "monitored"
+    }
+  ],
+  "insights": {
+    "recommendations": "enabled",
+    "anomaly_detection": "enabled",
+    "cross_product_analysis": "enabled"
+  }
+}
