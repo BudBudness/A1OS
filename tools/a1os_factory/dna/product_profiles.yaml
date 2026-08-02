@@ -1,0 +1,65 @@
+profiles:
+
+  education:
+    layers:
+      - core
+      - intelligence
+      - api
+      - web
+      - deployments
+      - docs
+    modules:
+      - identity
+      - governance
+      - analytics
+      - automation
+      - academic_intelligence
+      - parent_engagement
+
+  media:
+    layers:
+      - core
+      - intelligence
+      - api
+      - web
+      - deployments
+      - docs
+    modules:
+      - identity
+      - governance
+      - analytics
+      - automation
+      - content_engine
+      - audience_intelligence
+
+  finance:
+    layers:
+      - core
+      - intelligence
+      - api
+      - web
+      - deployments
+      - docs
+    modules:
+      - identity
+      - governance
+      - analytics
+      - automation
+      - payments
+      - financial_intelligence
+
+  business:
+    layers:
+      - core
+      - intelligence
+      - api
+      - web
+      - deployments
+      - docs
+    modules:
+      - identity
+      - governance
+      - analytics
+      - automation
+      - workflow_engine
+      - business_intelligence
