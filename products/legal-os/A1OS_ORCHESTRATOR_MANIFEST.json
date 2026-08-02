@@ -1,0 +1,15 @@
+{
+  "product": "legal-os",
+  "profile": "legal",
+  "factory_version": "2.0",
+  "created": "2026-08-02T06:36:36.655655",
+  "pipeline": {
+    "dna": "complete",
+    "runtime": "generated",
+    "intelligence": "injected",
+    "operations": "generated",
+    "validation": "ready",
+    "evolution": "enabled"
+  },
+  "status": "orchestrated"
+}
