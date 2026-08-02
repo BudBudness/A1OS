@@ -1,0 +1,22 @@
+version: "5.4"
+
+plane:
+  name: service_mesh_platform_engineering
+  status: frozen
+
+capabilities:
+
+  platform:
+    - service_registry
+    - service_discovery
+    - platform_apis
+
+  runtime:
+    - orchestration
+    - deployment_coordination
+    - environment_promotion
+
+  engineering:
+    - developer_portal
+    - golden_paths
+    - engineering_intelligence
