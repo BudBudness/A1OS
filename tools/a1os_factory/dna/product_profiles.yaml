@@ -1,65 +1,65 @@
+factory:
+  version: "1.4"
+  name: "A1OS Multi-Domain Product DNA Engine"
+
 profiles:
 
   education:
-    layers:
-      - core
-      - intelligence
-      - api
-      - web
-      - deployments
-      - docs
-    modules:
-      - identity
-      - governance
-      - analytics
-      - automation
-      - academic_intelligence
+    base: education-os
+    intelligence:
+      - academic
+      - finance
       - parent_engagement
+      - governance
+      - reporting
+      - analytics
+
+  ngo:
+    base: ngo-os
+    intelligence:
+      - beneficiary_management
+      - donor_intelligence
+      - project_tracking
+      - impact_reporting
+      - compliance
+      - field_operations
+
+  legal:
+    base: legal-os
+    intelligence:
+      - case_management
+      - document_intelligence
+      - compliance
+      - contract_intelligence
+      - legal_research
+      - client_portal
 
   media:
-    layers:
-      - core
-      - intelligence
-      - api
-      - web
-      - deployments
-      - docs
-    modules:
-      - identity
-      - governance
-      - analytics
-      - automation
-      - content_engine
-      - audience_intelligence
+    base: media-os
+    intelligence:
+      - content_management
+      - creator_intelligence
+      - audience_analytics
+      - distribution
+      - revenue_tracking
+      - media_command_center
 
   finance:
-    layers:
-      - core
-      - intelligence
-      - api
-      - web
-      - deployments
-      - docs
-    modules:
-      - identity
-      - governance
-      - analytics
-      - automation
-      - payments
-      - financial_intelligence
+    base: finance-os
+    intelligence:
+      - transactions
+      - accounting
+      - compliance
+      - risk_analysis
+      - reporting
+      - financial_assistant
 
   business:
-    layers:
-      - core
-      - intelligence
-      - api
-      - web
-      - deployments
-      - docs
-    modules:
-      - identity
-      - governance
-      - analytics
+    base: business-os
+    intelligence:
+      - crm
+      - operations
+      - inventory
       - automation
-      - workflow_engine
-      - business_intelligence
+      - analytics
+      - executive_dashboard
