@@ -1,0 +1,62 @@
+{
+  "factory_version": "2.3",
+  "generated": "2026-08-02T06:48:42.316455",
+  "executive_control_plane": "active",
+  "portfolio_size": 8,
+  "products": [
+    {
+      "product": "education-os",
+      "health_score": 50,
+      "status": "building",
+      "layers": 14
+    },
+    {
+      "product": "business-os",
+      "health_score": 50,
+      "status": "building",
+      "layers": 6
+    },
+    {
+      "product": "charity-os",
+      "health_score": 10,
+      "status": "building",
+      "layers": 1
+    },
+    {
+      "product": "music-label-os",
+      "health_score": 0,
+      "status": "building",
+      "layers": 0
+    },
+    {
+      "product": "media-os",
+      "health_score": 50,
+      "status": "building",
+      "layers": 6
+    },
+    {
+      "product": "finance-os",
+      "health_score": 50,
+      "status": "building",
+      "layers": 6
+    },
+    {
+      "product": "templates",
+      "health_score": 0,
+      "status": "building",
+      "layers": 1
+    },
+    {
+      "product": "legal-os",
+      "health_score": 80,
+      "status": "healthy",
+      "layers": 12
+    }
+  ],
+  "executive_summary": {
+    "portfolio_health": "healthy",
+    "recommendations": "enabled",
+    "risk_monitoring": "enabled",
+    "kpi_engine": "enabled"
+  }
+}

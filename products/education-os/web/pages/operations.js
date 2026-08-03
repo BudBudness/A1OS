@@ -1,7 +1,31 @@
+
 import { api } from "../js/education-api.js";
+
 import { error } from "../js/components/ui.js";
 
 export async function renderOperations() {
+
+    queueMicrotask(() => {
+        const workflowRoot=document.querySelector("#workflow-root");
+        if (typeof loadWorkflow==="function" && workflowRoot) {
+            loadWorkflow(workflowRoot);
+        }
+
+        const ids={
+            renderStudents:"#register-student",
+            renderAdmissions:"#new-admission",
+            renderFees:"#record-payment",
+            renderOperations:"#new-operation"
+        };
+
+        const id=ids[renderOperations];
+
+        if(id){
+            document.querySelector(id)?.addEventListener("click",()=>{}, {once:true});
+        }
+    });
+
+
   try {
     const [operations, staff] = await Promise.all([
       api.operations.list(),
@@ -40,9 +64,9 @@ export async function renderOperations() {
                           <strong>${o.title}</strong>
                           <small>${o.description || ""}</small>
                         </td>
-                        <td>${o.operation_type || "—"}</td>
+                        <td>${o.operation_type || "-"}</td>
                         <td>${o.assigned_to_name || "Unassigned"}</td>
-                        <td>${o.due_date || "—"}</td>
+                        <td>${o.due_date || "-"}</td>
                         <td><span class="status status-${o.status}">${o.status}</span></td>
                         <td>
                           <select class="operation-status" data-id="${o.id}">

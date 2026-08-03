@@ -1,0 +1,479 @@
+==================== A1OS FACTORY AUDIT v1.0 ====================
+
+===== GIT =====
+feature/little-oaks-v1.2-live-operations
+4e87fd0 A1OS Factory Fleet Operations Runtime v12.2
+194c62b A1OS Factory Production Hardening Runtime v12.1
+c163c06 A1OS Factory Autonomous Ecosystem Runtime v12.0
+d4fbb23 A1OS Factory Autonomous Governance Layer v11.9
+a2dd29b A1OS Factory Global Product Network Runtime v11.8
+422640d A1OS Factory Evolution Runtime v11.7
+bff3f0e A1OS Factory Autonomous Economic Engine v11.6
+f549a98 Repair Singularity Control Layer v11.5 governance key
+36c3aeb A1OS Factory Singularity Control Layer v11.5
+27e9ce7 Repair Global AI Orchestration Layer v11.4 syntax keys
+40550de A1OS Factory Global AI Orchestration Layer v11.4
+cf7448a A1OS Factory Autonomous Business Network Runtime v11.3
+d409630 A1OS Factory Global Product Ecosystem Runtime v11.2
+7aa5f85 A1OS Factory Autonomous Revenue Engine v11.1
+de08e25 A1OS Factory Global AI Governance Runtime v11.0
+9a8e1f7 A1OS Factory Autonomous Marketplace Network Runtime v10.9
+2779ff8 Repair Recursive Intelligence Runtime v10.8 execution hooks
+b1bb3be A1OS Factory Recursive Intelligence Runtime v10.8
+b7739ed A1OS Factory Global Product Network Runtime v10.7
+3c0aa1a A1OS Factory Autonomous Ecosystem Runtime v10.6
+04a3e79 A1OS Factory Recursive Optimization Runtime v10.5
+e928061 A1OS Factory Global Market Intelligence Runtime v10.4
+ffefdc4 A1OS Factory Autonomous Product Company Runtime v10.3
+10c0d24 A1OS Factory Self Management Runtime v10.2
+dd1ab54 A1OS Factory Global AI Operator Runtime v10.1
+56bbd13 A1OS Factory Autonomous Business Operations Runtime v10.0
+6bce620 A1OS Factory Network Intelligence Runtime v9.9
+27b94c3 A1OS Factory Global Control Plane Runtime v9.8
+a6ab1cf A1OS Factory Autonomous Product Scaling Runtime v9.7
+199057c A1OS Factory Marketplace Product Provisioning Runtime v9.6
+
+===== REPOSITORY STATS =====
+9446
+1698
+
+===== FACTORY RUNTIMES =====
+tools/a1os_factory
+tools/a1os_factory/a1os_ecosystem_runtime
+tools/a1os_factory/agent_execution_action_plane
+tools/a1os_factory/agent_orchestration_plane
+tools/a1os_factory/ai_agent_operating_layer
+tools/a1os_factory/ai_governance_plane
+tools/a1os_factory/api_integration_mesh_plane
+tools/a1os_factory/artifact_generation_engine
+tools/a1os_factory/autonomous_agent_operations_runtime
+tools/a1os_factory/autonomous_business_network_runtime
+tools/a1os_factory/autonomous_business_operations_runtime
+tools/a1os_factory/autonomous_control_plane
+tools/a1os_factory/autonomous_deployment_runtime
+tools/a1os_factory/autonomous_economic_engine
+tools/a1os_factory/autonomous_ecosystem_runtime
+tools/a1os_factory/autonomous_governance_layer
+tools/a1os_factory/autonomous_marketplace_network_runtime
+tools/a1os_factory/autonomous_product_company_runtime
+tools/a1os_factory/autonomous_product_scaling_runtime
+tools/a1os_factory/autonomous_revenue_engine
+tools/a1os_factory/autonomous_sre_runtime
+tools/a1os_factory/billing_revenue_plane
+tools/a1os_factory/build_execution_pipeline
+tools/a1os_factory/code_generation_pipeline
+tools/a1os_factory/communication_intelligence_plane
+tools/a1os_factory/compliance_risk_governance_plane
+tools/a1os_factory/composer
+tools/a1os_factory/continuous_validation_quality_runtime
+tools/a1os_factory/customer_deployment_automation_plane
+tools/a1os_factory/customer_success_intelligence_plane
+tools/a1os_factory/data_ai_decision_runtime
+tools/a1os_factory/data_intelligence_analytics_plane
+tools/a1os_factory/data_intelligence_plane
+tools/a1os_factory/deployment_orchestrator
+tools/a1os_factory/deployment_plane
+tools/a1os_factory/digital_operations_plane
+tools/a1os_factory/digital_twin_plane
+tools/a1os_factory/disaster_recovery_plane
+tools/a1os_factory/dna
+tools/a1os_factory/ecosystem_marketplace_generator_plane
+tools/a1os_factory/engine_adapter_layer
+tools/a1os_factory/enterprise_command_plane
+tools/a1os_factory/enterprise_intelligence_layer
+tools/a1os_factory/evolution
+tools/a1os_factory/executive_control
+tools/a1os_factory/factory_evolution_runtime
+tools/a1os_factory/factory_execution_runtime
+tools/a1os_factory/factory_fleet_operations_runtime
+tools/a1os_factory/factory_integration_bus
+tools/a1os_factory/factory_intelligence_command_center
+tools/a1os_factory/factory_production_hardening_runtime
+tools/a1os_factory/finops_resource_plane
+tools/a1os_factory/generated
+tools/a1os_factory/global_ai_governance_runtime
+tools/a1os_factory/global_ai_operator_runtime
+tools/a1os_factory/global_ai_orchestration_layer
+tools/a1os_factory/global_ai_orchestration_layer/__pycache__
+tools/a1os_factory/global_control_plane_runtime
+tools/a1os_factory/global_market_intelligence_runtime
+tools/a1os_factory/global_product_ecosystem_runtime
+tools/a1os_factory/global_product_network_runtime
+tools/a1os_factory/identity_access_plane
+tools/a1os_factory/infrastructure_engine
+tools/a1os_factory/intelligence_center
+tools/a1os_factory/intelligence_runtime
+tools/a1os_factory/knowledge_graph_semantic_plane
+tools/a1os_factory/knowledge_memory_plane
+tools/a1os_factory/marketplace_ecosystem_plane
+tools/a1os_factory/marketplace_product_provisioning_runtime
+tools/a1os_factory/multi_tenant_platform_runtime
+tools/a1os_factory/network_intelligence_runtime
+tools/a1os_factory/observability_reliability_plane
+tools/a1os_factory/operations
+tools/a1os_factory/orchestrator
+tools/a1os_factory/platform_engineering_runtime
+tools/a1os_factory/product_lifecycle_plane
+tools/a1os_factory/production_observability_mesh
+tools/a1os_factory/production_promotion_governance_runtime
+tools/a1os_factory/real_build_executor
+tools/a1os_factory/reasoning_decision_intelligence_plane
+tools/a1os_factory/recursive_intelligence_runtime
+tools/a1os_factory/recursive_intelligence_runtime/__pycache__
+tools/a1os_factory/recursive_optimization_runtime
+tools/a1os_factory/registry
+tools/a1os_factory/release_lifecycle_runtime
+tools/a1os_factory/revenue_intelligence_growth_plane
+tools/a1os_factory/runtime
+tools/a1os_factory/runtime_core
+tools/a1os_factory/secops_plane
+tools/a1os_factory/security_compliance_runtime
+tools/a1os_factory/security_plane
+tools/a1os_factory/self_evolution_optimization_plane
+tools/a1os_factory/self_improvement_plane
+tools/a1os_factory/self_management_runtime
+tools/a1os_factory/service_mesh_platform_plane
+tools/a1os_factory/singularity_control_layer
+tools/a1os_factory/singularity_control_layer/__pycache__
+tools/a1os_factory/templates
+tools/a1os_factory/tenant_control_plane
+tools/a1os_factory/validation
+tools/a1os_factory/vertical_os_catalog
+tools/a1os_factory/vertical_os_generator_plane
+tools/a1os_factory/workflow_automation_plane
+
+===== PYTHON FILES =====
+tools/a1os_factory/a1os_ecosystem_runtime/a1os_ecosystem_engine.py
+tools/a1os_factory/agent_execution_action_plane/agent_execution_engine.py
+tools/a1os_factory/agent_orchestration_plane/agent_orchestration_engine.py
+tools/a1os_factory/ai_agent_operating_layer/ai_agent_operating_engine.py
+tools/a1os_factory/ai_governance_plane/ai_governance_engine.py
+tools/a1os_factory/api_integration_mesh_plane/api_mesh_engine.py
+tools/a1os_factory/artifact_generation_engine/artifact_generation_engine.py
+tools/a1os_factory/autonomous_agent_operations_runtime/agent_operations_engine.py
+tools/a1os_factory/autonomous_business_network_runtime/business_network_engine.py
+tools/a1os_factory/autonomous_business_operations_runtime/business_operations_engine.py
+tools/a1os_factory/autonomous_control_plane/control_plane_engine.py
+tools/a1os_factory/autonomous_deployment_runtime/deployment_runtime_engine.py
+tools/a1os_factory/autonomous_economic_engine/autonomous_economic_engine.py
+tools/a1os_factory/autonomous_ecosystem_runtime/ecosystem_engine.py
+tools/a1os_factory/autonomous_governance_layer/autonomous_governance_engine.py
+tools/a1os_factory/autonomous_marketplace_network_runtime/autonomous_marketplace_engine.py
+tools/a1os_factory/autonomous_product_company_runtime/product_company_engine.py
+tools/a1os_factory/autonomous_product_scaling_runtime/autonomous_scaling_engine.py
+tools/a1os_factory/autonomous_revenue_engine/revenue_engine.py
+tools/a1os_factory/autonomous_sre_runtime/autonomous_sre_engine.py
+tools/a1os_factory/billing_revenue_plane/billing_revenue_engine.py
+tools/a1os_factory/build_execution_pipeline/build_execution_engine.py
+tools/a1os_factory/code_generation_pipeline/code_generation_engine.py
+tools/a1os_factory/communication_intelligence_plane/communication_intelligence_engine.py
+tools/a1os_factory/compliance_risk_governance_plane/compliance_risk_engine.py
+tools/a1os_factory/composer/product_composer.py
+tools/a1os_factory/continuous_validation_quality_runtime/continuous_validation_engine.py
+tools/a1os_factory/customer_deployment_automation_plane/customer_deployment_automation_engine.py
+tools/a1os_factory/customer_success_intelligence_plane/customer_success_intelligence_engine.py
+tools/a1os_factory/data_ai_decision_runtime/data_ai_decision_engine.py
+tools/a1os_factory/data_intelligence_analytics_plane/data_intelligence_engine.py
+tools/a1os_factory/data_intelligence_plane/data_intelligence_engine.py
+tools/a1os_factory/deployment_orchestrator/deployment_orchestrator_engine.py
+tools/a1os_factory/deployment_plane/deployment_plane.py
+tools/a1os_factory/digital_operations_plane/digital_operations_engine.py
+tools/a1os_factory/digital_twin_plane/digital_twin_engine.py
+tools/a1os_factory/disaster_recovery_plane/disaster_recovery_engine.py
+tools/a1os_factory/dna_engine.py
+tools/a1os_factory/ecosystem_marketplace_generator_plane/ecosystem_marketplace_generator_engine.py
+tools/a1os_factory/engine_adapter_layer/engine_adapter_runtime.py
+tools/a1os_factory/enterprise_command_plane/enterprise_command_engine.py
+tools/a1os_factory/enterprise_intelligence_layer/enterprise_intelligence_engine.py
+tools/a1os_factory/evolution/evolution_engine.py
+tools/a1os_factory/executive_control/executive_control_plane.py
+tools/a1os_factory/factory_evolution_runtime/factory_evolution_engine.py
+tools/a1os_factory/factory_execution_runtime/factory_execution_engine.py
+tools/a1os_factory/factory_fleet_operations_runtime/factory_fleet_operations_engine.py
+tools/a1os_factory/factory_integration_bus/integration_bus_engine.py
+tools/a1os_factory/factory_intelligence_command_center/intelligence_command_engine.py
+tools/a1os_factory/factory_production_hardening_runtime/factory_production_hardening_engine.py
+tools/a1os_factory/finops_resource_plane/finops_resource_engine.py
+tools/a1os_factory/generate_product.py
+tools/a1os_factory/global_ai_governance_runtime/global_ai_governance_engine.py
+tools/a1os_factory/global_ai_operator_runtime/global_ai_operator_engine.py
+tools/a1os_factory/global_ai_orchestration_layer/global_ai_orchestration_engine.py
+tools/a1os_factory/global_control_plane_runtime/global_control_plane_engine.py
+tools/a1os_factory/global_market_intelligence_runtime/market_intelligence_engine.py
+tools/a1os_factory/global_product_ecosystem_runtime/product_ecosystem_engine.py
+tools/a1os_factory/global_product_network_runtime/global_product_network_engine.py
+tools/a1os_factory/identity_access_plane/identity_access_engine.py
+tools/a1os_factory/infrastructure_engine/infrastructure_engine.py
+tools/a1os_factory/intelligence_center/intelligence_center.py
+tools/a1os_factory/intelligence_runtime/intelligence_generator.py
+tools/a1os_factory/knowledge_graph_semantic_plane/knowledge_graph_engine.py
+tools/a1os_factory/knowledge_memory_plane/knowledge_memory_engine.py
+tools/a1os_factory/marketplace_ecosystem_plane/marketplace_engine.py
+tools/a1os_factory/marketplace_product_provisioning_runtime/marketplace_product_engine.py
+tools/a1os_factory/multi_tenant_platform_runtime/multi_tenant_platform_engine.py
+tools/a1os_factory/network_intelligence_runtime/network_intelligence_engine.py
+tools/a1os_factory/observability_reliability_plane/observability_reliability_engine.py
+tools/a1os_factory/operations/operations_generator.py
+tools/a1os_factory/orchestrator/orchestrator.py
+tools/a1os_factory/platform_engineering_runtime/platform_engineering_engine.py
+tools/a1os_factory/product_lifecycle_plane/product_lifecycle_engine.py
+tools/a1os_factory/production_observability_mesh/observability_mesh_engine.py
+tools/a1os_factory/production_promotion_governance_runtime/production_promotion_engine.py
+tools/a1os_factory/real_build_executor/build_executor_engine.py
+tools/a1os_factory/reasoning_decision_intelligence_plane/reasoning_decision_engine.py
+tools/a1os_factory/recursive_intelligence_runtime/recursive_intelligence_engine.py
+tools/a1os_factory/recursive_optimization_runtime/recursive_optimization_engine.py
+tools/a1os_factory/registry/registry_engine.py
+tools/a1os_factory/release_lifecycle_runtime/release_lifecycle_engine.py
+tools/a1os_factory/revenue_intelligence_growth_plane/revenue_intelligence_growth_engine.py
+tools/a1os_factory/runtime/runtime_generator.py
+tools/a1os_factory/runtime_core/factory_runtime.py
+tools/a1os_factory/secops_plane/secops_engine.py
+tools/a1os_factory/security_compliance_runtime/security_compliance_engine.py
+tools/a1os_factory/security_plane/security_engine.py
+tools/a1os_factory/self_evolution_optimization_plane/self_evolution_engine.py
+tools/a1os_factory/self_improvement_plane/self_improvement_engine.py
+tools/a1os_factory/self_management_runtime/self_management_engine.py
+tools/a1os_factory/service_mesh_platform_plane/service_mesh_platform_engine.py
+tools/a1os_factory/singularity_control_layer/singularity_control_engine.py
+tools/a1os_factory/tenant_control_plane/tenant_control_engine.py
+tools/a1os_factory/validation/validation_engine.py
+tools/a1os_factory/vertical_os_generator_plane/vertical_os_generator_engine.py
+tools/a1os_factory/workflow_automation_plane/workflow_automation_engine.py
+
+===== README FILES =====
+tools/a1os_factory/README.md
+tools/a1os_factory/a1os_ecosystem_runtime/README.md
+tools/a1os_factory/agent_execution_action_plane/README.md
+tools/a1os_factory/agent_orchestration_plane/README.md
+tools/a1os_factory/ai_agent_operating_layer/README.md
+tools/a1os_factory/ai_governance_plane/README.md
+tools/a1os_factory/api_integration_mesh_plane/README.md
+tools/a1os_factory/artifact_generation_engine/README.md
+tools/a1os_factory/autonomous_agent_operations_runtime/README.md
+tools/a1os_factory/autonomous_business_network_runtime/README.md
+tools/a1os_factory/autonomous_business_operations_runtime/README.md
+tools/a1os_factory/autonomous_control_plane/README.md
+tools/a1os_factory/autonomous_deployment_runtime/README.md
+tools/a1os_factory/autonomous_economic_engine/README.md
+tools/a1os_factory/autonomous_ecosystem_runtime/README.md
+tools/a1os_factory/autonomous_governance_layer/README.md
+tools/a1os_factory/autonomous_marketplace_network_runtime/README.md
+tools/a1os_factory/autonomous_product_company_runtime/README.md
+tools/a1os_factory/autonomous_product_scaling_runtime/README.md
+tools/a1os_factory/autonomous_revenue_engine/README.md
+tools/a1os_factory/autonomous_sre_runtime/README.md
+tools/a1os_factory/billing_revenue_plane/README.md
+tools/a1os_factory/build_execution_pipeline/README.md
+tools/a1os_factory/code_generation_pipeline/README.md
+tools/a1os_factory/communication_intelligence_plane/README.md
+tools/a1os_factory/compliance_risk_governance_plane/README.md
+tools/a1os_factory/composer/README.md
+tools/a1os_factory/continuous_validation_quality_runtime/README.md
+tools/a1os_factory/customer_deployment_automation_plane/README.md
+tools/a1os_factory/customer_success_intelligence_plane/README.md
+tools/a1os_factory/data_ai_decision_runtime/README.md
+tools/a1os_factory/data_intelligence_analytics_plane/README.md
+tools/a1os_factory/data_intelligence_plane/README.md
+tools/a1os_factory/deployment_orchestrator/README.md
+tools/a1os_factory/deployment_plane/README.md
+tools/a1os_factory/digital_operations_plane/README.md
+tools/a1os_factory/digital_twin_plane/README.md
+tools/a1os_factory/disaster_recovery_plane/README.md
+tools/a1os_factory/dna/README.md
+tools/a1os_factory/ecosystem_marketplace_generator_plane/README.md
+tools/a1os_factory/engine_adapter_layer/README.md
+tools/a1os_factory/enterprise_command_plane/README.md
+tools/a1os_factory/enterprise_intelligence_layer/README.md
+tools/a1os_factory/evolution/README.md
+tools/a1os_factory/executive_control/README.md
+tools/a1os_factory/factory_evolution_runtime/README.md
+tools/a1os_factory/factory_execution_runtime/README.md
+tools/a1os_factory/factory_fleet_operations_runtime/README.md
+tools/a1os_factory/factory_integration_bus/README.md
+tools/a1os_factory/factory_intelligence_command_center/README.md
+tools/a1os_factory/factory_production_hardening_runtime/README.md
+tools/a1os_factory/finops_resource_plane/README.md
+tools/a1os_factory/global_ai_governance_runtime/README.md
+tools/a1os_factory/global_ai_operator_runtime/README.md
+tools/a1os_factory/global_ai_orchestration_layer/README.md
+tools/a1os_factory/global_control_plane_runtime/README.md
+tools/a1os_factory/global_market_intelligence_runtime/README.md
+tools/a1os_factory/global_product_ecosystem_runtime/README.md
+tools/a1os_factory/global_product_network_runtime/README.md
+tools/a1os_factory/identity_access_plane/README.md
+tools/a1os_factory/infrastructure_engine/README.md
+tools/a1os_factory/intelligence_center/README.md
+tools/a1os_factory/intelligence_runtime/README.md
+tools/a1os_factory/knowledge_graph_semantic_plane/README.md
+tools/a1os_factory/knowledge_memory_plane/README.md
+tools/a1os_factory/marketplace_ecosystem_plane/README.md
+tools/a1os_factory/marketplace_product_provisioning_runtime/README.md
+tools/a1os_factory/multi_tenant_platform_runtime/README.md
+tools/a1os_factory/network_intelligence_runtime/README.md
+tools/a1os_factory/observability_reliability_plane/README.md
+tools/a1os_factory/operations/README.md
+tools/a1os_factory/orchestrator/README.md
+tools/a1os_factory/platform_engineering_runtime/README.md
+tools/a1os_factory/product_lifecycle_plane/README.md
+tools/a1os_factory/production_observability_mesh/README.md
+tools/a1os_factory/production_promotion_governance_runtime/README.md
+tools/a1os_factory/real_build_executor/README.md
+tools/a1os_factory/reasoning_decision_intelligence_plane/README.md
+tools/a1os_factory/recursive_intelligence_runtime/README.md
+tools/a1os_factory/recursive_optimization_runtime/README.md
+tools/a1os_factory/registry/README.md
+tools/a1os_factory/release_lifecycle_runtime/README.md
+tools/a1os_factory/revenue_intelligence_growth_plane/README.md
+tools/a1os_factory/runtime/README.md
+tools/a1os_factory/secops_plane/README.md
+tools/a1os_factory/security_compliance_runtime/README.md
+tools/a1os_factory/security_plane/README.md
+tools/a1os_factory/self_evolution_optimization_plane/README.md
+tools/a1os_factory/self_improvement_plane/README.md
+tools/a1os_factory/self_management_runtime/README.md
+tools/a1os_factory/service_mesh_platform_plane/README.md
+tools/a1os_factory/singularity_control_layer/README.md
+tools/a1os_factory/tenant_control_plane/README.md
+tools/a1os_factory/validation/README.md
+tools/a1os_factory/vertical_os_catalog/README.md
+tools/a1os_factory/vertical_os_generator_plane/README.md
+tools/a1os_factory/workflow_automation_plane/README.md
+
+===== JSON MANIFESTS =====
+factory_runs/little-oaks/EXECUTION_MANIFEST.json
+factory_runs/little-oaks/a1os_ecosystem/A1OS_ECOSYSTEM_MANIFEST.json
+factory_runs/little-oaks/autonomous_business_network/BUSINESS_NETWORK_MANIFEST.json
+factory_runs/little-oaks/autonomous_economic_engine/ECONOMIC_ENGINE_MANIFEST.json
+factory_runs/little-oaks/autonomous_governance/AUTONOMOUS_GOVERNANCE_MANIFEST.json
+factory_runs/little-oaks/autonomous_marketplace_network/MARKETPLACE_NETWORK_MANIFEST.json
+factory_runs/little-oaks/autonomous_revenue_engine/REVENUE_ENGINE_MANIFEST.json
+factory_runs/little-oaks/factory_evolution/FACTORY_EVOLUTION_MANIFEST.json
+factory_runs/little-oaks/factory_fleet_operations/FLEET_OPERATIONS_MANIFEST.json
+factory_runs/little-oaks/factory_production_hardening/PRODUCTION_HARDENING_MANIFEST.json
+factory_runs/little-oaks/global_ai_governance/AI_GOVERNANCE_MANIFEST.json
+factory_runs/little-oaks/global_ai_operator/GLOBAL_AI_OPERATOR_MANIFEST.json
+factory_runs/little-oaks/global_ai_orchestration/AI_ORCHESTRATION_MANIFEST.json
+factory_runs/little-oaks/global_product_ecosystem/PRODUCT_ECOSYSTEM_MANIFEST.json
+factory_runs/little-oaks/global_product_network/GLOBAL_PRODUCT_NETWORK_MANIFEST.json
+factory_runs/little-oaks/network_intelligence/NETWORK_INTELLIGENCE_MANIFEST.json
+factory_runs/little-oaks/observability_mesh/OBSERVABILITY_MESH_MANIFEST.json
+factory_runs/little-oaks/platform_engineering/PLATFORM_ENGINEERING_MANIFEST.json
+factory_runs/little-oaks/recursive_intelligence/RECURSIVE_INTELLIGENCE_MANIFEST.json
+factory_runs/little-oaks/self_management/SELF_MANAGEMENT_MANIFEST.json
+factory_runs/little-oaks/singularity_control/SINGULARITY_CONTROL_MANIFEST.json
+
+===== PYTHON SYNTAX VALIDATION =====
+[OK] tools/a1os_factory/generate_product.py
+[OK] tools/a1os_factory/dna_engine.py
+[OK] tools/a1os_factory/composer/product_composer.py
+[OK] tools/a1os_factory/runtime/runtime_generator.py
+[OK] tools/a1os_factory/intelligence_runtime/intelligence_generator.py
+[OK] tools/a1os_factory/operations/operations_generator.py
+[OK] tools/a1os_factory/validation/validation_engine.py
+[OK] tools/a1os_factory/evolution/evolution_engine.py
+[OK] tools/a1os_factory/orchestrator/orchestrator.py
+[OK] tools/a1os_factory/registry/registry_engine.py
+[OK] tools/a1os_factory/intelligence_center/intelligence_center.py
+[OK] tools/a1os_factory/executive_control/executive_control_plane.py
+[OK] tools/a1os_factory/deployment_plane/deployment_plane.py
+[OK] tools/a1os_factory/infrastructure_engine/infrastructure_engine.py
+[OK] tools/a1os_factory/security_plane/security_engine.py
+[OK] tools/a1os_factory/data_intelligence_plane/data_intelligence_engine.py
+[OK] tools/a1os_factory/agent_orchestration_plane/agent_orchestration_engine.py
+[OK] tools/a1os_factory/digital_twin_plane/digital_twin_engine.py
+[OK] tools/a1os_factory/self_improvement_plane/self_improvement_engine.py
+[OK] tools/a1os_factory/knowledge_memory_plane/knowledge_memory_engine.py
+[OK] tools/a1os_factory/workflow_automation_plane/workflow_automation_engine.py
+[OK] tools/a1os_factory/api_integration_mesh_plane/api_mesh_engine.py
+[OK] tools/a1os_factory/marketplace_ecosystem_plane/marketplace_engine.py
+[OK] tools/a1os_factory/tenant_control_plane/tenant_control_engine.py
+[OK] tools/a1os_factory/identity_access_plane/identity_access_engine.py
+[OK] tools/a1os_factory/billing_revenue_plane/billing_revenue_engine.py
+[OK] tools/a1os_factory/communication_intelligence_plane/communication_intelligence_engine.py
+[OK] tools/a1os_factory/observability_reliability_plane/observability_reliability_engine.py
+[OK] tools/a1os_factory/disaster_recovery_plane/disaster_recovery_engine.py
+[OK] tools/a1os_factory/compliance_risk_governance_plane/compliance_risk_engine.py
+[OK] tools/a1os_factory/secops_plane/secops_engine.py
+[OK] tools/a1os_factory/finops_resource_plane/finops_resource_engine.py
+[OK] tools/a1os_factory/enterprise_command_plane/enterprise_command_engine.py
+[OK] tools/a1os_factory/product_lifecycle_plane/product_lifecycle_engine.py
+[OK] tools/a1os_factory/ai_governance_plane/ai_governance_engine.py
+[OK] tools/a1os_factory/digital_operations_plane/digital_operations_engine.py
+[OK] tools/a1os_factory/service_mesh_platform_plane/service_mesh_platform_engine.py
+[OK] tools/a1os_factory/data_intelligence_analytics_plane/data_intelligence_engine.py
+[OK] tools/a1os_factory/knowledge_graph_semantic_plane/knowledge_graph_engine.py
+[OK] tools/a1os_factory/reasoning_decision_intelligence_plane/reasoning_decision_engine.py
+[OK] tools/a1os_factory/agent_execution_action_plane/agent_execution_engine.py
+[OK] tools/a1os_factory/vertical_os_generator_plane/vertical_os_generator_engine.py
+[OK] tools/a1os_factory/ecosystem_marketplace_generator_plane/ecosystem_marketplace_generator_engine.py
+[OK] tools/a1os_factory/customer_deployment_automation_plane/customer_deployment_automation_engine.py
+[OK] tools/a1os_factory/customer_success_intelligence_plane/customer_success_intelligence_engine.py
+[OK] tools/a1os_factory/revenue_intelligence_growth_plane/revenue_intelligence_growth_engine.py
+[OK] tools/a1os_factory/runtime_core/factory_runtime.py
+[OK] tools/a1os_factory/engine_adapter_layer/engine_adapter_runtime.py
+[OK] tools/a1os_factory/code_generation_pipeline/code_generation_engine.py
+[OK] tools/a1os_factory/build_execution_pipeline/build_execution_engine.py
+[OK] tools/a1os_factory/deployment_orchestrator/deployment_orchestrator_engine.py
+[OK] tools/a1os_factory/autonomous_control_plane/control_plane_engine.py
+[OK] tools/a1os_factory/ai_agent_operating_layer/ai_agent_operating_engine.py
+[OK] tools/a1os_factory/self_evolution_optimization_plane/self_evolution_engine.py
+[OK] tools/a1os_factory/enterprise_intelligence_layer/enterprise_intelligence_engine.py
+[OK] tools/a1os_factory/factory_execution_runtime/factory_execution_engine.py
+[OK] tools/a1os_factory/artifact_generation_engine/artifact_generation_engine.py
+[OK] tools/a1os_factory/real_build_executor/build_executor_engine.py
+[OK] tools/a1os_factory/autonomous_deployment_runtime/deployment_runtime_engine.py
+[OK] tools/a1os_factory/production_observability_mesh/observability_mesh_engine.py
+[OK] tools/a1os_factory/security_compliance_runtime/security_compliance_engine.py
+[OK] tools/a1os_factory/data_ai_decision_runtime/data_ai_decision_engine.py
+[OK] tools/a1os_factory/autonomous_agent_operations_runtime/agent_operations_engine.py
+[OK] tools/a1os_factory/factory_integration_bus/integration_bus_engine.py
+[OK] tools/a1os_factory/factory_intelligence_command_center/intelligence_command_engine.py
+[OK] tools/a1os_factory/release_lifecycle_runtime/release_lifecycle_engine.py
+[OK] tools/a1os_factory/continuous_validation_quality_runtime/continuous_validation_engine.py
+[OK] tools/a1os_factory/production_promotion_governance_runtime/production_promotion_engine.py
+[OK] tools/a1os_factory/autonomous_sre_runtime/autonomous_sre_engine.py
+[OK] tools/a1os_factory/platform_engineering_runtime/platform_engineering_engine.py
+[OK] tools/a1os_factory/multi_tenant_platform_runtime/multi_tenant_platform_engine.py
+[OK] tools/a1os_factory/marketplace_product_provisioning_runtime/marketplace_product_engine.py
+[OK] tools/a1os_factory/autonomous_product_scaling_runtime/autonomous_scaling_engine.py
+[OK] tools/a1os_factory/global_control_plane_runtime/global_control_plane_engine.py
+[OK] tools/a1os_factory/network_intelligence_runtime/network_intelligence_engine.py
+[OK] tools/a1os_factory/autonomous_business_operations_runtime/business_operations_engine.py
+[OK] tools/a1os_factory/global_ai_operator_runtime/global_ai_operator_engine.py
+[OK] tools/a1os_factory/self_management_runtime/self_management_engine.py
+[OK] tools/a1os_factory/autonomous_product_company_runtime/product_company_engine.py
+[OK] tools/a1os_factory/global_market_intelligence_runtime/market_intelligence_engine.py
+[OK] tools/a1os_factory/recursive_optimization_runtime/recursive_optimization_engine.py
+[FAIL] tools/a1os_factory/autonomous_ecosystem_runtime/ecosystem_engine.py
+[OK] tools/a1os_factory/global_product_network_runtime/global_product_network_engine.py
+[OK] tools/a1os_factory/recursive_intelligence_runtime/recursive_intelligence_engine.py
+[OK] tools/a1os_factory/autonomous_marketplace_network_runtime/autonomous_marketplace_engine.py
+[OK] tools/a1os_factory/global_ai_governance_runtime/global_ai_governance_engine.py
+[OK] tools/a1os_factory/autonomous_revenue_engine/revenue_engine.py
+[OK] tools/a1os_factory/global_product_ecosystem_runtime/product_ecosystem_engine.py
+[OK] tools/a1os_factory/autonomous_business_network_runtime/business_network_engine.py
+[OK] tools/a1os_factory/global_ai_orchestration_layer/global_ai_orchestration_engine.py
+[OK] tools/a1os_factory/singularity_control_layer/singularity_control_engine.py
+[OK] tools/a1os_factory/autonomous_economic_engine/autonomous_economic_engine.py
+[OK] tools/a1os_factory/factory_evolution_runtime/factory_evolution_engine.py
+[OK] tools/a1os_factory/autonomous_governance_layer/autonomous_governance_engine.py
+[OK] tools/a1os_factory/a1os_ecosystem_runtime/a1os_ecosystem_engine.py
+[OK] tools/a1os_factory/factory_production_hardening_runtime/factory_production_hardening_engine.py
+[OK] tools/a1os_factory/factory_fleet_operations_runtime/factory_fleet_operations_engine.py
+
+===== DUPLICATE RUNTIME NAMES =====
+
+===== TOTAL RUNTIMES =====
+100
+
+===== TOTAL MANIFESTS =====
+21
+
+===== TOTAL README =====
+97
+
+===== TOTAL PYTHON MODULES =====
+97
+
+===== END OF AUDIT =====

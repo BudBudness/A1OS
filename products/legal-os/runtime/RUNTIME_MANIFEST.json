@@ -1,0 +1,14 @@
+{
+  "product": "legal-os",
+  "factory_version": "1.5",
+  "runtime_generated": true,
+  "generated": "2026-08-02T06:48:41.327250",
+  "layers": [
+    "database",
+    "api",
+    "security",
+    "web",
+    "deployment",
+    "tests"
+  ]
+}

@@ -1,0 +1,49 @@
+factory:
+  version: "4.1"
+  name: "A1OS Autonomous Tenant & Multi-Organization Control Plane"
+
+pipeline:
+  - tenant_architecture_generation
+  - organization_isolation_generation
+  - workspace_provisioning_generation
+  - identity_federation_generation
+  - billing_isolation_generation
+  - enterprise_onboarding_generation
+
+capabilities:
+
+  tenancy:
+    - multi_tenant_architecture
+    - tenant_lifecycle_management
+    - tenant_configuration
+    - tenant_health_monitoring
+
+  organizations:
+    - organization_registry
+    - workspace_management
+    - department_structure
+    - resource_isolation
+
+  identity:
+    - identity_provider_foundations
+    - role_federation
+    - access_policies
+    - session_management
+
+  enterprise:
+    - onboarding_workflows
+    - customer_provisioning
+    - enterprise_configuration
+    - service_entitlements
+
+  billing:
+    - tenant_billing_isolation
+    - subscription_mapping
+    - usage_tracking
+    - revenue_attribution
+
+  governance:
+    - tenant_audit
+    - compliance_boundaries
+    - data_isolation
+    - lifecycle_reporting

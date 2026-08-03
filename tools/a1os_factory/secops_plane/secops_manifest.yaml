@@ -1,0 +1,27 @@
+version: "4.8"
+
+plane:
+  name: security_operations_center
+  status: frozen
+
+capabilities:
+
+  intelligence:
+    - threat_intelligence
+    - threat_analysis
+    - vulnerability_intelligence
+
+  detection:
+    - security_events
+    - detection_rules
+    - event_correlation
+
+  response:
+    - incident_management
+    - response_playbooks
+    - remediation_tracking
+
+  operations:
+    - security_monitoring
+    - posture_scoring
+    - soc_reporting

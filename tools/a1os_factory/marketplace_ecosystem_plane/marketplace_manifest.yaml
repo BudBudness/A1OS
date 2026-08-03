@@ -1,0 +1,44 @@
+factory:
+  version: "4.0"
+  name: "A1OS Autonomous Marketplace & Ecosystem Plane"
+
+pipeline:
+  - marketplace_engine_generation
+  - plugin_system_generation
+  - partner_platform_generation
+  - licensing_generation
+  - subscription_generation
+  - tenant_provisioning_generation
+  - ecosystem_analytics_generation
+
+capabilities:
+
+  marketplace:
+    - product_catalog
+    - capability_catalog
+    - plugin_registry
+    - extension_management
+
+  ecosystem:
+    - partner_onboarding
+    - developer_portal
+    - integration_marketplace
+    - solution_templates
+
+  commercial:
+    - licensing_engine
+    - subscription_management
+    - billing_foundations
+    - revenue_tracking
+
+  platform:
+    - tenant_provisioning
+    - organization_management
+    - feature_entitlements
+    - deployment_packages
+
+  intelligence:
+    - marketplace_recommendations
+    - usage_analytics
+    - capability_discovery
+    - ecosystem_optimization

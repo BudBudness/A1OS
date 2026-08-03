@@ -1,0 +1,27 @@
+version: "5.1"
+
+plane:
+  name: product_lifecycle_management
+  status: frozen
+
+capabilities:
+
+  strategy:
+    - product_planning
+    - roadmap_management
+    - innovation_tracking
+
+  delivery:
+    - release_management
+    - version_control
+    - feature_lifecycle
+
+  intelligence:
+    - feedback_analysis
+    - adoption_tracking
+    - improvement_insights
+
+  governance:
+    - lifecycle_controls
+    - product_standards
+    - retirement_management

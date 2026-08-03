@@ -1,10 +1,35 @@
+
 import { api } from "../js/education-api.js";
+
+import { loadWorkflow } from "../workflows/fees.js";
 import { error, loading } from "../js/components/ui.js";
 
 const money = value =>
   `UGX ${Number(value || 0).toLocaleString("en-UG")}`;
 
 export async function renderFees() {
+
+    queueMicrotask(() => {
+        const workflowRoot=document.querySelector("#workflow-root");
+        if (typeof loadWorkflow==="function" && workflowRoot) {
+            loadWorkflow(workflowRoot);
+        }
+
+        const ids={
+            renderStudents:"#register-student",
+            renderAdmissions:"#new-admission",
+            renderFees:"#record-payment",
+            renderOperations:"#new-operation"
+        };
+
+        const id=ids[renderFees];
+
+        if(id){
+            document.querySelector(id)?.addEventListener("click",()=>{}, {once:true});
+        }
+    });
+
+
   try {
     const fees = await api.fees.list();
 
@@ -53,13 +78,13 @@ export async function renderFees() {
                       return `
                         <tr>
                           <td>${f.first_name || ""} ${f.last_name || ""}</td>
-                          <td>${f.fee_type || "—"}</td>
-                          <td>${f.academic_period || "—"}</td>
+                          <td>${f.fee_type || "-"}</td>
+                          <td>${f.academic_period || "-"}</td>
                           <td>${money(f.amount)}</td>
                           <td>${money(f.amount_paid)}</td>
                           <td>${money(balance)}</td>
                           <td><span class="status status-${status}">${status}</span></td>
-                          <td>${f.due_date || "—"}</td>
+                          <td>${f.due_date || "-"}</td>
                         </tr>
                       `;
                     }).join("")}
@@ -74,3 +99,6 @@ export async function renderFees() {
     return error(err.message);
   }
 }
+
+
+

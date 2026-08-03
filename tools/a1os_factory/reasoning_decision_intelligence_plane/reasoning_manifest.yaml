@@ -1,0 +1,26 @@
+version: "5.7"
+
+plane:
+  name: autonomous_reasoning_decision_intelligence
+  status: frozen
+
+capabilities:
+
+  reasoning:
+    - reasoning_models
+    - decision_graphs
+    - causal_analysis
+
+  intelligence:
+    - recommendations
+    - scenario_reasoning
+    - executive_support
+
+  automation:
+    - planning
+    - automation_logic
+    - policy_reasoning
+
+  governance:
+    - explainability
+    - decision_audit

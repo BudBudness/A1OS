@@ -1,0 +1,42 @@
+factory:
+  version: "2.0"
+  name: "A1OS Autonomous Product Orchestrator"
+
+pipeline:
+  - dna_selection
+  - product_composition
+  - runtime_generation
+  - intelligence_injection
+  - operations_generation
+  - validation_execution
+  - evolution_registration
+  - release_generation
+
+orchestration:
+
+  creation:
+    - product_identity
+    - domain_profile
+    - architecture_generation
+
+  intelligence:
+    - agents
+    - workflows
+    - analytics
+    - recommendations
+
+  operations:
+    - deployment
+    - monitoring
+    - backup
+    - recovery
+
+  governance:
+    - manifests
+    - versioning
+    - audit_trail
+
+  release:
+    - production_report
+    - release_manifest
+    - lifecycle_status

@@ -1,0 +1,92 @@
+factory:
+  version: "1.6"
+  name: "A1OS Intelligence Runtime Injection Engine"
+
+pipeline:
+  - detect_profile
+  - inject_agents
+  - inject_workflows
+  - inject_analytics
+  - inject_recommendations
+  - create_intelligence_manifest
+
+intelligence:
+
+  education:
+    agents:
+      - academic_copilot
+      - parent_assistant
+      - teacher_assistant
+      - finance_advisor
+    workflows:
+      - student_progress_analysis
+      - attendance_monitoring
+      - fee_tracking
+    analytics:
+      - learning_insights
+      - performance_reports
+
+  ngo:
+    agents:
+      - impact_assistant
+      - donor_assistant
+      - field_operations_agent
+    workflows:
+      - beneficiary_tracking
+      - donation_management
+      - project_monitoring
+    analytics:
+      - impact_metrics
+      - donor_reports
+
+  legal:
+    agents:
+      - legal_research_agent
+      - contract_assistant
+      - compliance_agent
+    workflows:
+      - case_tracking
+      - document_review
+      - deadline_monitoring
+    analytics:
+      - case_metrics
+      - compliance_reports
+
+  media:
+    agents:
+      - creator_copilot
+      - audience_agent
+      - content_assistant
+    workflows:
+      - content_pipeline
+      - publishing
+      - revenue_tracking
+    analytics:
+      - audience_metrics
+      - content_performance
+
+  finance:
+    agents:
+      - financial_assistant
+      - risk_agent
+      - compliance_agent
+    workflows:
+      - transaction_monitoring
+      - reporting
+      - reconciliation
+    analytics:
+      - cashflow_analysis
+      - financial_metrics
+
+  business:
+    agents:
+      - operations_copilot
+      - sales_agent
+      - executive_assistant
+    workflows:
+      - crm_automation
+      - inventory_tracking
+      - reporting
+    analytics:
+      - business_metrics
+      - executive_insights

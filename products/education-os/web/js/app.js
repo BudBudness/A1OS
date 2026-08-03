@@ -1,6 +1,6 @@
 import { getRoute, navigate, routeTitle, startRouter } from "./router.js";
 import { api } from "./education-api.js";
-import { login, logout, verifySession, isAuthenticated, can, user } from "./auth.js";
+import { login, logout, verifySession, isAuthenticated, can, user } from "./auth.js?v=1785434576";
 import { renderDashboard } from "../pages/dashboard.js";
 import { renderStudents } from "../pages/students.js";
 import { renderAdmissions } from "../pages/admissions.js";
@@ -9,6 +9,7 @@ import { renderAttendance } from "../pages/attendance.js";
 import { renderOperations } from "../pages/operations.js";
 
 import { renderStaffPage } from "../pages/staff.js";
+import { renderDirectorSuite } from "../pages/director/index.js";
 const app = document.querySelector("#app");
 
 const navItems = [
@@ -79,14 +80,6 @@ function renderLogin() {
 
         try {
             await login(email, password);
-            if (bootApp) {
-            const status = document.querySelector("#boot-status");
-            if (status) status.textContent = "Application modules loaded. Verifying session...";
-        }
-        if (bootApp) {
-            const status = document.querySelector("#boot-status");
-            if (status) status.textContent = "Application modules loaded. Verifying session...";
-        }
         await render();
         } catch (e) {
             error.textContent = e.message;
@@ -96,95 +89,97 @@ function renderLogin() {
     });
 }
 
+
+
 async function render() {
-    if (!isAuthenticated()) {
-        renderLogin();
+    console.log("APP RENDER ENTER");
+    const route = getRoute();
+    console.log("ROUTE =", route);
+    console.log("RENDER ROUTE:", route);
+
+    const appRoot = document.querySelector("#app");
+
+    if (!appRoot) {
+        console.error("Missing #app root");
         return;
     }
 
-    const route = getRoute();
-    const currentUser = user();
-
-    app.innerHTML = `
-        <div class="app-shell">
-            <aside class="sidebar">
-                <div class="brand">
-                    Little Oaks
-                    <small>Education OS</small>
-                </div>
-
-                <nav class="nav">
-                    ${navItems
-                        .map(
-                            ([key, label]) => `
-                                <button
-                                    data-route="${key}"
-                                    class="${route === key ? "active" : ""}"
-                                >
-                                    ${label}
-                                </button>
-                            `
-                        )
-                        .join("")}
-                </nav>
-
-                <div class="sidebar-user">
-                    <strong>${currentUser?.full_name || "User"}</strong>
-                    <small>${currentUser?.role || ""}</small>
-                    <button id="logout-button" class="logout-button">
-                        Sign out
-                    </button>
-                </div>
-            </aside>
-
-            <main class="main">
-                <header class="topbar">
-                    <h1>${routeTitle(route)}</h1>
-                    <span>Little Oaks Montessori</span>
-                </header>
-
-                <section class="content" id="page-content">
-                    <div class="loading">Loading...</div>
-                </section>
-            </main>
-        </div>
-    `;
-
-    document.querySelectorAll("[data-route]").forEach(button => {
-        button.addEventListener("click", () => navigate(button.dataset.route));
-    });
-
-    document.querySelector("#logout-button").addEventListener("click", logout);
-
-    const content = document.querySelector("#page-content");
-
     try {
-        if (route === "dashboard") {
-            content.innerHTML = await renderDashboard();
-        } else if (route === "students") {
-            content.innerHTML = await renderStudents();
-        } else if (route === "admissions") {
-            content.innerHTML = await renderAdmissions();
-        } else if (route === "fees") {
-            content.innerHTML = await renderFees();
-        } else if (route === "attendance") {
-            content.innerHTML = await renderAttendance();
-        } else if (route === "operations") {
-            content.innerHTML = await renderOperations();
-        } else {
-            navigate("dashboard");
+        if (!isAuthenticated()) {
+            renderLogin();
+            return;
         }
-    } catch (e) {
-        content.innerHTML = `
-            <div class="error">
-                <strong>Frontend integration error</strong>
-                <p>${e.message}</p>
+
+        appRoot.innerHTML = `
+            <div class="app-shell">
+                <nav class="sidebar">
+                    <h2>Little Oaks</h2>
+                    ${navItems.map(([r,t]) =>
+                        `<a href="#/${r}">${t}</a>`
+                    ).join("")}
+                </nav>
+                <main id="content" class="content">
+                    <div class="loading">Loading ${route}...</div>
+                </main>
+            </div>
+        `;
+
+        const content = document.querySelector("#content");
+
+        if (!content) {
+            throw new Error("Content container missing");
+        }
+
+        switch(route) {
+            case "dashboard":
+                content.innerHTML = await renderDashboard();
+                break;
+
+            case "students":
+                content.innerHTML = await renderStudents();
+                break;
+
+            case "admissions":
+                content.innerHTML = await renderAdmissions();
+                break;
+
+            case "fees":
+                content.innerHTML = await renderFees();
+                break;
+
+            case "attendance":
+                content.innerHTML = await renderAttendance();
+                break;
+
+            case "operations":
+                content.innerHTML = await renderOperations();
+                break;
+
+            case "staff":
+                content.innerHTML = await renderStaffPage();
+                break;
+
+            default:
+                content.innerHTML = await renderDashboard();
+        }
+
+        console.log("RENDER COMPLETE", route);
+
+    } catch (error) {
+        console.error("RENDER FAILURE:", error);
+
+        appRoot.innerHTML = `
+            <div style="padding:40px;color:#991b1b;font-family:system-ui">
+                <h1>Little Oaks Education OS</h1>
+                <h2>Frontend Render Error</h2>
+                <pre>${error.stack || error}</pre>
             </div>
         `;
     }
 }
 
 window.addEventListener("error", event => {
+    console.error("GLOBAL ERROR:", event.message, event.error);
     const app = document.querySelector("#app");
     if (app) {
         app.innerHTML = `
@@ -198,6 +193,7 @@ window.addEventListener("error", event => {
 });
 
 window.addEventListener("unhandledrejection", event => {
+    console.error("PROMISE ERROR:", event.reason);
     const app = document.querySelector("#app");
     if (app) {
         app.innerHTML = `
@@ -211,33 +207,34 @@ window.addEventListener("unhandledrejection", event => {
 });
 
 
+
+
 async function boot() {
     const app = document.querySelector("#app");
 
     try {
-        if (app) {
-            app.innerHTML = `
-                <div style="padding:40px;font-family:system-ui;background:#f8fafc;min-height:100vh">
-                    <h1 style="color:#14532d">Little Oaks Education OS</h1>
-                    <p>Initializing application...</p>
-                </div>
-            `;
-        }
+        console.log("[BOOT] starting");
+
+        await verifySession();
+
+        console.log("[BOOT] session verified");
 
         await render();
+
+        console.log("[BOOT] render completed");
+
         startRouter(render);
 
     } catch (error) {
-        console.error("BOOT ERROR:", error);
+        console.error("[BOOT ERROR]", error);
 
         if (app) {
             app.innerHTML = `
-                <div style="padding:40px;font-family:system-ui;background:#fef2f2;min-height:100vh;color:#991b1b">
-                    <h1>Little Oaks Education OS</h1>
-                    <h2>Frontend module failed to load</h2>
-                    <pre style="white-space:pre-wrap">${error?.stack || error?.message || error}</pre>
-                </div>
-            `;
+            <div style="padding:40px;font-family:system-ui;color:#991b1b">
+                <h1>Little Oaks Education OS</h1>
+                <h2>Frontend startup failed</h2>
+                <pre>${error?.stack || error}</pre>
+            </div>`;
         }
     }
 }

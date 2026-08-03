@@ -4,7 +4,8 @@ const routes = {
     admissions: "Admissions",
     fees: "Fees & Payments",
     attendance: "Attendance",
-    operations: "School Operations"
+    operations: "School Operations",
+    staff: "Staff & HR"
 };
 
 export function getRoute() {
