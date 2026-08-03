@@ -49,9 +49,9 @@ export async function renderStaffPage() {
               <tbody>
                 ${staff.map(member => `
                   <tr>
-                    <td>${member.full_name || "—"}</td>
-                    <td>${(member.role || "—").replaceAll("_"," ")}</td>
-                    <td>${member.email || "—"}</td>
+                    <td>${member.full_name || "-"}</td>
+                    <td>${(member.role || "-").replaceAll("_"," ")}</td>
+                    <td>${member.email || "-"}</td>
                   </tr>
                 `).join("")}
               </tbody>

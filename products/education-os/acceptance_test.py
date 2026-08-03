@@ -1,7 +1,7 @@
 import json, sqlite3, urllib.request, urllib.error
 
 BASE = "http://127.0.0.1:3012"
-DB = "products/education-os/deployments/little-oaks/data/education.db"
+DB = "deployments/little-oaks/data/education.db"
 
 TOKEN = None
 

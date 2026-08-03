@@ -14,10 +14,9 @@ export function loadWorkflow(root){
 
   <div id="student-operation-status" role="status"></div>
   <div id="student-list" aria-live="polite"></div>
-</section>
+</section>`;
 
-<script>
-(function () {
+
   const STUDENT_WORKFLOW_MARKER = "STUDENT_OPERATIONS_WORKFLOW_V1";
   const TOKEN_KEY = "little_oaks_access_token";
   const status = document.getElementById("student-operation-status");
@@ -31,7 +30,7 @@ export function loadWorkflow(root){
 
   function headers() {
     const t = token();
-    return t ? { Authorization: \`Bearer ${t}\` } : {};
+    return t ? { Authorization: `Bearer ${t}` } : {};
   }
 
   async function loadStudents() {
@@ -42,7 +41,7 @@ export function loadWorkflow(root){
     });
 
     if (!response.ok) {
-      status.textContent = \`Unable to load students (${response.status})\`;
+      status.textContent = `Unable to load students (${response.status})`;
       return;
     }
 
@@ -51,14 +50,14 @@ export function loadWorkflow(root){
       ? payload
       : (payload.items || payload.students || []);
 
-    list.innerHTML = students.map(student => \`
+    list.innerHTML = students.map(student => `
       <article class="student-record">
         <strong>${student.full_name || student.name || "Unnamed student"}</strong>
         <span>${student.student_number || student.id || ""}</span>
       </article>
-    \`).join("") || "<p>No students found.</p>";
+    `).join("") || "<p>No students found.</p>";
 
-    status.textContent = \`${students.length} student record(s) loaded.\`;
+    status.textContent = `${students.length} student record(s) loaded.`;
 
     window.dispatchEvent(new CustomEvent(
       "little-oaks-student-operations-loaded",
@@ -83,7 +82,7 @@ export function loadWorkflow(root){
     });
 
     if (!response.ok) {
-      status.textContent = \`Student creation failed (${response.status})\`;
+      status.textContent = `Student creation failed (${response.status})`;
       return;
     }
 
@@ -101,10 +100,8 @@ export function loadWorkflow(root){
   if (token()) {
     loadStudents();
   }
-})();
-</script>
 
 
-<!-- LITTLE_OAKS_STAGE_4_ADMISSIONS_WORKFLOW -->
-`;
+
+
 }

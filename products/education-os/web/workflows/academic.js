@@ -33,17 +33,16 @@ export function loadWorkflow(root){
   </div>
 
   <div id="academic-workflow-status" class="workflow-status"></div>
-</section>
+</section>`;
 
-<script>
-(function () {
+
   const ACADEMIC_OPERATIONS_WORKFLOW_V1 = true;
   const tokenKey = "a1os_access_token";
 
   function authHeaders() {
     const token = localStorage.getItem(tokenKey);
     return token
-      ? { "Authorization": \`Bearer ${token}\` }
+      ? { "Authorization": `Bearer ${token}` }
       : {};
   }
 
@@ -53,7 +52,7 @@ export function loadWorkflow(root){
     });
 
     if (!response.ok) {
-      throw new Error(\`${path} returned ${response.status}\`);
+      throw new Error(`${path} returned ${response.status}`);
     }
 
     return response.json();
@@ -69,7 +68,7 @@ export function loadWorkflow(root){
     const items = itemsFrom(payload);
 
     if (!items.length) {
-      element.innerHTML = \`<div class="empty-state">${emptyText}</div>\`;
+      element.innerHTML = `<div class="empty-state">${emptyText}</div>`;
       return;
     }
 
@@ -84,15 +83,15 @@ export function loadWorkflow(root){
         "Unnamed";
 
       const status = item.status
-        ? \`<span class="status-badge">${item.status}</span>\`
+        ? `<span class="status-badge">${item.status}</span>`
         : "";
 
-      return \`
+      return `
         <div class="academic-item">
           <strong>${name}</strong>
           ${status}
         </div>
-      \`;
+      `;
     }).join("");
   }
 
@@ -171,11 +170,10 @@ export function loadWorkflow(root){
   if (ACADEMIC_OPERATIONS_WORKFLOW_V1) {
     setTimeout(loadAcademicOperations, 0);
   }
-})();
-</script>
-<!-- END STAGE_4_ACADEMIC_OPERATIONS_WORKFLOW_V1 -->
 
 
-<!-- STAGE_4_REPORTS_WORKFLOW_V1 -->
-`;
+// END STAGE_4_ACADEMIC_OPERATIONS_WORKFLOW_V1
+
+
+// STAGE_4_REPORTS_WORKFLOW_V1
 }

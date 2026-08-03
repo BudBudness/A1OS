@@ -20,10 +20,9 @@ export function loadWorkflow(root){
 
   <div id="attendance-operation-status" role="status"></div>
   <div id="attendance-list" aria-live="polite"></div>
-</section>
+</section>`;
 
-<script>
-(function () {
+
   const ATTENDANCE_WORKFLOW_MARKER = "ATTENDANCE_WORKFLOW_V1";
   const TOKEN_KEY = "little_oaks_access_token";
 
@@ -34,7 +33,7 @@ export function loadWorkflow(root){
 
   function authHeaders() {
     const token = localStorage.getItem(TOKEN_KEY);
-    return token ? { Authorization: \`Bearer ${token}\` } : {};
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   async function loadAttendance() {
@@ -45,7 +44,7 @@ export function loadWorkflow(root){
     });
 
     if (!response.ok) {
-      status.textContent = \`Unable to load attendance (${response.status})\`;
+      status.textContent = `Unable to load attendance (${response.status})`;
       return;
     }
 
@@ -54,18 +53,18 @@ export function loadWorkflow(root){
       ? payload
       : (payload.items || payload.attendance || []);
 
-    list.innerHTML = records.map(record => \`
+    list.innerHTML = records.map(record => `
       <article class="attendance-record">
-        <strong>Student #${record.student_id || "—"}</strong>
+        <strong>Student #${record.student_id || "-"}</strong>
         <span>${record.status || "unknown"}</span>
         <small>
           ${record.attendance_date || record.date || ""}
-          ${record.notes ? \` — ${record.notes}\` : ""}
+          ${record.notes ? ` - ${record.notes}` : ""}
         </small>
       </article>
-    \`).join("") || "<p>No attendance records found.</p>";
+    `).join("") || "<p>No attendance records found.</p>";
 
-    status.textContent = \`${records.length} attendance record(s) loaded.\`;
+    status.textContent = `${records.length} attendance record(s) loaded.`;
 
     window.dispatchEvent(new CustomEvent(
       "little-oaks-attendance-loaded",
@@ -90,7 +89,7 @@ export function loadWorkflow(root){
     });
 
     if (!response.ok) {
-      status.textContent = \`Attendance recording failed (${response.status})\`;
+      status.textContent = `Attendance recording failed (${response.status})`;
       return;
     }
 
@@ -108,10 +107,8 @@ export function loadWorkflow(root){
   if (localStorage.getItem(TOKEN_KEY)) {
     loadAttendance();
   }
-})();
-</script>
 
 
-<!-- LITTLE_OAKS_STAGE_4_FEES_BILLING_WORKFLOW -->
-`;
+
+
 }

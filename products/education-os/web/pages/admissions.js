@@ -56,15 +56,15 @@ export async function renderAdmissions() {
                                         .map(
                                             a => `
                                                 <tr>
-                                                    <td>${a.application_reference || "—"}</td>
-                                                    <td>${[a.first_name, a.last_name].filter(Boolean).join(" ") || a.applicant_name || "—"}</td>
-                                                    <td>${a.class_name || a.requested_class || "—"}</td>
+                                                    <td>${a.application_reference || "-"}</td>
+                                                    <td>${[a.first_name, a.last_name].filter(Boolean).join(" ") || a.applicant_name || "-"}</td>
+                                                    <td>${a.class_name || a.requested_class || "-"}</td>
                                                     <td>
                                                         <span class="status status-success">
                                                             ${a.status || "submitted"}
                                                         </span>
                                                     </td>
-                                                    <td>${a.created_at || "—"}</td>
+                                                    <td>${a.created_at || "-"}</td>
                                                 </tr>
                                             `
                                         )

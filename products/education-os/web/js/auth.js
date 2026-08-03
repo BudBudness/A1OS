@@ -18,6 +18,11 @@ export function isAuthenticated() {
 
 export function setAuth(data) {
     localStorage.setItem(AUTH_KEY, JSON.stringify(data));
+    localStorage.setItem("little_oaks_access_token", data.token);
+    localStorage.setItem("little_oaks_education_os_token", data.token);
+    localStorage.setItem("a1os_access_token", data.token);
+    localStorage.setItem("a1os_token", data.token);
+    localStorage.setItem("access_token", data.token);
 }
 
 export function clearAuth() {
@@ -34,7 +39,7 @@ export function hasPermission(permission) {
 }
 
 export async function login(email, password) {
-    const response = await fetch("/api/auth/login", {
+    const response = await fetch("http://127.0.0.1:3011/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
