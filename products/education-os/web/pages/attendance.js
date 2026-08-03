@@ -66,9 +66,9 @@ export async function renderAttendance() {
                   <tbody>
                     ${sessions.map(s => `
                       <tr>
-                        <td>${s.attendance_date || "—"}</td>
-                        <td>${s.class_level || "—"}</td>
-                        <td>${s.record_count ?? "—"}</td>
+                        <td>${s.attendance_date || "-"}</td>
+                        <td>${s.class_level || "-"}</td>
+                        <td>${s.record_count ?? "-"}</td>
                       </tr>
                     `).join("")}
                   </tbody>

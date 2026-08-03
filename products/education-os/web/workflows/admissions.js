@@ -20,10 +20,9 @@ export function loadWorkflow(root){
 
   <div id="admission-operation-status" role="status"></div>
   <div id="admission-list" aria-live="polite"></div>
-</section>
+</section>`;
 
-<script>
-(function () {
+
   const ADMISSIONS_WORKFLOW_MARKER = "ADMISSIONS_WORKFLOW_V1";
   const TOKEN_KEY = "little_oaks_access_token";
 
@@ -34,7 +33,7 @@ export function loadWorkflow(root){
 
   function authHeaders() {
     const token = localStorage.getItem(TOKEN_KEY);
-    return token ? { Authorization: \`Bearer ${token}\` } : {};
+    return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   async function loadAdmissions() {
@@ -45,7 +44,7 @@ export function loadWorkflow(root){
     });
 
     if (!response.ok) {
-      status.textContent = \`Unable to load admissions (${response.status})\`;
+      status.textContent = `Unable to load admissions (${response.status})`;
       return;
     }
 
@@ -54,7 +53,7 @@ export function loadWorkflow(root){
       ? payload
       : (payload.items || payload.admissions || []);
 
-    list.innerHTML = admissions.map(admission => \`
+    list.innerHTML = admissions.map(admission => `
       <article class="admission-record">
         <strong>
           ${admission.student_name || admission.full_name || "Unnamed applicant"}
@@ -62,9 +61,9 @@ export function loadWorkflow(root){
         <span>${admission.status || "pending"}</span>
         <small>${admission.parent_name || ""}</small>
       </article>
-    \`).join("") || "<p>No admissions found.</p>";
+    `).join("") || "<p>No admissions found.</p>";
 
-    status.textContent = \`${admissions.length} admission record(s) loaded.\`;
+    status.textContent = `${admissions.length} admission record(s) loaded.`;
 
     window.dispatchEvent(new CustomEvent(
       "little-oaks-admissions-loaded",
@@ -89,7 +88,7 @@ export function loadWorkflow(root){
     });
 
     if (!response.ok) {
-      status.textContent = \`Admission creation failed (${response.status})\`;
+      status.textContent = `Admission creation failed (${response.status})`;
       return;
     }
 
@@ -107,10 +106,8 @@ export function loadWorkflow(root){
   if (localStorage.getItem(TOKEN_KEY)) {
     loadAdmissions();
   }
-})();
-</script>
 
 
-<!-- LITTLE_OAKS_STAGE_4_ATTENDANCE_WORKFLOW -->
-`;
+
+
 }

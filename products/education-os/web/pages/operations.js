@@ -64,9 +64,9 @@ export async function renderOperations() {
                           <strong>${o.title}</strong>
                           <small>${o.description || ""}</small>
                         </td>
-                        <td>${o.operation_type || "—"}</td>
+                        <td>${o.operation_type || "-"}</td>
                         <td>${o.assigned_to_name || "Unassigned"}</td>
-                        <td>${o.due_date || "—"}</td>
+                        <td>${o.due_date || "-"}</td>
                         <td><span class="status status-${o.status}">${o.status}</span></td>
                         <td>
                           <select class="operation-status" data-id="${o.id}">

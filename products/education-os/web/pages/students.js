@@ -57,8 +57,8 @@ export async function renderStudents() {
                                                 <tr>
                                                     <td>${s.id}</td>
                                                     <td>${s.first_name || ""} ${s.last_name || ""}</td>
-                                                    <td>${s.date_of_birth || "—"}</td>
-                                                    <td>${s.gender || "—"}</td>
+                                                    <td>${s.date_of_birth || "-"}</td>
+                                                    <td>${s.gender || "-"}</td>
                                                 </tr>
                                             `
                                         )

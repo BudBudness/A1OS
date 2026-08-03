@@ -26,14 +26,7 @@ export function loadWorkflow(root){
   <div id="fees-list" aria-live="polite"></div>
 </section>`;
 
-
-
-
-
-}
-
-
-
+(function () {
   const FEES_BILLING_WORKFLOW_MARKER = "FEES_BILLING_WORKFLOW_V1";
   const TOKEN_KEY = "little_oaks_access_token";
 
@@ -164,4 +157,10 @@ export function loadWorkflow(root){
   if (localStorage.getItem(TOKEN_KEY)) {
     loadFees();
   }
+})();
 
+
+
+// LITTLE_OAKS_STAGE_4_PARENTS_GUARDIANS_WORKFLOW
+`;
+}
