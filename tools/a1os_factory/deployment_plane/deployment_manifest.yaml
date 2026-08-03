@@ -1,0 +1,32 @@
+factory:
+  version: "3.0"
+  name: "A1OS Live Product Deployment Plane"
+
+pipeline:
+  - environment_generation
+  - docker_generation
+  - database_migration_generation
+  - cicd_generation
+  - monitoring_generation
+  - backup_generation
+  - cloudflare_generation
+  - production_readiness_check
+
+capabilities:
+  containers:
+    - dockerfile
+    - docker-compose
+  database:
+    - migrations
+    - backups
+  cicd:
+    - github_actions
+    - deployment_pipeline
+  monitoring:
+    - health_checks
+    - metrics
+    - logs
+  infrastructure:
+    - cloudflare
+    - secrets
+    - environments

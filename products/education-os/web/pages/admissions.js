@@ -1,6 +1,31 @@
+
 import { api } from "../js/education-api.js";
 
+import { loadWorkflow } from "../workflows/admissions.js";
+
 export async function renderAdmissions() {
+
+    queueMicrotask(() => {
+        const workflowRoot=document.querySelector("#workflow-root");
+        if (typeof loadWorkflow==="function" && workflowRoot) {
+            loadWorkflow(workflowRoot);
+        }
+
+        const ids={
+            renderStudents:"#register-student",
+            renderAdmissions:"#new-admission",
+            renderFees:"#record-payment",
+            renderOperations:"#new-operation"
+        };
+
+        const id=ids[renderAdmissions];
+
+        if(id){
+            document.querySelector(id)?.addEventListener("click",()=>{}, {once:true});
+        }
+    });
+
+
     const admissions = await api.admissions.list();
 
     return `
@@ -31,15 +56,15 @@ export async function renderAdmissions() {
                                         .map(
                                             a => `
                                                 <tr>
-                                                    <td>${a.application_reference || "—"}</td>
-                                                    <td>${[a.first_name, a.last_name].filter(Boolean).join(" ") || a.applicant_name || "—"}</td>
-                                                    <td>${a.class_name || a.requested_class || "—"}</td>
+                                                    <td>${a.application_reference || "-"}</td>
+                                                    <td>${[a.first_name, a.last_name].filter(Boolean).join(" ") || a.applicant_name || "-"}</td>
+                                                    <td>${a.class_name || a.requested_class || "-"}</td>
                                                     <td>
                                                         <span class="status status-success">
                                                             ${a.status || "submitted"}
                                                         </span>
                                                     </td>
-                                                    <td>${a.created_at || "—"}</td>
+                                                    <td>${a.created_at || "-"}</td>
                                                 </tr>
                                             `
                                         )
@@ -53,3 +78,6 @@ export async function renderAdmissions() {
         </section>
     `;
 }
+
+
+

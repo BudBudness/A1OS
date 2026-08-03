@@ -1,6 +1,31 @@
+
 import { api } from "../js/education-api.js";
 
+import { loadWorkflow } from "../workflows/students.js";
+
 export async function renderStudents() {
+
+    queueMicrotask(() => {
+        const workflowRoot=document.querySelector("#workflow-root");
+        if (typeof loadWorkflow==="function" && workflowRoot) {
+            loadWorkflow(workflowRoot);
+        }
+
+        const ids={
+            renderStudents:"#register-student",
+            renderAdmissions:"#new-admission",
+            renderFees:"#record-payment",
+            renderOperations:"#new-operation"
+        };
+
+        const id=ids[renderStudents];
+
+        if(id){
+            document.querySelector(id)?.addEventListener("click",()=>{}, {once:true});
+        }
+    });
+
+
     const students = await api.students.list();
 
     return `
@@ -32,8 +57,8 @@ export async function renderStudents() {
                                                 <tr>
                                                     <td>${s.id}</td>
                                                     <td>${s.first_name || ""} ${s.last_name || ""}</td>
-                                                    <td>${s.date_of_birth || "—"}</td>
-                                                    <td>${s.gender || "—"}</td>
+                                                    <td>${s.date_of_birth || "-"}</td>
+                                                    <td>${s.gender || "-"}</td>
                                                 </tr>
                                             `
                                         )
@@ -47,3 +72,6 @@ export async function renderStudents() {
         </section>
     `;
 }
+
+
+

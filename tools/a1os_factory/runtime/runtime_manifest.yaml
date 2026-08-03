@@ -1,0 +1,47 @@
+factory:
+  version: "1.5"
+  name: "A1OS Runtime Generation Engine"
+
+generation_pipeline:
+  - database_schema
+  - api_modules
+  - rbac_roles
+  - dashboards
+  - deployment
+  - tests
+
+runtime_layers:
+  - database
+  - api
+  - web
+  - security
+  - intelligence
+  - deployment
+
+generated_assets:
+  database:
+    - schema.sql
+    - migrations
+
+  api:
+    - routers
+    - services
+    - models
+
+  security:
+    - roles
+    - permissions
+    - audit
+
+  web:
+    - dashboards
+    - components
+
+  deployment:
+    - docker
+    - environment
+    - health_checks
+
+  testing:
+    - api_tests
+    - integration_tests

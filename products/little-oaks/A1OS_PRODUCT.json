@@ -1,0 +1,12 @@
+{
+  "product": "little-oaks",
+  "factory": "A1OS Product Factory",
+  "factory_version": "1.1",
+  "modules": [
+    "identity",
+    "governance",
+    "analytics",
+    "automation"
+  ],
+  "status": "generated"
+}

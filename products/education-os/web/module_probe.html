@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8">
+<pre id="o"></pre>
+<script type="module">
+const out=document.getElementById("o");
+
+async function test(path){
+    try{
+        await import(path+"?v="+Date.now());
+        out.textContent+=`OK   ${path}\n`;
+    }catch(e){
+        out.textContent+=`FAIL ${path}\n${e.stack||e}\n\n`;
+    }
+}
+
+await test("./js/router.js");
+await test("./js/auth.js");
+await test("./js/education-api.js");
+await test("./pages/dashboard.js");
+await test("./pages/students.js");
+await test("./pages/admissions.js");
+await test("./pages/fees.js");
+await test("./pages/attendance.js");
+await test("./pages/operations.js");
+await test("./pages/staff.js");
+await test("./pages/director/index.js");
+await test("./pages/roles/director.js");
+await test("./pages/roles/headmistress.js");
+await test("./pages/roles/staff.js");

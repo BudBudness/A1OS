@@ -1,0 +1,217 @@
+import { getRoute, navigate, routeTitle, startRouter } from "./router.js";
+import { api } from "./education-api.js";
+import { login, logout, verifySession, isAuthenticated, can, user } from "./auth.js";
+import { renderDashboard } from "../pages/dashboard.js";
+import { renderStudents } from "../pages/students.js";
+import { renderAdmissions } from "../pages/admissions.js";
+import { renderFees } from "../pages/fees.js";
+import { renderAttendance } from "../pages/attendance.js";
+import { renderOperations } from "../pages/operations.js";
+
+import { renderStaffPage } from "../pages/staff.js";
+import { renderDirectorSuite } from "../pages/director/index.js";
+const app = document.querySelector("#app");
+
+const navItems = [
+    ["dashboard", "Dashboard"],
+    ["students", "Students"],
+    ["admissions", "Admissions"],
+    ["fees", "Fees & Payments"],
+    ["attendance", "Attendance"],
+    ["operations", "School Operations"]
+];
+
+function renderLogin() {
+    app.innerHTML = `
+        <div class="auth-shell">
+            <div class="auth-card">
+                <div class="auth-brand">
+                    <strong>Little Oaks</strong>
+                    <span>Education OS</span>
+                </div>
+
+                <h1>Sign in</h1>
+                <p class="auth-subtitle">
+                    Little Oaks Montessori Nursery & Kindergarten
+                </p>
+
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input
+                            id="login-email"
+                            type="email"
+                            placeholder="you@littleoaks.ug"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input
+                            id="login-password"
+                            type="password"
+                            placeholder="Enter your password"
+                            required
+                        />
+                    </div>
+
+                    <div id="login-error" class="auth-error"></div>
+
+                    <button class="btn btn-primary auth-submit" type="submit">
+                        Sign in
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.querySelector("#login-form").addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const email = document.querySelector("#login-email").value.trim();
+        const password = document.querySelector("#login-password").value;
+        const error = document.querySelector("#login-error");
+        const button = document.querySelector(".auth-submit");
+
+        error.textContent = "";
+        button.disabled = true;
+        button.textContent = "Signing in...";
+
+        try {
+            await login(email, password);
+            console.log("LOGIN SUCCESS");
+            console.log("AUTH STATE", localStorage.getItem("little_oaks_auth"));
+        await render();
+        console.log("RENDER COMPLETE");
+        } catch (e) {
+            error.textContent = e.message;
+            button.disabled = false;
+            button.textContent = "Sign in";
+        }
+    });
+}
+
+
+async function render() {
+    const app = document.querySelector("#app");
+
+    if (!app) {
+        console.error("APP ROOT MISSING");
+        return;
+    }
+
+    const route = getRoute();
+    console.log("RENDER ROUTE:", route);
+
+    try {
+        if (!isAuthenticated()) {
+            renderLogin();
+            return;
+        }
+
+        app.innerHTML = `
+            <div class="shell">
+                <main id="content">
+                    Loading Little Oaks Education OS...
+                </main>
+            </div>
+        `;
+
+        const content = document.querySelector("#content");
+
+        if (route === "students") {
+            content.innerHTML = await renderStudents();
+        } else if (route === "admissions") {
+            content.innerHTML = await renderAdmissions();
+        } else if (route === "fees") {
+            content.innerHTML = await renderFees();
+        } else if (route === "attendance") {
+            content.innerHTML = await renderAttendance();
+        } else if (route === "operations") {
+            content.innerHTML = await renderOperations();
+        } else if (route === "staff") {
+            content.innerHTML = await renderStaffPage();
+        } else if (route === "director") {
+            content.innerHTML = await renderDirectorSuite();
+        } else {
+            content.innerHTML = await renderDashboard();
+        }
+
+        console.log("RENDER COMPLETE:", route);
+
+    } catch (error) {
+        console.error("RENDER FAILED:", error);
+
+        app.innerHTML = `
+            <div style="padding:40px;color:#991b1b">
+                <h1>Little Oaks Frontend Error</h1>
+                <pre>${error.stack || error}</pre>
+            </div>
+        `;
+    }
+}
+
+
+window.addEventListener("error", event => {
+    console.error("GLOBAL ERROR:", event.message, event.error);
+    const app = document.querySelector("#app");
+    if (app) {
+        app.innerHTML = `
+            <div style="padding:40px;font-family:system-ui;color:#b91c1c">
+                <h1>Little Oaks Frontend Error</h1>
+                <pre style="white-space:pre-wrap">${event.error?.stack || event.message}</pre>
+            </div>
+        `;
+    }
+    console.error("Little Oaks runtime error:", event.error || event.message);
+});
+
+window.addEventListener("unhandledrejection", event => {
+    console.error("PROMISE ERROR:", event.reason);
+    const app = document.querySelector("#app");
+    if (app) {
+        app.innerHTML = `
+            <div style="padding:40px;font-family:system-ui;color:#b91c1c">
+                <h1>Little Oaks Frontend Error</h1>
+                <pre style="white-space:pre-wrap">${event.reason?.stack || event.reason}</pre>
+            </div>
+        `;
+    }
+    console.error("Little Oaks unhandled rejection:", event.reason);
+});
+
+
+async function boot() {
+    const app = document.querySelector("#app");
+
+    try {
+        if (app) {
+            app.innerHTML = `
+                <div style="padding:40px;font-family:system-ui;background:#f8fafc;min-height:100vh">
+                    <h1 style="color:#14532d">Little Oaks Education OS</h1>
+                    <p>Initializing application...</p>
+                </div>
+            `;
+        }
+
+        await verifySession();
+        await render();
+        startRouter(render);
+
+    } catch (error) {
+        console.error("BOOT ERROR:", error);
+
+        if (app) {
+            app.innerHTML = `
+                <div style="padding:40px;font-family:system-ui;background:#fef2f2;min-height:100vh;color:#991b1b">
+                    <h1>Little Oaks Education OS</h1>
+                    <h2>Frontend module failed to load</h2>
+                    <pre style="white-space:pre-wrap">${error?.stack || error?.message || error}</pre>
+                </div>
+            `;
+        }
+    }
+}
+
+boot();

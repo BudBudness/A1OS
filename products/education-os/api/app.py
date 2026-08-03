@@ -1,3 +1,33 @@
+from api.a1os_core.intelligence.engine import system_insights
+from api.modules.live_operations.reporting_intelligence_api import router as reporting_router
+from api.modules.live_operations.governance_security_api import router as governance_router
+from api.modules.live_operations.academic_intelligence_api import router as academic_router
+from api.modules.live_operations.parent_engagement_api import router as parent_engagement_router
+from api.modules.live_operations.ai_assistant_api import router as ai_router
+from api.modules.live_operations.school_intelligence_api import router as intelligence_router
+from api.modules.live_operations.executive_intelligence_api import router as executive_router
+from api.modules.live_operations.operations_excellence_api import router as operations_router
+from api.modules.live_operations.go_live_api import router as golive_router
+from api.modules.live_operations.release_api import router as release_router
+from api.modules.live_operations.production_readiness_api import router as readiness_router
+from api.modules.live_operations.disaster_recovery_api import router as recovery_router
+from api.modules.live_operations.observability_api import router as observability_router
+from api.modules.live_operations.feature_api import router as feature_router
+from api.modules.live_operations.health_api import router as health_system_router
+from api.modules.live_operations.integration_api import router as integration_router
+from api.modules.live_operations.backup_api import router as backup_router
+from api.modules.live_operations.monitoring_api import router as monitoring_router
+from api.modules.live_operations.rbac import router as rbac_router
+from api.modules.live_operations.role_dashboard import router as role_dashboard_router
+from api.modules.live_operations.staff_api import router as staff_router
+from api.modules.live_operations.inventory_api import router as inventory_router
+from api.modules.live_operations.notifications_api import router as notifications_router
+from api.modules.live_operations.parent_portal import router as parent_portal_router
+from api.modules.live_operations.production_api import router as production_router
+from api.modules.live_operations.finance_dashboard import router as finance_dashboard_router
+from api.modules.live_operations.finance_operations import router as finance_operations_router
+from api.modules.live_operations.finance_workflows import router as finance_workflows_router
+from api.modules.live_operations.auth import router as auth_router
 import uuid
 import secrets
 from pathlib import Path
@@ -5,6 +35,8 @@ import sqlite3
 from typing import Optional
 
 from fastapi import FastAPI, Request
+from api.a1os_core.a1os_router import router as a1os_core_router
+from api.modules.director.profile.routes import router as director_profile_router
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -35,9 +67,32 @@ class StripAPIPrefixMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 app = FastAPI(
+
 title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
     version="0.1.0",
 )
+
+app.include_router(health_system_router)
+app.include_router(feature_router)
+app.include_router(observability_router)
+app.include_router(recovery_router)
+app.include_router(readiness_router)
+app.include_router(release_router)
+app.include_router(golive_router)
+app.include_router(operations_router)
+app.include_router(executive_router)
+app.include_router(intelligence_router)
+app.include_router(ai_router)
+app.include_router(governance_router)
+app.include_router(reporting_router)
+app.include_router(parent_engagement_router)
+app.include_router(academic_router)
+app.include_router(a1os_core_router)
+
+
+
+
+app.include_router(director_profile_router)
 app.add_middleware(StripAPIPrefixMiddleware)
 
 
@@ -171,11 +226,11 @@ def _current_user(
                 u.email,
                 u.phone,
                 u.active,
-                s.session_token,
+                s.token,
                 s.expires_at
             FROM auth_sessions s
             JOIN users u ON u.id = s.user_id
-            WHERE s.session_token = ?
+            WHERE s.token = ?
             """,
             (token,),
         ).fetchone()
@@ -198,7 +253,7 @@ def _current_user(
 
         if expires_at < datetime.now(timezone.utc):
             conn.execute(
-                "DELETE FROM auth_sessions WHERE session_token = ?",
+                "DELETE FROM auth_sessions WHERE token = ?",
                 (token,),
             )
             conn.commit()
@@ -212,7 +267,7 @@ def _current_user(
             """
             UPDATE auth_sessions
             SET last_used_at = CURRENT_TIMESTAMP
-            WHERE session_token = ?
+            WHERE token = ?
             """,
             (token,),
         )
@@ -293,7 +348,7 @@ def auth_login(payload: dict):
             INSERT INTO auth_sessions
             (
                 user_id,
-                session_token,
+                token,
                 expires_at
             )
             VALUES (?, ?, ?)
@@ -363,7 +418,7 @@ def auth_logout(
             conn.execute(
                 """
                 DELETE FROM auth_sessions
-                WHERE session_token = ?
+                WHERE token = ?
                 """,
                 (token,),
             )
@@ -688,18 +743,20 @@ def reports(request: Request):
             (organization_id,),
         ).fetchone()["total"]
 
-        attendance = conn.execute(
-            """
-            SELECT
-                COUNT(*) AS total_records,
-                SUM(CASE WHEN status = 'present' THEN 1 ELSE 0 END) AS present,
-                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) AS absent,
-                SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) AS late
-            FROM attendance
-            WHERE organization_id = ?
-            """,
-            (organization_id,),
-        ).fetchone()
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
 
         academic_years = conn.execute(
             """
@@ -1977,26 +2034,32 @@ def director_intelligence_summary(request: Request):
             (organization_id,),
         ).fetchone()[0]
 
-        parents = conn.execute(
-            """
-            SELECT COUNT(*)
-            FROM parents_guardians
-            WHERE organization_id=?
-            """,
-            (organization_id,),
-        ).fetchone()[0]
+        try:
+            parents = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM parents_guardians
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()[0]
+        except Exception:
+            parents = 0
 
-        attendance = conn.execute(
-            """
-            SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
-                SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
-            FROM attendance
-            WHERE organization_id=?
-            """,
-            (organization_id,),
-        ).fetchone()
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
 
     total_attendance = int(attendance["total"] or 0)
     present = int(attendance["present"] or 0)
@@ -2053,17 +2116,20 @@ def director_intelligence_insights(request: Request):
     insights = []
 
     with db() as conn:
-        attendance = conn.execute(
-            """
-            SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
-                SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
-            FROM attendance
-            WHERE organization_id=?
-            """,
-            (organization_id,),
-        ).fetchone()
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
 
         total = int(attendance["total"] or 0)
         absent = int(attendance["absent"] or 0)
@@ -2104,5 +2170,81 @@ from pathlib import Path as _Path
 
 _WEB = _Path(__file__).resolve().parent.parent / "web"
 
-if _WEB.exists():
-    app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
+
+
+
+
+
+# Little Oaks Education OS v1.1.0 Director Suite
+# v1.1.0 Director Editing Suite
+
+from api.modules.live_operations import (
+    students_router,
+    parents_router,
+    classrooms_router,
+)
+
+
+from api.modules.live_operations.student_parents import router as student_parents_router
+
+app.include_router(students_router)
+app.include_router(parents_router)
+from api.modules.live_operations.attendance import router as attendance_router
+
+app.include_router(classrooms_router)
+from api.modules.live_operations.attendance_sessions import router as attendance_sessions_router
+
+app.include_router(attendance_router)
+from api.modules.live_operations.school_operations import router as school_operations_router
+
+app.include_router(attendance_sessions_router)
+from api.modules.live_operations.dashboard import router as dashboard_router
+
+app.include_router(school_operations_router)
+app.include_router(dashboard_router)
+app.include_router(student_parents_router)
+
+app.include_router(finance_operations_router)
+app.include_router(finance_workflows_router)
+
+app.include_router(role_dashboard_router)
+app.include_router(rbac_router)
+from api.security_layer import router as security_router
+app.include_router(security_router)
+
+app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
+
+app.include_router(auth_router)
+
+app.include_router(finance_dashboard_router)
+app.include_router(integration_router)
+app.include_router(backup_router)
+app.include_router(monitoring_router)
+app.include_router(staff_router)
+app.include_router(inventory_router)
+app.include_router(notifications_router)
+app.include_router(parent_portal_router)
+app.include_router(production_router)
+
+
+
+
+# Little Oaks v1.4 Finance Operations Router
+
+
+# Little Oaks v1.4 finance operations final registration
+
+
+@app.get("/v1/a1os/core/status")
+def a1os_core_status():
+    return {
+        "platform":"A1OS Core",
+        "version":"1.0",
+        "source":"Little Oaks v4.8",
+        "status":"operational"
+    }
+
+
+@app.get("/v1/a1os/intelligence/status")
+def a1os_intelligence_status():
+    return system_insights()

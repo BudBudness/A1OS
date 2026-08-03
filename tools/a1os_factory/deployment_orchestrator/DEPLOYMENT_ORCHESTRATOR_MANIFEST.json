@@ -1,0 +1,19 @@
+{
+  "plane": "deployment_orchestrator",
+  "version": "7.4",
+  "generated": "2026-08-02T17:08:50.105176+00:00",
+  "status": "deployment_orchestration_ready",
+  "capabilities": [
+    "environment_management",
+    "release_management",
+    "deployment_manifest_generation",
+    "health_monitoring_hooks",
+    "rollback_foundations",
+    "deployment_reporting"
+  ],
+  "environments": [
+    "development",
+    "staging",
+    "production"
+  ]
+}

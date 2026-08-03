@@ -1,0 +1,27 @@
+version: "5.5"
+
+plane:
+  name: data_intelligence_analytics
+  status: frozen
+
+capabilities:
+
+  data_platform:
+    - data_lake
+    - warehouse
+    - pipelines
+
+  intelligence:
+    - analytics_engine
+    - business_insights
+    - metrics_layer
+
+  governance:
+    - data_quality
+    - data_governance
+    - lineage_tracking
+
+  ai:
+    - ai_data_readiness
+    - knowledge_extraction
+    - intelligence_generation

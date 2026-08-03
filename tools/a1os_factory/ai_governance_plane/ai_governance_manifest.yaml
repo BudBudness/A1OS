@@ -1,0 +1,30 @@
+version: "5.2"
+
+plane:
+  name: ai_governance
+  status: frozen
+
+capabilities:
+  governance:
+    - ai_policy_management
+    - model_governance
+    - responsible_ai_controls
+    - approval_workflows
+
+  intelligence:
+    - model_registry
+    - prompt_governance
+    - evaluation_frameworks
+    - performance_tracking
+
+  compliance:
+    - ai_risk_assessment
+    - transparency_reporting
+    - explainability_controls
+    - audit_readiness
+
+  operations:
+    - ai_lifecycle_management
+    - human_oversight
+    - model_change_tracking
+    - governance_reporting

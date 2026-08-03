@@ -1,0 +1,41 @@
+factory:
+  version: "2.1"
+  name: "A1OS Product Registry Command Center"
+
+pipeline:
+  - discover_products
+  - register_products
+  - track_versions
+  - collect_health
+  - map_capabilities
+  - generate_registry_report
+
+registry:
+
+  products:
+    - identity
+    - domain
+    - profile
+    - version
+    - status
+
+  lifecycle:
+    - created
+    - deployed
+    - validated
+    - evolved
+
+  intelligence:
+    - agents
+    - workflows
+    - analytics
+
+  operations:
+    - deployment
+    - monitoring
+    - recovery
+
+  reporting:
+    - health_report
+    - capability_map
+    - product_inventory

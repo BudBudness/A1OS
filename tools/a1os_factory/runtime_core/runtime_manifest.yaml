@@ -1,0 +1,12 @@
+version: "7.0"
+
+plane:
+  name: a1os_factory_runtime_core
+  status: initialized
+
+capabilities:
+  - engine_discovery
+  - execution_tracking
+  - artifact_management
+  - runtime_orchestration
+  - transformation_pipeline

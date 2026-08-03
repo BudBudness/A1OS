@@ -1,28 +1,7 @@
 Little Oaks Education OS
-Version: 1.0.0
-Release Type: Production
+Version: 1.1.0
 Environment: Production
 Organization: Little Oaks Montessori Nursery & Kindergarten
-
-Status:
-Production Ready
-
-Capabilities:
-- Authentication and role-based access
-- Executive dashboard intelligence
-- Student management foundation
-- Admissions management foundation
-- Fees and payments foundation
-- Attendance foundation
-- School operations foundation
-- Production API infrastructure
-
-Release Notes:
-v1.0.0 establishes the production Education OS platform.
-Future releases will expand director editing workflows and full CRUD user interfaces.
-
-Git Release:
-6281134
-
-Deployment:
-https://little-oaks.pyongcity.org
+Release: Director Editing Suite
+Status: Development
+Base Release: v1.0.0 Production

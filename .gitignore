@@ -56,3 +56,23 @@ billions.db
 
 # Expose protection
 .exposed.*
+
+# SQLite runtime files
+*.db-shm
+*.db-wal
+
+# Runtime backups
+backups/immutable/
+
+# Logs
+*.log
+nohup.out
+
+# Forensics artifacts
+browser_forensics.js
+browser_runtime_probe.html
+frontend_forensics.js
+frontend_forensics.json
+
+# Node artifacts (if not needed)
+node_modules/

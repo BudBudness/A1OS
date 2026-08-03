@@ -1,0 +1,19 @@
+product:
+  name: string
+  version: string
+
+layers:
+  required:
+    - core
+    - intelligence
+    - api
+    - web
+    - deployments
+    - docs
+
+modules:
+  default:
+    - identity
+    - governance
+    - analytics
+    - automation

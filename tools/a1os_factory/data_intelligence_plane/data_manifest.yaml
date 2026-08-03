@@ -1,0 +1,44 @@
+factory:
+  version: "3.3"
+  name: "A1OS Data Intelligence & Analytics Plane"
+
+pipeline:
+  - data_model_generation
+  - warehouse_generation
+  - etl_generation
+  - analytics_generation
+  - reporting_generation
+  - ai_insight_generation
+  - data_quality_validation
+
+capabilities:
+
+  data:
+    - schemas
+    - data_models
+    - warehouse_foundation
+    - data_catalog
+
+  pipelines:
+    - ingestion
+    - transformation
+    - synchronization
+    - scheduled_jobs
+
+  analytics:
+    - dashboards
+    - metrics
+    - kpis
+    - trend_analysis
+
+  intelligence:
+    - recommendations
+    - forecasting
+    - anomaly_detection
+    - decision_support
+
+  governance:
+    - data_quality
+    - lineage
+    - retention
+    - access_control

@@ -1,3 +1,4 @@
+import { loadWorkflow } from "../workflows/attendance.js";
 import { api } from "../js/education-api.js";
 import { error } from "../js/components/ui.js";
 
@@ -65,9 +66,9 @@ export async function renderAttendance() {
                   <tbody>
                     ${sessions.map(s => `
                       <tr>
-                        <td>${s.attendance_date || "—"}</td>
-                        <td>${s.class_level || "—"}</td>
-                        <td>${s.record_count ?? "—"}</td>
+                        <td>${s.attendance_date || "-"}</td>
+                        <td>${s.class_level || "-"}</td>
+                        <td>${s.record_count ?? "-"}</td>
                       </tr>
                     `).join("")}
                   </tbody>
@@ -81,3 +82,5 @@ export async function renderAttendance() {
     return error(err.message);
   }
 }
+
+

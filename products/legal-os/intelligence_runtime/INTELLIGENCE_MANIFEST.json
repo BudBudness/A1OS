@@ -1,0 +1,21 @@
+{
+  "product": "legal-os",
+  "profile": "legal",
+  "factory_version": "1.6",
+  "agents": [
+    "legal_research_agent",
+    "contract_assistant",
+    "compliance_agent"
+  ],
+  "workflows": [
+    "case_tracking",
+    "document_review",
+    "deadline_monitoring"
+  ],
+  "analytics": [
+    "case_metrics",
+    "compliance_reports"
+  ],
+  "generated": "2026-08-02T06:48:41.501388",
+  "status": "intelligence_ready"
+}

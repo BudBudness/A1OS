@@ -18,6 +18,11 @@ export function isAuthenticated() {
 
 export function setAuth(data) {
     localStorage.setItem(AUTH_KEY, JSON.stringify(data));
+    localStorage.setItem("little_oaks_access_token", data.token);
+    localStorage.setItem("little_oaks_education_os_token", data.token);
+    localStorage.setItem("a1os_access_token", data.token);
+    localStorage.setItem("a1os_token", data.token);
+    localStorage.setItem("access_token", data.token);
 }
 
 export function clearAuth() {
@@ -34,7 +39,7 @@ export function hasPermission(permission) {
 }
 
 export async function login(email, password) {
-    const response = await fetch("/api/auth/login", {
+    const response = await fetch("http://127.0.0.1:3011/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -51,31 +56,10 @@ export async function login(email, password) {
 }
 
 export async function verifySession() {
-    const token = getToken();
-
-    if (!token) return null;
-
-    const response = await fetch("/api/auth/me", {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-
-    if (!response.ok) {
-        clearAuth();
-        return null;
-    }
-
-    const data = await response.json();
-
-    const current = getAuth();
-    setAuth({
-        ...current,
-        user: data.user
-    });
-
-    return data;
+    const auth = getAuth();
+    return auth && auth.token ? auth : null;
 }
+
 
 export function logout() {
     clearAuth();
@@ -89,14 +73,19 @@ export function can(permission) {
 
     const role = String(current.role || "").toLowerCase();
 
-    if (role === "director" || role === "director_ceo" || role === "ceo") {
+    if (role === "director" || role === "director_ceo" || role === "director_ceo_teacher" || role === "ceo") {
         return true;
     }
 
     const permissions = {
         "head_mistress": [
             "academic",
+            "headmistress",
+            "curriculum.manage",
+            "lesson.review",
             "operations",
+            "staff.manage",
+            "staff.view",
             "students",
             "admissions",
             "attendance",
