@@ -1,6 +1,6 @@
 import { getToken, clearAuth } from "./auth.js?v=1785434576";
 
-const API_BASE = "http://127.0.0.1:3011";
+const API_BASE = "http://127.0.0.1:3012";
 
 async function request(path, options = {}) {
     const token = getToken();
