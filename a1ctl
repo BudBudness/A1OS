@@ -5,7 +5,7 @@ import json
 import urllib.request
 import urllib.error
 
-API_URL = "http://127.0.0.1:8000/v1"
+API_URL = "http://127.0.0.1:3011/v1"
 
 def send_request(endpoint, method="GET", data=None):
     url = f"{API_URL}/{endpoint}"
