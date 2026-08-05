@@ -1,6 +1,6 @@
 import { getRoute, navigate, routeTitle, startRouter } from "./router.js";
 import { api } from "./education-api.js";
-import { login, logout, verifySession, isAuthenticated, can, user } from "./auth.js?v=1785434576";
+import { login, logout, verifySession, isAuthenticated, can, user, getToken } from "./auth.js?v=1785434576";
 import { renderDashboard } from "../pages/dashboard.js";
 import { renderStudents } from "../pages/students.js";
 import { renderAdmissions } from "../pages/admissions.js";
@@ -18,7 +18,8 @@ const navItems = [
     ["admissions", "Admissions"],
     ["fees", "Fees & Payments"],
     ["attendance", "Attendance"],
-    ["operations", "School Operations"]
+    ["operations", "School Operations"],
+    ["password", "Change Password"]
 ];
 
 function renderLogin() {
@@ -91,6 +92,103 @@ function renderLogin() {
 
 
 
+function renderChangePassword() {
+    return `
+        <div class="auth-shell">
+            <div class="auth-card">
+                <div class="auth-brand">
+                    <strong>Little Oaks</strong>
+                    <span>Account</span>
+                </div>
+
+                <h1>Change Password</h1>
+
+                <div id="password-error" class="auth-error"></div>
+                <div id="password-success" style="color:#15803d;margin-bottom:12px"></div>
+
+                <form id="password-form">
+                    <div class="form-group">
+                        <label>Current password</label>
+                        <input id="current-password" type="password" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label>New password (min 8 characters)</label>
+                        <input id="new-password" type="password" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirm new password</label>
+                        <input id="confirm-password" type="password" required />
+                    </div>
+
+                    <button class="btn btn-primary auth-submit" type="submit">
+                        Update password
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+}
+
+function wireChangePasswordForm() {
+    const passwordForm = document.querySelector("#password-form");
+    if (!passwordForm) return;
+
+    passwordForm.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const error = document.querySelector("#password-error");
+        const success = document.querySelector("#password-success");
+        const button = passwordForm.querySelector("button");
+        const current = document.querySelector("#current-password").value;
+        const next = document.querySelector("#new-password").value;
+        const confirm = document.querySelector("#confirm-password").value;
+
+        error.textContent = "";
+        success.textContent = "";
+
+        if (next !== confirm) {
+            error.textContent = "New passwords do not match";
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = "Updating...";
+
+        try {
+            const token = getToken();
+            const response = await fetch("/api/auth/change-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    current_password: current,
+                    new_password: next
+                })
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(data?.detail || "Failed to update password");
+            }
+
+            success.textContent = "Password updated. Other sessions were signed out.";
+            passwordForm.reset();
+        } catch (e) {
+            error.textContent = e.message;
+        } finally {
+            button.disabled = false;
+            button.textContent = "Update password";
+        }
+    });
+}
+
+
+
 async function render() {
     console.log("APP RENDER ENTER");
     const route = getRoute();
@@ -117,6 +215,7 @@ async function render() {
                     ${navItems.map(([r,t]) =>
                         `<a href="#/${r}">${t}</a>`
                     ).join("")}
+                    <a href="#" id="logout-link" style="margin-top:24px;opacity:.7">Logout</a>
                 </nav>
                 <main id="content" class="content">
                     <div class="loading">Loading ${route}...</div>
@@ -159,11 +258,22 @@ async function render() {
                 content.innerHTML = await renderStaffPage();
                 break;
 
+            case "password":
+                content.innerHTML = renderChangePassword();
+                break;
+
             default:
                 content.innerHTML = await renderDashboard();
         }
 
         console.log("RENDER COMPLETE", route);
+
+        document.querySelector("#logout-link")?.addEventListener("click", event => {
+            event.preventDefault();
+            logout();
+        });
+
+        wireChangePasswordForm();
 
     } catch (error) {
         console.error("RENDER FAILURE:", error);

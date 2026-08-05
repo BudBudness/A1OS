@@ -1,5 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
+export PATH="/data/data/com.termux/files/usr/bin:$PATH"
+
 APP="python3 -m uvicorn api.app:app --host 127.0.0.1 --port 3012"
 
 if ! pgrep -f "$APP" >/dev/null; then

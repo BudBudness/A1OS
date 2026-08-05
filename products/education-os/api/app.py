@@ -407,6 +407,98 @@ def auth_login(payload: dict):
         }
 
 
+@app.post("/auth/change-password")
+def auth_change_password(
+    payload: dict,
+    authorization: str | None = Header(default=None),
+):
+    user = _current_user(authorization)
+
+    current_password = str(payload.get("current_password", ""))
+    new_password = str(payload.get("new_password", ""))
+
+    if not current_password or not new_password:
+        raise HTTPException(
+            status_code=400,
+            detail="Current and new password are required",
+        )
+
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="New password must be at least 8 characters",
+        )
+
+    with db() as conn:
+        row = conn.execute(
+            """
+            SELECT password_hash
+            FROM users
+            WHERE id = ?
+            """,
+            (user["id"],),
+        ).fetchone()
+
+        if (
+            not row
+            or not row["password_hash"]
+            or not _verify_password(current_password, row["password_hash"])
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Current password is incorrect",
+            )
+
+        token = _get_bearer_token(authorization)
+
+        conn.execute(
+            """
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ?
+            """,
+            (_password_hash(new_password), user["id"]),
+        )
+
+        if token:
+            conn.execute(
+                """
+                DELETE FROM auth_sessions
+                WHERE user_id = ? AND token != ?
+                """,
+                (user["id"], token),
+            )
+
+        conn.execute(
+            """
+            INSERT INTO audit_log
+            (
+                organization_id,
+                actor_user_id,
+                entity_type,
+                entity_id,
+                action,
+                details
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user["organization_id"],
+                user["id"],
+                "auth",
+                user["id"],
+                "change_password",
+                json.dumps({"email": user["email"]}),
+            ),
+        )
+
+        conn.commit()
+
+    return {
+        "status": "password_updated"
+    }
+
+
 @app.post("/auth/logout")
 def auth_logout(
     authorization: str | None = Header(default=None),

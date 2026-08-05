@@ -1,6 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 set -u
+export PATH="/data/data/com.termux/files/usr/bin:$PATH"
 
 ROOT="$HOME/A1OS_RESTORED"
 LOG="$ROOT/logs/production-watchdog.log"
@@ -21,10 +22,10 @@ check() {
 
 restart_education_api() {
     log "ACTION restart education-api"
-    pkill -f 'uvicorn app:app --host 127.0.0.1 --port 3012' 2>/dev/null || true
+    pkill -f 'uvicorn api.app:app' 2>/dev/null || true
     sleep 2
-    cd "$ROOT/products/education-os/api" || exit 1
-    nohup python3 -m uvicorn app:app --host 127.0.0.1 --port 3012 \
+    cd "$ROOT/products/education-os" || exit 1
+    nohup ./run-production.sh \
         >> "$ROOT/logs/education-api-watchdog.log" 2>&1 &
     log "RESULT education-api restart issued"
 }
@@ -72,12 +73,9 @@ else
     log "FAIL public-frontend"
 fi
 
-if python3 - <<'PY'
-import sqlite3
-with sqlite3.connect(ROOT + "/data/a1os.db") as c:
-    raise SystemExit(0 if c.execute("PRAGMA integrity_check").fetchone()[0] == "ok" else 1)
-PY
-then
+EDU_DB="$ROOT/products/education-os/deployments/little-oaks/data/education.db"
+if sqlite3 "$ROOT/data/a1os.db" "PRAGMA integrity_check;" | grep -qx "ok" \
+    && sqlite3 "$EDU_DB" "PRAGMA integrity_check;" | grep -qx "ok"; then
     log "PASS database-integrity"
 else
     log "CRITICAL database-integrity-failed"

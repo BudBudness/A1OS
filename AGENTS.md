@@ -29,7 +29,7 @@ Canonical launch: `education-os-launch.sh` (Termux home). One service per port �
 - **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — `little-oaks.pyongcity.org/api/*` → 3012, everything else → 8080.
 `a1ctl` talks to the core on 3011 (runs `python3 main.py`).
 
-Watchdogs: `products/education-os/ops/watchdog.sh` (restarts API on 3012), `A1OS_RESTORED/ops/a1os-production-watchdog.sh` (core). Cron template: `~/crontab.txt` (install with `crontab crontab.txt`).
+Watchdogs + cron (INSTALLED via `crontab ~/crontab.txt`): hourly `ops/a1os-production-watchdog.sh` (core :3011, API :3012, frontend :8080, public tunnel, DB integrity; auto-restarts core/API with canonical `run-production.sh`), daily 1:00 + weekly Sun 12:00 DB backups via `~/backup-little-oaks-education-db.sh` (sqlite `.backup`, integrity-checked, 30-day retention). Auth: `POST /auth/change-password` (authed; requires `current_password` + `new_password`, min 8 chars; invalidates other sessions); UI has a Change Password page + Logout in the sidebar.
 
 ## Gotchas
 
