@@ -29,6 +29,8 @@ npm-debug.log
 *.key
 *.pem
 *.crt
+*.secret
+secrets/
 *.jks
 
 # Databases (except schema)
