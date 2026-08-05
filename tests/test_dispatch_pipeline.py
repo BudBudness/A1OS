@@ -2,7 +2,7 @@ import sys
 import os
 
 # Dynamically add A1OS root
-sys.path.append(os.path.expanduser("~/A1OS"))
+sys.path.append(os.path.expanduser("~/A1OS_RESTORED"))
 
 from core.execution.v2.dispatcher.engine import DistributedDispatcher
 

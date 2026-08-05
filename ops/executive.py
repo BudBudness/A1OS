@@ -1,7 +1,7 @@
 import json, os
-STATE_FILE, LOG_FILE, PIPE = os.path.expanduser("~/A1OS/data/state.json"), os.path.expanduser("~/A1OS/data/ingest/logs/audit.jsonl"), os.path.expanduser("~/A1OS/data/queue/task_pipe")
+STATE_FILE, LOG_FILE, PIPE = os.path.expanduser("~/A1OS_RESTORED/data/state.json"), os.path.expanduser("~/A1OS_RESTORED/data/ingest/logs/audit.jsonl"), os.path.expanduser("~/A1OS_RESTORED/data/queue/task_pipe")
 def actuate(action, category):
-    with open(PIPE, "w") as f: f.write(f"$HOME/A1OS/ops/actions/{action}.sh {category}\n")
+    with open(PIPE, "w") as f: f.write(f"$HOME/A1OS_RESTORED/ops/actions/{action}.sh {category}\n")
 def analyze_and_act():
     if not os.path.exists(LOG_FILE): return
     with open(LOG_FILE, 'r') as f: logs = [json.loads(l) for l in f if l.strip()]

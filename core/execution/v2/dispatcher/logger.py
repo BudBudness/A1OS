@@ -2,7 +2,7 @@ import os
 import json
 
 class LoggingGate:
-    def __init__(self, log_path="~/A1OS/logs/pending_decisions.log"):
+    def __init__(self, log_path="~/A1OS_RESTORED/logs/pending_decisions.log"):
         self.log_path = os.path.expanduser(log_path)
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
 

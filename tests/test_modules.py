@@ -1,5 +1,5 @@
 import sys, os
-sys.path.append(os.path.expanduser("~/A1OS"))
+sys.path.append(os.path.expanduser("~/A1OS_RESTORED"))
 
 from modules.finance.accounting import AccountingWorkflow
 from modules.research.synthesizer import ResearchSynthesizer

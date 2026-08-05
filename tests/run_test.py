@@ -2,7 +2,7 @@ import sys
 import os
 
 # Dynamically add A1OS root to the path
-sys.path.append(os.path.expanduser("~/A1OS"))
+sys.path.append(os.path.expanduser("~/A1OS_RESTORED"))
 
 from core.persistence.engine import StateManager
 

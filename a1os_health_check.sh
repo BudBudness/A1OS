@@ -16,8 +16,8 @@ echo "Ledger Records : $(sqlite3 $DB 'SELECT count(*) FROM finance_ledger;')"
 # 3. Process Initialization
 echo "[3/3] Initializing Enterprise Workers..."
 # Assuming your worker entry point is manager.py or a background daemon
-nohup python3 ~/A1OS/manager.py > ~/A1OS/logs/worker.log 2>&1 &
-echo "Workers active. Logs redirected to ~/A1OS/logs/worker.log."
+nohup python3 ~/A1OS_RESTORED/manager.py > ~/A1OS_RESTORED/logs/worker.log 2>&1 &
+echo "Workers active. Logs redirected to ~/A1OS_RESTORED/logs/worker.log."
 
 echo "--- ✅ HEALTH CHECK COMPLETE ---"
 

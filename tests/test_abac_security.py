@@ -1,5 +1,5 @@
 import sys, os
-sys.path.append(os.path.expanduser("~/A1OS"))
+sys.path.append(os.path.expanduser("~/A1OS_RESTORED"))
 from core.execution.v2.dispatcher.engine import DistributedDispatcher
 
 def test():
