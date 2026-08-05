@@ -19,6 +19,18 @@ Autonomous multi-engine AI/agent orchestration platform ("A1OS Factory"). Python
 - education-os API: `cd products/education-os/api && python3 -m uvicorn app:app --host 127.0.0.1 --port 3012`.
 - Node tooling (`package.json`: playwright, chrome-remote-interface, react-three): `npm install`.
 
+## Runtime wiring (production topology)
+
+Canonical launch: `education-os-launch.sh` (Termux home). One service per port — do not move these:
+
+- **3011** — A1OS core engine (`python3 main.py`). Currently idle; edu owns 3012.
+- **3012** — education-os API (`run-production.sh` → `uvicorn api.app:app --host 127.0.0.1 --port 3012 --workers 1 --proxy-headers`).
+- **8080** — frontend + same-origin `/api` proxy (`education-os-web-server.py` serves `products/education-os/web`, proxies to 3012).
+- **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — `little-oaks.pyongcity.org/api/*` → 3012, everything else → 8080.
+- **8000** — `a1ctl` gateway. Not currently running.
+
+Watchdogs: `products/education-os/ops/watchdog.sh` (restarts API on 3012), `A1OS_RESTORED/ops/a1os-production-watchdog.sh` (core). Cron template: `~/crontab.txt` (install with `crontab crontab.txt`).
+
 ## Gotchas
 
 - `.env` in repo root holds secrets (Cloudflare tokens, `SECRET_KEY`, `JWT_SECRET_KEY`). Never print or commit it.
