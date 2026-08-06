@@ -9,8 +9,9 @@ test -f "$ROOT/js/app.js"
 test -f "$ROOT/js/api.js"
 test -f "$ROOT/js/state.js"
 test -f "$ROOT/js/router.js"
+test -f "$ROOT/js/site-content.js"
 
-for page in dashboard students admissions fees attendance operations; do
+for page in dashboard students admissions fees attendance operations public website; do
     test -f "$ROOT/pages/$page.js"
 done
 
@@ -19,10 +20,13 @@ echo "[PASS] Application shell"
 echo "[PASS] API client"
 echo "[PASS] Router"
 echo "[PASS] State module"
+echo "[PASS] Site content module"
 echo "[PASS] Dashboard page"
 echo "[PASS] Students page"
 echo "[PASS] Admissions page"
 echo "[PASS] Fees page"
 echo "[PASS] Attendance page"
 echo "[PASS] Operations page"
+echo "[PASS] Public website page"
+echo "[PASS] Website CMS page"
 echo "[PASS] Frontend smoke test"

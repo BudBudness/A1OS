@@ -107,6 +107,79 @@ print("PASS — authenticated dashboard integration")
 print("PASS — live dashboard rendering")
 print("PASS — responsive dashboard surface")
 
+# ============================================================
+# PUBLIC WEBSITE + CMS ACCEPTANCE
+# ============================================================
+
+public = requests.get(f"{BASE}/site-content", timeout=10)
+assert public.status_code == 200, public.text
+sections = public.json().get("sections", {})
+required_sections = [
+    "homepage_announcement",
+    "admissions_notice",
+    "about",
+    "approach",
+    "programmes",
+    "sports_skills",
+    "location",
+    "contact",
+    "gallery",
+]
+for name in required_sections:
+    assert name in sections, f"missing site-content section: {name}"
+print("PASS — public site content")
+
+assert sections["about"]["mission"], "about.mission empty"
+assert sections["programmes"]["day_care"]["ages"], "day_care ages empty"
+assert sections["programmes"]["kindergarten"]["ages"], "kindergarten ages empty"
+assert sections["sports_skills"]["sports"], "sports list empty"
+assert sections["contact"]["phones"], "contact phones empty"
+print("PASS — public site content values")
+
+denied = requests.put(
+    f"{BASE}/site-content", json={"sections": {}}, timeout=10
+)
+assert denied.status_code in (401, 403), denied.status_code
+print("PASS — CMS requires authentication")
+
+saved = requests.put(
+    f"{BASE}/site-content",
+    json={"sections": sections},
+    headers=headers,
+    timeout=10,
+)
+assert saved.status_code == 200, saved.text
+print("PASS — CMS save")
+
+after = requests.get(f"{BASE}/site-content", timeout=10)
+assert after.status_code == 200, after.text
+assert after.json().get("sections", {}) == sections, "CMS round-trip mismatch"
+print("PASS — CMS round-trip persistence")
+
+# ============================================================
+# PUBLIC SITE + CMS SOURCE ACCEPTANCE
+# ============================================================
+
+public_js = Path("products/education-os/web/pages/public.js").read_text()
+website_js = Path("products/education-os/web/pages/website.js").read_text()
+site_content_js = Path("products/education-os/web/js/site-content.js").read_text()
+app_js = Path("products/education-os/web/js/app.js").read_text()
+
+for marker in ["renderPublicPage", "announcementBand", "pageHeading"]:
+    assert marker in public_js, f"missing public.js marker: {marker}"
+
+for marker in ["renderWebsitePage", "collectSections", "cms-save-top"]:
+    assert marker in website_js, f"missing website.js marker: {marker}"
+
+for marker in ["DEFAULT_CONTENT", "loadSiteContent", "refreshSiteContent"]:
+    assert marker in site_content_js, f"missing site-content.js marker: {marker}"
+
+for marker in ["renderPublicApp", "isPublicRoute"]:
+    assert marker in app_js, f"missing app.js marker: {marker}"
+
+print("PASS — public site source")
+print("PASS — CMS source")
+
 print("=" * 60)
 print("STAGE 4 FULL LIVE ACCEPTANCE: PASS")
 print("=" * 60)

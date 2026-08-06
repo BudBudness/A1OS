@@ -10,6 +10,15 @@ import { renderOperations } from "../pages/operations.js";
 
 import { renderStaffPage } from "../pages/staff.js";
 import { renderDirectorSuite } from "../pages/director/index.js";
+import { renderWebsitePage, wireWebsitePage } from "../pages/website.js";
+import {
+    renderPublicShell,
+    renderPublicPage,
+    parentPortalPage,
+    isPublicRoute,
+    publicTitle
+} from "../pages/public.js";
+import { loadSiteContent } from "./site-content.js";
 const app = document.querySelector("#app");
 
 const navItems = [
@@ -19,55 +28,15 @@ const navItems = [
     ["fees", "Fees & Payments"],
     ["attendance", "Attendance"],
     ["operations", "School Operations"],
+    ["website", "Website"],
     ["password", "Change Password"]
 ];
 
-function renderLogin() {
-    app.innerHTML = `
-        <div class="auth-shell">
-            <div class="auth-card">
-                <div class="auth-brand">
-                    <strong>Little Oaks</strong>
-                    <span>Education OS</span>
-                </div>
+function wireLoginForm() {
+    const form = document.querySelector("#login-form");
+    if (!form) return;
 
-                <h1>Sign in</h1>
-                <p class="auth-subtitle">
-                    Little Oaks Montessori Nursery & Kindergarten
-                </p>
-
-                <form id="login-form">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input
-                            id="login-email"
-                            type="email"
-                            placeholder="you@littleoaks.ug"
-                            required
-                        />
-                    </div>
-
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input
-                            id="login-password"
-                            type="password"
-                            placeholder="Enter your password"
-                            required
-                        />
-                    </div>
-
-                    <div id="login-error" class="auth-error"></div>
-
-                    <button class="btn btn-primary auth-submit" type="submit">
-                        Sign in
-                    </button>
-                </form>
-            </div>
-        </div>
-    `;
-
-    document.querySelector("#login-form").addEventListener("submit", async event => {
+    form.addEventListener("submit", async event => {
         event.preventDefault();
 
         const email = document.querySelector("#login-email").value.trim();
@@ -81,13 +50,44 @@ function renderLogin() {
 
         try {
             await login(email, password);
-        await render();
+            await render();
         } catch (e) {
             error.textContent = e.message;
             button.disabled = false;
             button.textContent = "Sign in";
         }
     });
+}
+
+function wireContactForm() {
+    const form = document.querySelector("#contact-form");
+    if (!form) return;
+
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        const note = document.querySelector("#contact-note");
+        if (note) {
+            note.hidden = false;
+            note.textContent = "Thank you! Your message has been received. We will be in touch within one working day.";
+        }
+        form.reset();
+    });
+}
+
+function renderPublicApp(route) {
+    const appRoot = document.querySelector("#app");
+
+    if (!isPublicRoute(route)) {
+        location.hash = "/home";
+        route = "home";
+    }
+
+    const content = route === "parent-portal" ? parentPortalPage() : renderPublicPage(route);
+    appRoot.innerHTML = renderPublicShell(content, route);
+    document.title = `${publicTitle(route)} — Little Oaks Montessori Kindergarten & Daycare`;
+
+    if (route === "parent-portal") wireLoginForm();
+    if (route === "contact") wireContactForm();
 }
 
 
@@ -204,15 +204,18 @@ async function render() {
 
     try {
         if (!isAuthenticated()) {
-            renderLogin();
+            renderPublicApp(route);
             return;
         }
+
+        document.title = "Little Oaks Education OS";
 
         appRoot.innerHTML = `
             <div class="app-shell">
                 <nav class="sidebar">
                     <h2>Little Oaks</h2>
-                    ${navItems.map(([r,t]) =>
+                    ${navItems.filter(([r]) => r !== "website" || can("website"))
+                        .map(([r,t]) =>
                         `<a href="#/${r}">${t}</a>`
                     ).join("")}
                     <a href="#" id="logout-link" style="margin-top:24px;opacity:.7">Logout</a>
@@ -258,6 +261,12 @@ async function render() {
                 content.innerHTML = await renderStaffPage();
                 break;
 
+            case "website":
+                content.innerHTML = can("website")
+                    ? await renderWebsitePage()
+                    : `<div class="error">You do not have permission to manage website content.</div>`;
+                break;
+
             case "password":
                 content.innerHTML = renderChangePassword();
                 break;
@@ -274,6 +283,7 @@ async function render() {
         });
 
         wireChangePasswordForm();
+        wireWebsitePage();
 
     } catch (error) {
         console.error("RENDER FAILURE:", error);
@@ -328,6 +338,10 @@ async function boot() {
         await verifySession();
 
         console.log("[BOOT] session verified");
+
+        await loadSiteContent();
+
+        console.log("[BOOT] site content loaded");
 
         await render();
 

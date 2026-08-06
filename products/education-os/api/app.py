@@ -577,6 +577,95 @@ def auth_me(
     }
 
 
+# ============================================================
+# PUBLIC WEBSITE CONTENT (CMS)
+# ============================================================
+
+_SITE_SECTIONS = {
+    "homepage_announcement",
+    "about",
+    "approach",
+    "programmes",
+    "sports_skills",
+    "admissions_notice",
+    "location",
+    "contact",
+    "gallery",
+}
+
+
+def _site_content_db():
+    conn = sqlite3.connect(DB_PATH, timeout=30.0, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS site_content (
+            section TEXT PRIMARY KEY,
+            content TEXT NOT NULL DEFAULT '{}',
+            updated_by INTEGER,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    return conn
+
+
+@app.get("/site-content")
+def get_site_content():
+    conn = _site_content_db()
+    rows = conn.execute(
+        "SELECT section, content FROM site_content"
+    ).fetchall()
+    conn.close()
+    return {
+        "sections": {
+            row["section"]: json.loads(row["content"])
+            for row in rows
+        }
+    }
+
+
+class SiteContentUpdate(BaseModel):
+    sections: dict
+
+
+@app.put("/site-content")
+def put_site_content(
+    payload: SiteContentUpdate,
+    request: Request,
+):
+    actor = _require_permission(request, "site.manage")
+
+    conn = _site_content_db()
+    for section, content in (payload.sections or {}).items():
+        if section not in _SITE_SECTIONS:
+            continue
+        conn.execute(
+            """
+            INSERT INTO site_content (section, content, updated_by, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(section) DO UPDATE SET
+                content = excluded.content,
+                updated_by = excluded.updated_by,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (section, json.dumps(content, default=str), actor["id"]),
+        )
+    conn.commit()
+
+    rows = conn.execute(
+        "SELECT section, content FROM site_content"
+    ).fetchall()
+    conn.close()
+
+    return {
+        "sections": {
+            row["section"]: json.loads(row["content"])
+            for row in rows
+        }
+    }
+
+
 class AdmissionCreate(BaseModel):
     student_id: int
     admission_date: str
@@ -860,7 +949,7 @@ def reports(request: Request):
         parents = conn.execute(
             """
             SELECT COUNT(*) AS total
-            FROM parents_guardians
+            FROM parents
             WHERE organization_id = ?
             """,
             (organization_id,),
@@ -884,7 +973,7 @@ def reports(request: Request):
         academic_years = conn.execute(
             """
             SELECT COUNT(*) AS total
-            FROM academic_years
+            FROM academic_terms
             WHERE organization_id = ?
             """,
             (organization_id,),
@@ -893,7 +982,7 @@ def reports(request: Request):
         academic_periods = conn.execute(
             """
             SELECT COUNT(*) AS total
-            FROM academic_periods
+            FROM academic_terms
             WHERE organization_id = ?
             """,
             (organization_id,),
@@ -902,7 +991,7 @@ def reports(request: Request):
         class_levels = conn.execute(
             """
             SELECT COUNT(*) AS total
-            FROM class_levels
+            FROM classrooms
             WHERE organization_id = ?
             """,
             (organization_id,),
@@ -964,7 +1053,7 @@ def list_parents(request: Request):
         rows = conn.execute(
             """
             SELECT *
-            FROM parents_guardians
+            FROM parents
             WHERE organization_id=?
             ORDER BY created_at DESC, id DESC
             """,
@@ -2161,7 +2250,7 @@ def director_intelligence_summary(request: Request):
             parents = conn.execute(
                 """
                 SELECT COUNT(*)
-                FROM parents_guardians
+                FROM parents
                 WHERE organization_id=?
                 """,
                 (organization_id,),

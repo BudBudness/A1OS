@@ -149,3 +149,12 @@ api.intelligence = {
     return Array.isArray(data) ? data : (data.staff || []);
   }
 };
+
+api.siteContent = {
+  get: () => request("/site-content"),
+  update: sections =>
+    request("/site-content", {
+      method: "PUT",
+      body: JSON.stringify({ sections })
+    })
+};
