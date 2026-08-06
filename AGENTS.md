@@ -36,6 +36,6 @@ Watchdogs + cron (INSTALLED via `crontab ~/crontab.txt`): hourly `ops/a1os-produ
 - `.env` in repo root holds secrets (Cloudflare tokens, `SECRET_KEY`, `JWT_SECRET_KEY`). Never print or commit it.
 - `products/education-os/deployments/little-oaks/data/education.db` is a tracked binary (`.gitignore` ignores `*.db`; this one was force-added) with local modifications. Release and acceptance pipelines depend on it — don't rebuild or drop it casually.
 - `./little-oaks-release.sh` runs Stage 4–7 acceptance suites, backs up the DB, commits, tags, and **pushes to origin main**. Don't run casually.
-- Stale paths: `run_all.sh` and `tests/run_test.py` reference `~/A1OS`, but the working copy is `~/A1OS_RESTORED`. Use the real path.
+- `data/a1os.db-shm` and `data/a1os.db-wal` are untracked SQLite WAL sidecars (covered by `*.db-shm`/`*.db-wal`); a live engine rewrites them, so ignore any `git status` noise from them.
 - `infra/` (redis/nats/postgres/minio/k8s) and `deployment/docker-compose.yml` are **planned, aspirational scaffolding — not load-bearing**. The live product runs as two Termux processes (uvicorn :3012 + web-server :8080) behind the Cloudflare tunnel. Don't treat infra as the deployment target.
 - Host memory is tight (~5.5Gi total, ~1.1Gi free) — avoid parallel heavy builds.
