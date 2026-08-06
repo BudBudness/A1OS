@@ -1,39 +1,54 @@
-from http.server import SimpleHTTPRequestHandler, HTTPServer
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.request import Request, urlopen
-from urllib.error import HTTPError
-import json
+from urllib.error import HTTPError, URLError
+from pathlib import Path
 
 API = "http://127.0.0.1:3012"
+WEB = Path(__file__).resolve().parent
+
 
 class Handler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=WEB, **kwargs)
+
     def do_GET(self):
         if self.path.startswith("/api/"):
-            self.proxy()
+            self._proxy(self.path[4:], "GET")
             return
-        super().do_GET()
+        if self.path == "/" or self.path == "":
+            self.path = "/index.html"
+        return super().do_GET()
 
     def do_POST(self):
         if self.path.startswith("/api/"):
-            self.proxy()
-            return
-        super().do_POST()
+            self._proxy(self.path[4:], "POST")
 
-    def proxy(self):
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length) if length else None
+    def do_PUT(self):
+        if self.path.startswith("/api/"):
+            self._proxy(self.path[4:], "PUT")
 
-        req = Request(
-            API + self.path,
-            data=body,
-            method=self.command,
-            headers={
-                "Content-Type": self.headers.get("Content-Type", "application/json"),
-                "Authorization": self.headers.get("Authorization", "")
-            }
-        )
+    def do_PATCH(self):
+        if self.path.startswith("/api/"):
+            self._proxy(self.path[4:], "PATCH")
 
+    def do_DELETE(self):
+        if self.path.startswith("/api/"):
+            self._proxy(self.path[4:], "DELETE")
+
+    def _proxy(self, suffix, method):
+        target = API + "/" + suffix.lstrip("/")
+        body = None
+        length = int(self.headers.get("Content-Length", 0) or 0)
+        if length:
+            body = self.rfile.read(length)
+        headers = {
+            k: v
+            for k, v in self.headers.items()
+            if k.lower() not in ("host", "content-length", "accept-encoding", "connection")
+        }
         try:
-            with urlopen(req) as r:
+            req = Request(target, data=body, method=method, headers=headers)
+            with urlopen(req, timeout=15) as r:
                 data = r.read()
                 self.send_response(r.status)
                 self.send_header("Content-Type", r.headers.get("Content-Type", "application/json"))
@@ -41,11 +56,21 @@ class Handler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(data)
         except HTTPError as e:
-            data = e.read()
+            try:
+                data = e.read()
+            except Exception:
+                data = b""
             self.send_response(e.code)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
             self.end_headers()
-            self.wfile.write(data)
+            if data:
+                self.wfile.write(data)
+        except URLError as e:
+            self.send_error(502, str(e))
 
-if __name__ == "__main__":
-    HTTPServer(("0.0.0.0", 8090), Handler).serve_forever()
+    def log_message(self, format, *args):
+        pass
+
+
+ThreadingHTTPServer(("127.0.0.1", 8080), Handler).serve_forever()

@@ -29,7 +29,7 @@ Canonical launch: `education-os-launch.sh` (Termux home). One service per port �
 - **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — `little-oaks.pyongcity.org/api/*` → 3012, everything else → 8080.
 `a1ctl` talks to the core on 3011 (runs `python3 main.py`).
 
-Watchdogs + cron (INSTALLED via `crontab ~/crontab.txt`): hourly `ops/a1os-production-watchdog.sh` (core :3011, API :3012, frontend :8080, public tunnel, DB integrity; auto-restarts core/API with canonical `run-production.sh`), daily 1:00 + weekly Sun 12:00 DB backups via `~/backup-little-oaks-education-db.sh` (sqlite `.backup`, integrity-checked, 30-day retention). Auth: `POST /auth/change-password` (authed; requires `current_password` + `new_password`, min 8 chars; invalidates other sessions); UI has a Change Password page + Logout in the sidebar.
+Watchdogs + cron (INSTALLED via `crontab ~/crontab.txt`): hourly `ops/a1os-production-watchdog.sh` (core :3011, API :3012, frontend :8080, public tunnel, DB integrity; auto-restarts core/API/web with canonical `run-production.sh`), daily 1:00 + weekly Sun 12:00 DB backups via `~/backup-little-oaks-education-db.sh` (sqlite `.backup`, integrity-checked, 30-day retention). Auth: `POST /auth/change-password` (authed; requires `current_password` + `new_password`, min 8 chars; invalidates other sessions); UI has a Change Password page + Logout in the sidebar. `/auth/login` and `/auth/change-password` are rate-limited (20 attempts / 300s per client IP, in-memory — keep uvicorn at `--workers 1`).
 
 ## Gotchas
 
@@ -38,4 +38,5 @@ Watchdogs + cron (INSTALLED via `crontab ~/crontab.txt`): hourly `ops/a1os-produ
 - `./little-oaks-release.sh` runs Stage 4–7 acceptance suites, backs up the DB, commits, tags, and **pushes to origin main**. Don't run casually.
 - `data/a1os.db-shm` and `data/a1os.db-wal` are untracked SQLite WAL sidecars (covered by `*.db-shm`/`*.db-wal`); a live engine rewrites them, so ignore any `git status` noise from them.
 - `infra/` (redis/nats/postgres/minio/k8s) and `deployment/docker-compose.yml` are **planned, aspirational scaffolding — not load-bearing**. The live product runs as two Termux processes (uvicorn :3012 + web-server :8080) behind the Cloudflare tunnel. Don't treat infra as the deployment target.
+- Frontend server: the canonical process is `~/education-os-web-server.py` (Termux home, *untracked*); the repo copy `products/education-os/web/server.py` is the tracked equivalent (`ThreadingHTTPServer`, portable `WEB` path). Both bind `127.0.0.1:8080` and same-origin-proxy `/api/*` → :3012.
 - Host memory is tight (~5.5Gi total, ~1.1Gi free) — avoid parallel heavy builds.

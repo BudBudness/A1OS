@@ -40,6 +40,15 @@ restart_core() {
     log "RESULT a1os-core restart issued"
 }
 
+restart_web() {
+    log "ACTION restart education-web"
+    pkill -f 'education-os-web-server.py' 2>/dev/null || true
+    sleep 2
+    nohup "$HOME/education-os-web-server.py" \
+        >> "$HOME/education-os-web-runtime.log" 2>&1 &
+    log "RESULT education-web restart issued"
+}
+
 if check "http://127.0.0.1:3011/v1/health"; then
     log "PASS core-api"
 else
@@ -58,6 +67,7 @@ if check "http://127.0.0.1:8080/"; then
     log "PASS frontend"
 else
     log "FAIL frontend"
+    restart_web
 fi
 
 if check "https://little-oaks.pyongcity.org/api/health"; then

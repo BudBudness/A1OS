@@ -121,6 +121,33 @@ from fastapi import Header
 
 AUTH_SESSION_DAYS = 30
 
+import time
+from collections import defaultdict, deque
+
+AUTH_RATE_LIMIT_WINDOW = 300
+AUTH_RATE_LIMIT_MAX = 20
+_auth_rate_hits: dict[str, deque] = defaultdict(deque)
+
+
+def _rate_limit_auth(
+    request: Request,
+    max_attempts: int = AUTH_RATE_LIMIT_MAX,
+    window_seconds: int = AUTH_RATE_LIMIT_WINDOW,
+):
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"{client_ip}:{request.url.path}"
+    now = time.time()
+    hits = _auth_rate_hits[key]
+    while hits and hits[0] < now - window_seconds:
+        hits.popleft()
+    if len(hits) >= max_attempts:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts, please try again later",
+        )
+    hits.append(now)
+
+
 ROLE_PERMISSIONS = {
     "director_ceo_teacher": {
         "*"
@@ -299,7 +326,9 @@ def _require_permission(
 
 
 @app.post("/auth/login")
-def auth_login(payload: dict):
+def auth_login(payload: dict, request: Request):
+    _rate_limit_auth(request)
+
     email = str(payload.get("email", "")).strip().lower()
     password = str(payload.get("password", ""))
 
@@ -410,8 +439,10 @@ def auth_login(payload: dict):
 @app.post("/auth/change-password")
 def auth_change_password(
     payload: dict,
+    request: Request,
     authorization: str | None = Header(default=None),
 ):
+    _rate_limit_auth(request)
     user = _current_user(authorization)
 
     current_password = str(payload.get("current_password", ""))
