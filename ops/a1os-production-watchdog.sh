@@ -58,7 +58,7 @@ restart_web() {
     log "ACTION restart education-web"
     pkill -f 'education-os/web/server.py' 2>/dev/null || true
     sleep 2
-    nohup "$ROOT/products/education-os/web/server.py" \
+    nohup python3 "$ROOT/products/education-os/web/server.py" \
         >> "$ROOT/logs/education-web-watchdog.log" 2>&1 9>&- &
     log "RESULT education-web restart issued"
 }
