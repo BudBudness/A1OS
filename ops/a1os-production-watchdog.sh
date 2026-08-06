@@ -74,7 +74,7 @@ restart_tunnel() {
 }
 
 tunnel_alive() {
-    cloudflared tunnel info a1os-prod 2>&1 | grep -qE "CONNECTOR"
+    check "https://little-oaks.pyongcity.org/api/health"
 }
 
 if check "http://127.0.0.1:3011/v1/health"; then
