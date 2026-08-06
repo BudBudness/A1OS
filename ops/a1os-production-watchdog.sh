@@ -6,14 +6,28 @@ export PATH="/data/data/com.termux/files/usr/bin:$PATH"
 ROOT="$HOME/A1OS_RESTORED"
 LOG="$ROOT/logs/production-watchdog.log"
 LOCK="$ROOT/.locks/production-watchdog.lock"
+NTFY_TOPIC_FILE="$HOME/.a1os/ntfy.topic"
 
 mkdir -p "$ROOT/logs" "$ROOT/.locks"
 
 exec 9>"$LOCK"
 flock -n 9 || exit 0
 
+notify() {
+    local topic
+    topic="$(cat "$NTFY_TOPIC_FILE" 2>/dev/null || true)"
+    [ -n "$topic" ] || return 0
+    curl -fsS --max-time 8 \
+        -H "Title: A1OS alert" \
+        -d "$*" \
+        "https://ntfy.sh/$topic" >/dev/null 2>&1 || true
+}
+
 log() {
     printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*" >> "$LOG"
+    case "$*" in
+        FAIL* | CRITICAL*) notify "$*" ;;
+    esac
 }
 
 check() {
