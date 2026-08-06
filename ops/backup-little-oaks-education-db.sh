@@ -1,5 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
+export PATH="/data/data/com.termux/files/usr/bin:$PATH"
 DB="$HOME/A1OS_RESTORED/products/education-os/deployments/little-oaks/data/education.db"
 BACKUP_DIR="$HOME/A1OS_RESTORED/products/education-os/deployments/little-oaks/backups"
 mkdir -p "$BACKUP_DIR"
