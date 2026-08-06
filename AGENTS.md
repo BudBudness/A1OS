@@ -23,7 +23,7 @@ Autonomous multi-engine AI/agent orchestration platform ("A1OS Factory"). Python
 
 Canonical launch: `education-os-launch.sh` (Termux home). One service per port — do not move these:
 
-- **3011** — A1OS core engine (`python3 main.py`). Currently idle; edu owns 3012.
+- **3011** — A1OS core engine (`python3 main.py`). Running and supervised by the watchdog; edu owns 3012.
 - **3012** — education-os API (`run-production.sh` → `uvicorn api.app:app --host 127.0.0.1 --port 3012 --workers 1 --proxy-headers`).
 - **8080** — frontend + same-origin `/api` proxy (`products/education-os/web/server.py` serves `products/education-os/web`, proxies to 3012).
 - **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — `little-oaks.pyongcity.org/api/*` → 3012, everything else → 8080.
