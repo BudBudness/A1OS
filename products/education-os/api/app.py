@@ -930,6 +930,32 @@ def list_alerts(request: Request):
         "total": len(alerts),
     }
 
+def _page_params(request, default_limit=None, max_limit=500):
+    limit = default_limit
+    raw_limit = request.query_params.get("limit")
+    if raw_limit is not None:
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = default_limit
+    try:
+        offset = int(request.query_params.get("offset", "0"))
+    except (TypeError, ValueError):
+        offset = 0
+    if limit is not None:
+        limit = max(0, min(limit, max_limit))
+    offset = max(offset, 0)
+    return limit, offset
+
+
+def _pagination_sql(limit, offset):
+    if limit is not None:
+        return " LIMIT ? OFFSET ?", [limit, offset]
+    if offset:
+        return " OFFSET ?", [offset]
+    return "", []
+
+
 @app.get("/reports")
 def reports(request: Request):
     actor = _require_permission(request, "reports.view")
@@ -970,16 +996,7 @@ def reports(request: Request):
         except Exception:
             attendance={"total":0,"present":0,"absent":0}
 
-        academic_years = conn.execute(
-            """
-            SELECT COUNT(*) AS total
-            FROM academic_terms
-            WHERE organization_id = ?
-            """,
-            (organization_id,),
-        ).fetchone()["total"]
-
-        academic_periods = conn.execute(
+        academic_terms_count = conn.execute(
             """
             SELECT COUNT(*) AS total
             FROM academic_terms
@@ -1023,6 +1040,24 @@ def reports(request: Request):
 
     fees_conn.close()
 
+    attendance_data = dict(attendance)
+    attendance_data["rate"] = (
+        round(attendance_data["present"] / attendance_data["total"] * 100, 1)
+        if attendance_data.get("total")
+        else None
+    )
+
+    fees_data = {
+        "total_billed_ugx": float(fees["total_billed"] or 0),
+        "total_paid_ugx": float(fees["total_paid"] or 0),
+        "total_outstanding_ugx": float(fees["total_outstanding"] or 0),
+        "total_records": fees["total_records"],
+    }
+    billed = fees_data["total_billed_ugx"]
+    fees_data["collection_rate"] = (
+        round(fees_data["total_paid_ugx"] / billed * 100, 1) if billed else None
+    )
+
     return {
         "students": {
             "total": students,
@@ -1030,16 +1065,11 @@ def reports(request: Request):
         "parents_guardians": {
             "total": parents,
         },
-        "attendance": dict(attendance),
-        "fees": {
-            "total_billed_ugx": float(fees["total_billed"] or 0),
-            "total_paid_ugx": float(fees["total_paid"] or 0),
-            "total_outstanding_ugx": float(fees["total_outstanding"] or 0),
-            "total_records": fees["total_records"],
-        },
+        "attendance": attendance_data,
+        "fees": fees_data,
         "academic": {
-            "years": academic_years,
-            "periods": academic_periods,
+            "years": academic_terms_count,
+            "periods": academic_terms_count,
             "class_levels": class_levels,
         },
     }
@@ -1047,21 +1077,40 @@ def reports(request: Request):
 @app.get("/parents")
 def list_parents(request: Request):
     actor = _require_permission(request, "parents.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
 
     conn = db()
     try:
+        where = ["organization_id = ?"]
+        params = [actor["organization_id"]]
+        if search:
+            like = f"%{search}%"
+            where.append("(full_name LIKE ? OR phone LIKE ? OR email LIKE ?)")
+            params.extend([like, like, like])
+
+        where_sql = "WHERE " + " AND ".join(where)
+        total = conn.execute(
+            f"SELECT COUNT(*) AS total FROM parents {where_sql}",
+            params,
+        ).fetchone()["total"]
+
+        page_sql, page_params = _pagination_sql(limit, offset)
         rows = conn.execute(
-            """
+            f"""
             SELECT *
             FROM parents
-            WHERE organization_id=?
+            {where_sql}
             ORDER BY created_at DESC, id DESC
+            {page_sql}
             """,
-            (actor["organization_id"],),
+            params + page_params,
         ).fetchall()
 
         return {
-            "count": len(rows),
+            "count": total,
+            "limit": limit,
+            "offset": offset,
             "parents": [dict(row) for row in rows],
         }
     finally:
@@ -1071,21 +1120,35 @@ def list_parents(request: Request):
 @app.get("/fees")
 def list_fees(request: Request):
     actor = _require_permission(request, "fees.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
 
     conn = _fees_db()
 
+    where = ["f.organization_id = ?"]
+    params = [actor["organization_id"]]
+    if search:
+        like = f"%{search}%"
+        where.append(
+            "(f.fee_type LIKE ? OR f.status LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ?)"
+        )
+        params.extend([like, like, like, like])
+
+    where_sql = "WHERE " + " AND ".join(where)
+    page_sql, page_params = _pagination_sql(limit, offset)
     rows = conn.execute(
-        """
+        f"""
         SELECT
             f.*,
             s.first_name,
             s.last_name
         FROM fee_obligations f
         LEFT JOIN students s ON s.id = f.student_id
-        WHERE f.organization_id = ?
+        {where_sql}
         ORDER BY f.created_at DESC, f.id DESC
+        {page_sql}
         """,
-        (actor["organization_id"],),
+        params + page_params,
     ).fetchall()
 
     result = [dict(row) for row in rows]
@@ -1377,17 +1440,31 @@ def create_payment(payload: dict, request: Request):
 @app.get("/payments")
 def list_payments(request: Request):
     actor = _require_permission(request, "payments.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
 
     conn = _fees_db()
 
+    where = ["organization_id = ?"]
+    params = [actor["organization_id"]]
+    if search:
+        like = f"%{search}%"
+        where.append(
+            "(payment_reference LIKE ? OR payment_method LIKE ? OR verification_status LIKE ?)"
+        )
+        params.extend([like, like, like])
+
+    where_sql = "WHERE " + " AND ".join(where)
+    page_sql, page_params = _pagination_sql(limit, offset)
     rows = conn.execute(
-        """
+        f"""
         SELECT *
         FROM payments
-        WHERE organization_id = ?
+        {where_sql}
         ORDER BY paid_at DESC, id DESC
+        {page_sql}
         """,
-        (actor["organization_id"],),
+        params + page_params,
     ).fetchall()
 
     result = [dict(row) for row in rows]
@@ -1423,22 +1500,33 @@ def get_payment(payment_id: int, request: Request):
 @app.get("/audit")
 def list_audit_logs(request: Request):
     actor = _require_permission(request, "audit.view")
+    limit, offset = _page_params(request, default_limit=100)
+    search = (request.query_params.get("search") or "").strip()
 
     conn = _fees_db()
 
+    where = ["a.organization_id = ?"]
+    params = [actor["organization_id"]]
+    if search:
+        like = f"%{search}%"
+        where.append("(a.entity_type LIKE ? OR a.action LIKE ? OR u.full_name LIKE ?)")
+        params.extend([like, like, like])
+
+    where_sql = "WHERE " + " AND ".join(where)
+    page_sql, page_params = _pagination_sql(limit, offset)
     rows = conn.execute(
-        """
+        f"""
         SELECT
             a.*,
             u.full_name AS actor_name,
             u.email AS actor_email
         FROM audit_log a
         LEFT JOIN users u ON u.id = a.actor_user_id
-        WHERE a.organization_id = ?
+        {where_sql}
         ORDER BY a.created_at DESC, a.id DESC
-        LIMIT 500
+        {page_sql}
         """,
-        (actor["organization_id"],),
+        params + page_params,
     ).fetchall()
 
     result = [dict(row) for row in rows]
@@ -1518,32 +1606,38 @@ def create_student(payload: StudentCreate, request: Request):
             ).fetchone()[0]
             admission_number = f"LO-{next_number:06d}"
 
-        cursor = conn.execute(
-            """
-            INSERT INTO students
-            (
-                organization_id,
-                admission_number,
-                first_name,
-                last_name,
-                date_of_birth,
-                gender,
-                enrollment_status
+        try:
+            cursor = conn.execute(
+                """
+                INSERT INTO students
+                (
+                    organization_id,
+                    admission_number,
+                    first_name,
+                    last_name,
+                    date_of_birth,
+                    gender,
+                    enrollment_status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    organization["id"],
+                    admission_number,
+                    payload.first_name,
+                    payload.last_name,
+                    payload.date_of_birth,
+                    payload.gender,
+                    payload.enrollment_status,
+                ),
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                organization["id"],
-                admission_number,
-                payload.first_name,
-                payload.last_name,
-                payload.date_of_birth,
-                payload.gender,
-                payload.enrollment_status,
-            ),
-        )
 
-        conn.commit()
+            conn.commit()
+        except sqlite3.IntegrityError:
+            raise HTTPException(
+                status_code=409,
+                detail="Admission number already in use",
+            )
 
         return {
             "status": "created",
@@ -1555,19 +1649,42 @@ def create_student(payload: StudentCreate, request: Request):
 @app.get("/students")
 def list_students(request: Request):
     _require_permission(request, "students.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
     conn = db()
 
     try:
+        where = []
+        params = []
+        if search:
+            like = f"%{search}%"
+            where.append(
+                "(first_name LIKE ? OR last_name LIKE ? OR admission_number LIKE ?)"
+            )
+            params.extend([like, like, like])
+
+        where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+        total = conn.execute(
+            f"SELECT COUNT(*) AS total FROM students {where_sql}",
+            params,
+        ).fetchone()["total"]
+
+        page_sql, page_params = _pagination_sql(limit, offset)
         rows = conn.execute(
-            """
+            f"""
             SELECT *
             FROM students
+            {where_sql}
             ORDER BY created_at DESC, id DESC
-            """
+            {page_sql}
+            """,
+            params + page_params,
         ).fetchall()
 
         return {
-            "count": len(rows),
+            "count": total,
+            "limit": limit,
+            "offset": offset,
             "students": [dict(row) for row in rows],
         }
 
@@ -1593,6 +1710,101 @@ def get_student(student_id: int, request: Request):
 
         return dict(row)
 
+    finally:
+        conn.close()
+
+
+@app.patch("/students/{student_id}")
+def update_student(student_id: int, payload: dict, request: Request):
+    _require_permission(request, "students.update")
+
+    allowed = {
+        "first_name",
+        "last_name",
+        "date_of_birth",
+        "gender",
+        "class_level",
+        "enrollment_status",
+        "guardian_name",
+        "guardian_phone",
+    }
+
+    updates = {key: value for key, value in payload.items() if key in allowed}
+
+    if not updates:
+        raise HTTPException(
+            status_code=422,
+            detail="No editable fields supplied",
+        )
+
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT id FROM students WHERE id=?",
+            (student_id,),
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        set_sql = ", ".join(f"{key} = ?" for key in updates)
+        conn.execute(
+            f"UPDATE students SET {set_sql}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            list(updates.values()) + [student_id],
+        )
+        conn.commit()
+
+        return {
+            "status": "updated",
+            "student_id": student_id,
+            "updated_fields": list(updates.keys()),
+        }
+    finally:
+        conn.close()
+
+
+@app.patch("/students/{student_id}/status")
+def update_student_status(student_id: int, payload: dict, request: Request):
+    _require_permission(request, "students.update")
+
+    new_status = (payload or {}).get("enrollment_status")
+    allowed_statuses = {"active", "inactive", "graduated", "transferred", "withdrawn"}
+    if not new_status or new_status not in allowed_statuses:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "enrollment_status must be one of: "
+                "active, inactive, graduated, transferred, withdrawn"
+            ),
+        )
+
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT id FROM students WHERE id=?",
+            (student_id,),
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        conn.execute(
+            "UPDATE students SET enrollment_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (new_status, student_id),
+        )
+        conn.commit()
+
+        return {
+            "status": "updated",
+            "student_id": student_id,
+            "enrollment_status": new_status,
+        }
     finally:
         conn.close()
 
@@ -1694,49 +1906,38 @@ def list_school_operations(
     request: Request = None,
 ):
     _require_permission(request, "operations.view")
+    limit, offset = _page_params(request)
     with db() as conn:
+        where = []
+        params = []
         if status:
-            rows = conn.execute(
-                """
-                SELECT
-                    id,
-                    operation_type,
-                    title,
-                    description,
-                    assigned_to,
-                    due_date,
-                    status,
-                    created_at,
-                    updated_at
-                FROM school_operations
-                WHERE status = ?
-                ORDER BY
-                    CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
-                    due_date ASC,
-                    id DESC
-                """,
-                (status,),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                """
-                SELECT
-                    id,
-                    operation_type,
-                    title,
-                    description,
-                    assigned_to,
-                    due_date,
-                    status,
-                    created_at,
-                    updated_at
-                FROM school_operations
-                ORDER BY
-                    CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
-                    due_date ASC,
-                    id DESC
-                """
-            ).fetchall()
+            where.append("status = ?")
+            params.append(status)
+
+        where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+        page_sql, page_params = _pagination_sql(limit, offset)
+        rows = conn.execute(
+            f"""
+            SELECT
+                id,
+                operation_type,
+                title,
+                description,
+                assigned_to,
+                due_date,
+                status,
+                created_at,
+                updated_at
+            FROM school_operations
+            {where_sql}
+            ORDER BY
+                CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
+                due_date ASC,
+                id DESC
+            {page_sql}
+            """,
+            params + page_params,
+        ).fetchall()
 
     return [dict(row) for row in rows]
 
@@ -1827,25 +2028,43 @@ def update_school_operation_status(
 @app.get("/attendance")
 def list_attendance(request: Request):
     actor = _require_permission(request, "operations.view")
+    limit, offset = _page_params(request)
+    status_filter = (request.query_params.get("status") or "").strip()
 
     conn = db()
     try:
+        where = ["a.organization_id = ?"]
+        params = [actor["organization_id"]]
+        if status_filter:
+            where.append("a.status = ?")
+            params.append(status_filter)
+
+        where_sql = "WHERE " + " AND ".join(where)
+        total = conn.execute(
+            f"SELECT COUNT(*) AS total FROM attendance a {where_sql}",
+            params,
+        ).fetchone()["total"]
+
+        page_sql, page_params = _pagination_sql(limit, offset)
         rows = conn.execute(
-            """
+            f"""
             SELECT
                 a.*,
                 (s.first_name || ' ' || s.last_name) AS student_name
             FROM attendance a
             JOIN students s
                 ON s.id = a.student_id
-            WHERE a.organization_id=?
+            {where_sql}
             ORDER BY a.attendance_date DESC, a.id DESC
+            {page_sql}
             """,
-            (actor["organization_id"],),
+            params + page_params,
         ).fetchall()
 
         return {
-            "count": len(rows),
+            "count": total,
+            "limit": limit,
+            "offset": offset,
             "attendance": [dict(row) for row in rows],
         }
     finally:
@@ -2127,10 +2346,12 @@ def create_admission(admission: AdmissionCreate, request: Request):
 @app.get("/admissions")
 def list_admissions(request: Request):
     _require_permission(request, "admissions.view")
+    limit, offset = _page_params(request)
     conn = db()
 
+    page_sql, page_params = _pagination_sql(limit, offset)
     rows = conn.execute(
-        '''
+        f'''
         SELECT
             a.id,
             a.student_id,
@@ -2144,7 +2365,10 @@ def list_admissions(request: Request):
         FROM admissions a
         JOIN students s ON s.id = a.student_id
         ORDER BY a.created_at DESC
+        {page_sql}
         '''
+        ,
+        page_params,
     ).fetchall()
 
     return [dict(row) for row in rows]
