@@ -2602,6 +2602,241 @@ def director_intelligence_insights(request: Request):
     }
 
 
+# ============================================================
+# V1.5 AUTOMATION & INTELLIGENCE
+# ============================================================
+
+def _fee_arrears_data(conn, organization_id):
+    return [
+        dict(row)
+        for row in conn.execute(
+            """
+            SELECT
+                f.id,
+                f.student_id,
+                f.academic_period,
+                f.fee_type,
+                f.amount,
+                f.amount_paid,
+                f.due_date,
+                (f.amount - f.amount_paid) AS outstanding,
+                (s.first_name || ' ' || s.last_name) AS student_name,
+                s.guardian_name,
+                s.guardian_phone
+            FROM fee_obligations f
+            LEFT JOIN students s ON s.id = f.student_id
+            WHERE f.organization_id = ?
+              AND f.amount > f.amount_paid
+            ORDER BY outstanding DESC, f.id ASC
+            """,
+            (organization_id,),
+        ).fetchall()
+    ]
+
+
+def _days_overdue(due_date):
+    if not due_date:
+        return None
+    from datetime import date
+    try:
+        due = date.fromisoformat(str(due_date)[:10])
+    except ValueError:
+        return None
+    return max((date.today() - due).days, 0)
+
+
+@app.get("/intelligence/fee-arrears")
+def fee_arrears_intelligence(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    with db() as conn:
+        arrears = _fee_arrears_data(conn, organization_id)
+
+    total_outstanding = round(
+        sum(float(a["outstanding"] or 0) for a in arrears), 2
+    )
+    student_count = len({a["student_id"] for a in arrears})
+
+    return {
+        "organization_id": organization_id,
+        "total_outstanding_ugx": total_outstanding,
+        "students_in_arrears": student_count,
+        "arrears": arrears,
+        "count": len(arrears),
+    }
+
+
+@app.get("/intelligence/briefing")
+def director_daily_briefing(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    from datetime import date
+
+    with db() as conn:
+        students = conn.execute(
+            "SELECT COUNT(*) FROM students WHERE organization_id=?",
+            (organization_id,),
+        ).fetchone()[0]
+
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance = {"total": 0, "present": 0, "absent": 0}
+
+        admissions_rows = conn.execute(
+            "SELECT status, COUNT(*) AS c FROM admissions GROUP BY status"
+        ).fetchall()
+        operations_rows = conn.execute(
+            "SELECT status, COUNT(*) AS c FROM school_operations GROUP BY status"
+        ).fetchall()
+        fee_totals = conn.execute(
+            """
+            SELECT
+                COALESCE(SUM(amount), 0) AS billed,
+                COALESCE(SUM(amount_paid), 0) AS collected
+            FROM fee_obligations
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()
+        arrears = _fee_arrears_data(conn, organization_id)
+
+    total_attendance = int(attendance["total"] or 0)
+    present = int(attendance["present"] or 0)
+    attendance_rate = (
+        round(present / total_attendance * 100, 1)
+        if total_attendance
+        else None
+    )
+
+    billed = float(fee_totals["billed"] or 0)
+    collected = float(fee_totals["collected"] or 0)
+    collection_rate = round(collected / billed * 100, 1) if billed else None
+
+    total_outstanding = round(
+        sum(float(a["outstanding"] or 0) for a in arrears), 2
+    )
+    students_in_arrears = len({a["student_id"] for a in arrears})
+
+    pending_admissions = sum(
+        c for s, c in admissions_rows if s == "pending"
+    )
+    open_operations = sum(c for s, c in operations_rows if s == "open")
+
+    briefing_insights = []
+    if attendance_rate is not None and attendance_rate < 80:
+        briefing_insights.append({
+            "severity": "high" if attendance_rate < 60 else "medium",
+            "category": "attendance",
+            "title": "Attendance below target",
+            "message": f"Attendance rate is {attendance_rate:.1f}%.",
+        })
+    if students_in_arrears:
+        briefing_insights.append({
+            "severity": "high",
+            "category": "fees",
+            "title": "Fee arrears require action",
+            "message": (
+                f"{students_in_arrears} student(s) owe UGX "
+                f"{total_outstanding:,.0f}."
+            ),
+        })
+    if pending_admissions:
+        briefing_insights.append({
+            "severity": "medium",
+            "category": "admissions",
+            "title": "Admissions pending review",
+            "message": f"{pending_admissions} admission(s) are pending.",
+        })
+    if not briefing_insights:
+        briefing_insights.append({
+            "severity": "healthy",
+            "category": "system",
+            "title": "All systems healthy",
+            "message": "No priority signals for the daily briefing.",
+        })
+
+    return {
+        "briefing_date": date.today().isoformat(),
+        "kpis": {
+            "students": int(students or 0),
+            "attendance_rate": attendance_rate,
+            "collection_rate": collection_rate,
+            "total_outstanding_ugx": total_outstanding,
+            "students_in_arrears": students_in_arrears,
+            "pending_admissions": pending_admissions,
+            "open_operations": open_operations,
+        },
+        "top_arrears": arrears[:5],
+        "insights": briefing_insights,
+        "alerts": {
+            "total": len(briefing_insights),
+        },
+    }
+
+
+@app.get("/intelligence/fee-reminders")
+def automated_fee_reminders(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    from datetime import date, datetime, timezone
+
+    today = date.today().isoformat()
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                f.id,
+                f.student_id,
+                f.academic_period,
+                f.fee_type,
+                f.amount,
+                f.amount_paid,
+                f.due_date,
+                (f.amount - f.amount_paid) AS outstanding,
+                (s.first_name || ' ' || s.last_name) AS student_name,
+                s.guardian_name,
+                s.guardian_phone
+            FROM fee_obligations f
+            LEFT JOIN students s ON s.id = f.student_id
+            WHERE f.organization_id = ?
+              AND f.amount > f.amount_paid
+              AND f.due_date IS NOT NULL
+              AND f.due_date <= ?
+            ORDER BY f.due_date ASC, f.id ASC
+            """,
+            (organization_id, today),
+        ).fetchall()
+
+    reminders = []
+    for row in rows:
+        reminder = dict(row)
+        reminder["days_overdue"] = _days_overdue(reminder["due_date"])
+        reminder["channel"] = "sms" if reminder.get("guardian_phone") else "none"
+        reminders.append(reminder)
+
+    return {
+        "organization_id": organization_id,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "count": len(reminders),
+        "reminders": reminders,
+    }
+
+
 from pathlib import Path as _Path
 
 _WEB = _Path(__file__).resolve().parent.parent / "web"
