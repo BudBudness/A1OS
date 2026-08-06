@@ -40,7 +40,7 @@ restart_education_api() {
     sleep 2
     cd "$ROOT/products/education-os" || exit 1
     nohup ./run-production.sh \
-        >> "$ROOT/logs/education-api-watchdog.log" 2>&1 &
+        >> "$ROOT/logs/education-api-watchdog.log" 2>&1 9>&- &
     log "RESULT education-api restart issued"
 }
 
@@ -50,16 +50,16 @@ restart_core() {
     sleep 2
     cd "$ROOT" || exit 1
     nohup python3 main.py \
-        >> "$ROOT/logs/a1os-watchdog.log" 2>&1 &
+        >> "$ROOT/logs/a1os-watchdog.log" 2>&1 9>&- &
     log "RESULT a1os-core restart issued"
 }
 
 restart_web() {
     log "ACTION restart education-web"
-    pkill -f 'education-os-web-server.py' 2>/dev/null || true
+    pkill -f 'education-os/web/server.py' 2>/dev/null || true
     sleep 2
-    nohup "$HOME/education-os-web-server.py" \
-        >> "$HOME/education-os-web-runtime.log" 2>&1 &
+    nohup "$ROOT/products/education-os/web/server.py" \
+        >> "$ROOT/logs/education-web-watchdog.log" 2>&1 9>&- &
     log "RESULT education-web restart issued"
 }
 

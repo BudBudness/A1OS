@@ -25,7 +25,7 @@ Canonical launch: `education-os-launch.sh` (Termux home). One service per port �
 
 - **3011** — A1OS core engine (`python3 main.py`). Currently idle; edu owns 3012.
 - **3012** — education-os API (`run-production.sh` → `uvicorn api.app:app --host 127.0.0.1 --port 3012 --workers 1 --proxy-headers`).
-- **8080** — frontend + same-origin `/api` proxy (`education-os-web-server.py` serves `products/education-os/web`, proxies to 3012).
+- **8080** — frontend + same-origin `/api` proxy (`products/education-os/web/server.py` serves `products/education-os/web`, proxies to 3012).
 - **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — `little-oaks.pyongcity.org/api/*` → 3012, everything else → 8080.
 `a1ctl` talks to the core on 3011 (runs `python3 main.py`).
 
@@ -38,5 +38,6 @@ Watchdogs + cron (INSTALLED via `crontab ~/crontab.txt`): hourly `ops/a1os-produ
 - `./little-oaks-release.sh` runs Stage 4–7 acceptance suites, backs up the DB, commits, tags, and **pushes to origin main**. Don't run casually.
 - `data/a1os.db-shm` and `data/a1os.db-wal` are untracked SQLite WAL sidecars (covered by `*.db-shm`/`*.db-wal`); a live engine rewrites them, so ignore any `git status` noise from them.
 - `infra/` (redis/nats/postgres/minio/k8s) and `deployment/docker-compose.yml` are **planned, aspirational scaffolding — not load-bearing**. The live product runs as two Termux processes (uvicorn :3012 + web-server :8080) behind the Cloudflare tunnel. Don't treat infra as the deployment target.
-- Frontend server: the canonical process is `~/education-os-web-server.py` (Termux home, *untracked*); the repo copy `products/education-os/web/server.py` is the tracked equivalent (`ThreadingHTTPServer`, portable `WEB` path). Both bind `127.0.0.1:8080` and same-origin-proxy `/api/*` → :3012.
+- Frontend server: single source of truth is the tracked `products/education-os/web/server.py` (`ThreadingHTTPServer`, portable `WEB` path). The watchdog's `restart_web` launches it directly. The old untracked `~/education-os-web-server.py` was retired — don't reintroduce it.
+- The watchdog holds a flock on fd 9 (`.locks/production-watchdog.lock`). Its restart functions MUST close fd 9 in spawned children (`9>&-`) — otherwise the long-running child (core/API/web) inherits the lock fd and silently deadlocks every later watchdog run (`flock -n || exit 0`). If `logs/production-watchdog.log` stops growing, check `ls -l /proc/<pid>/fd/9` for the holder.
 - Host memory is tight (~5.5Gi total, ~1.1Gi free) — avoid parallel heavy builds.
