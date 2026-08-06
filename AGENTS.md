@@ -8,7 +8,7 @@ Autonomous multi-engine AI/agent orchestration platform ("A1OS Factory"). Python
   - Termux `/data/data/com.termux/files/usr/bin/python3` (3.14.6) — has pytest 9.1.1 and project deps; runs the live services.
   - The `python3` on PATH (PRoot/Ubuntu, 3.14.4) has **no pytest/FastAPI** — `python3 -m pytest` fails there. Use the Termux interpreter or `pip install -r requirements.txt` first.
 - Scripts use Termux shebangs, e.g. `#!/data/data/com.termux/files/usr/bin/bash`.
-- SSH keys exist (`~/.ssh/id_ed25519`, config routes github.com → ssh.github.com:443) but the pubkey is **not registered on the GitHub account** — `git push` fails with `Permission denied (publickey)` until the key is added or `gh auth login` is run.
+- Push auth is **HTTPS via `gh`** (account `BudBudness`, `gh auth setup-git` in the Termux HOME). The remote is `https://github.com/BudBudness/A1OS.git`. The SSH pubkey is *not* registered on GitHub, so run `git` with `HOME=/data/data/com.termux/files/home` (or `gh auth login`) — an SSH push will fail with `Permission denied (publickey)`.
 
 ## Commands
 
