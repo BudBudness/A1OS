@@ -63,6 +63,20 @@ restart_web() {
     log "RESULT education-web restart issued"
 }
 
+restart_tunnel() {
+    log "ACTION restart cloudflare-tunnel"
+    pkill -f 'cloudflared.*a1os-prod' 2>/dev/null || true
+    pkill -f 'cloudflared.*7fdd3dce' 2>/dev/null || true
+    sleep 3
+    nohup cloudflared tunnel --config "$HOME/.cloudflared/config.yml" run a1os-prod \
+        >> "$ROOT/logs/cloudflared-watchdog.log" 2>&1 9>&- &
+    log "RESULT cloudflare-tunnel restart issued"
+}
+
+tunnel_alive() {
+    cloudflared tunnel info a1os-prod 2>&1 | grep -qE "CONNECTOR"
+}
+
 if check "http://127.0.0.1:3011/v1/health"; then
     log "PASS core-api"
 else
@@ -88,6 +102,9 @@ if check "https://little-oaks.pyongcity.org/api/health"; then
     log "PASS public-api"
 else
     log "FAIL public-api"
+    if check "http://127.0.0.1:3012/health" && ! tunnel_alive; then
+        restart_tunnel
+    fi
 fi
 
 if curl -fsSI --max-time 10 \
@@ -95,6 +112,9 @@ if curl -fsSI --max-time 10 \
     log "PASS public-frontend"
 else
     log "FAIL public-frontend"
+    if check "http://127.0.0.1:8080/" && ! tunnel_alive; then
+        restart_tunnel
+    fi
 fi
 
 EDU_DB="$ROOT/products/education-os/deployments/little-oaks/data/education.db"
@@ -105,8 +125,9 @@ else
     log "CRITICAL database-integrity-failed"
 fi
 
-if cloudflared tunnel info a1os-prod >/dev/null 2>&1; then
+if tunnel_alive; then
     log "PASS cloudflare-tunnel"
 else
     log "FAIL cloudflare-tunnel"
+    restart_tunnel
 fi

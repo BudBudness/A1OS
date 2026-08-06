@@ -18,7 +18,7 @@ Health checks:
 - `curl -s http://127.0.0.1:8080/`
 - `curl -s https://little-oaks.pyongcity.org/api/health`
 
-Watchdog: `ops/a1os-production-watchdog.sh` runs hourly via crontab `~/crontab.txt`; it checks core, API, frontend, public tunnel, and DB integrity, auto-restarts core/API/web, and fires a ntfy.sh alert on FAIL/CRITICAL (topic in `~/.a1os/ntfy.topic`).
+Watchdog: `ops/a1os-production-watchdog.sh` runs hourly via crontab `~/crontab.txt`; it checks core, API, frontend, public tunnel, and DB integrity, auto-restarts core/API/web/tunnel, and fires a ntfy.sh alert on FAIL/CRITICAL (topic in `~/.a1os/ntfy.topic`).
 Backups: `~/backup-little-oaks-education-db.sh` (tracked source `ops/backup-little-oaks-education-db.sh`) runs daily 01:00 and Sunday 12:00; it writes integrity-checked sqlite `.backup` files to `products/education-os/deployments/little-oaks/backups/` (30-day retention). After each backup, `ops/push-education-backups.sh` pushes the latest DB to the private repo `BudBudness/a1os-backups`.
 
 Environment quirks (critical):
