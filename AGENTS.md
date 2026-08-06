@@ -21,7 +21,7 @@ Autonomous multi-engine AI/agent orchestration platform ("A1OS Factory"). Python
 
 ## Runtime wiring (production topology)
 
-Canonical launch: `education-os-launch.sh` (Termux home). One service per port — do not move these:
+Canonical launch: `education-os-launch.sh` (Termux home; tracked source of truth `ops/education-os-launch.sh` — keep the two in sync, e.g. `cp ops/education-os-launch.sh ~/`). One service per port — do not move these:
 
 - **3011** — A1OS core engine (`python3 main.py`). Running and supervised by the watchdog; edu owns 3012.
 - **3012** — education-os API (`run-production.sh` → `uvicorn api.app:app --host 127.0.0.1 --port 3012 --workers 1 --proxy-headers`).
@@ -29,7 +29,7 @@ Canonical launch: `education-os-launch.sh` (Termux home). One service per port �
 - **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — `little-oaks.pyongcity.org/api/*` → 3012, everything else → 8080.
 `a1ctl` talks to the core on 3011 (runs `python3 main.py`).
 
-Watchdogs + cron (INSTALLED via `crontab ~/crontab.txt`): hourly `ops/a1os-production-watchdog.sh` (core :3011, API :3012, frontend :8080, public tunnel, DB integrity; auto-restarts core/API/web with canonical `run-production.sh`), daily 1:00 + weekly Sun 12:00 DB backups via `~/backup-little-oaks-education-db.sh` (sqlite `.backup`, integrity-checked, 30-day retention). The watchdog fires a **ntfy.sh alert** on any FAIL/CRITICAL — topic read from `~/.a1os/ntfy.topic` (untracked; subscribe in the ntfy app to receive pushes). After each DB backup, `ops/push-education-backups.sh` copies the latest `education-*.db` into the **private** GitHub repo `BudBudness/a1os-backups` (local clone `~/a1os-backups`, HTTPS/`gh` auth, idempotent). Auth: `POST /auth/change-password` (authed; requires `current_password` + `new_password`, min 8 chars; invalidates other sessions); UI has a Change Password page + Logout in the sidebar. `/auth/login` and `/auth/change-password` are rate-limited (20 attempts / 300s per client IP, in-memory — keep uvicorn at `--workers 1`).
+Watchdogs + cron (INSTALLED via `crontab ~/crontab.txt`): hourly `ops/a1os-production-watchdog.sh` (core :3011, API :3012, frontend :8080, public tunnel, DB integrity; auto-restarts core/API/web with canonical `run-production.sh`), daily 1:00 + weekly Sun 12:00 DB backups via `~/backup-little-oaks-education-db.sh` (tracked source `ops/backup-little-oaks-education-db.sh`; sqlite `.backup`, integrity-checked, 30-day retention). The watchdog fires a **ntfy.sh alert** on any FAIL/CRITICAL — topic read from `~/.a1os/ntfy.topic` (untracked; subscribe in the ntfy app to receive pushes). After each DB backup, `ops/push-education-backups.sh` copies the latest `education-*.db` into the **private** GitHub repo `BudBudness/a1os-backups` (local clone `~/a1os-backups`, HTTPS/`gh` auth, idempotent). Auth: `POST /auth/change-password` (authed; requires `current_password` + `new_password`, min 8 chars; invalidates other sessions); UI has a Change Password page + Logout in the sidebar. `/auth/login` and `/auth/change-password` are rate-limited (20 attempts / 300s per client IP, in-memory — keep uvicorn at `--workers 1`).
 
 ## Gotchas
 
