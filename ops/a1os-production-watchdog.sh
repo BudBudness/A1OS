@@ -77,12 +77,14 @@ tunnel_alive() {
     check "https://little-oaks.pyongcity.org/api/health"
 }
 
-if check "http://127.0.0.1:3011/v1/health"; then
-    log "PASS core-api"
-else
-    log "FAIL core-api"
-    restart_core
-fi
+# A1OS core engine (:3011) decommissioned — the edu product does not depend on
+# it and it was consuming idle RAM. To bring it back: run `python3 main.py`.
+# if check "http://127.0.0.1:3011/v1/health"; then
+#     log "PASS core-api"
+# else
+#     log "FAIL core-api"
+#     restart_core
+# fi
 
 if check "http://127.0.0.1:3012/health"; then
     log "PASS education-api"
