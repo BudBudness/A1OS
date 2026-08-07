@@ -36,12 +36,33 @@ check() {
 
 restart_education_api() {
     log "ACTION restart education-api"
-    pkill -f 'uvicorn api.app:app' 2>/dev/null || true
+    pkill -f 'uvicorn api.app:app --host 127.0.0.1 --port 3012' 2>/dev/null || true
     sleep 2
     cd "$ROOT/products/education-os" || exit 1
     nohup ./run-production.sh \
         >> "$ROOT/logs/education-api-watchdog.log" 2>&1 9>&- &
     log "RESULT education-api restart issued"
+}
+
+restart_platform_api() {
+    log "ACTION restart platform-api"
+    pkill -f 'uvicorn api.app:app --host 127.0.0.1 --port 3013' 2>/dev/null || true
+    sleep 2
+    cd "$ROOT/products/a1os-platform-api" || exit 1
+    nohup ./run-production.sh \
+        >> "$ROOT/logs/platform-api-watchdog.log" 2>&1 9>&- &
+    log "RESULT platform-api restart issued"
+}
+
+restart_coffee_web() {
+    log "ACTION restart coffee-web"
+    pkill -f 'next-server' 2>/dev/null || true
+    pkill -f 'next start' 2>/dev/null || true
+    sleep 2
+    cd "/data/data/com.termux/files/home/ImageCoffeeRoastery-app" || exit 1
+    nohup npm run start -- --port 3000 \
+        >> "$ROOT/logs/coffee-web-watchdog.log" 2>&1 9>&- &
+    log "RESULT coffee-web restart issued"
 }
 
 restart_core() {
@@ -98,6 +119,20 @@ if check "http://127.0.0.1:8080/"; then
 else
     log "FAIL frontend"
     restart_web
+fi
+
+if check "http://127.0.0.1:3013/v1/health"; then
+    log "PASS platform-api"
+else
+    log "FAIL platform-api"
+    restart_platform_api
+fi
+
+if check "http://127.0.0.1:3000/login"; then
+    log "PASS coffee-web"
+else
+    log "FAIL coffee-web"
+    restart_coffee_web
 fi
 
 if check "https://little-oaks.pyongcity.org/api/health"; then

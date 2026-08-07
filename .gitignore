@@ -78,3 +78,6 @@ frontend_forensics.json
 
 # Node artifacts (if not needed)
 node_modules/
+
+# Playwright MCP artifacts
+.playwright-mcp/

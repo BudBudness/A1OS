@@ -6,12 +6,22 @@ from pathlib import Path
 import requests
 import websockets.sync.client
 
+PLATFORM = Path(__file__).resolve().parents[3]
+DB = PLATFORM / "deployments" / "a1os-platform" / "data" / "a1os-platform.db"
+
+if not os.getenv("A1OS_PLATFORM_ADMIN_EMAIL") or not os.getenv(
+    "A1OS_PLATFORM_ADMIN_PASSWORD"
+):
+    env_file = PLATFORM / ".env.production"
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            if "=" in line and not line.lstrip().startswith("#"):
+                key, _, value = line.partition("=")
+                os.environ.setdefault(key.strip(), value.strip())
+
 BASE = os.getenv("A1OS_PLATFORM_BASE_URL", "http://127.0.0.1:3013")
 EMAIL = os.getenv("A1OS_PLATFORM_ADMIN_EMAIL", "admin@a1os.io")
 PASSWORD = os.getenv("A1OS_PLATFORM_ADMIN_PASSWORD", "A1os.Admin@2026")
-
-PLATFORM = Path(__file__).resolve().parents[3]
-DB = PLATFORM / "deployments" / "a1os-platform" / "data" / "a1os-platform.db"
 
 print("=" * 60)
 print("A1OS PLATFORM API — V1.0 ACCEPTANCE")
@@ -45,9 +55,17 @@ try:
     _conn.execute(
         "DELETE FROM ledger_entries WHERE reference = 'SALE-0001'"
     )
-    _conn.execute(
-        "DELETE FROM stock_movements WHERE reference IN ('PO-2026-001', 'ROAST-2026-001')"
-    )
+    if prod_ids:
+        _conn.execute(
+            "DELETE FROM stock_movements "
+            f"WHERE reference IN ({','.join('?' * len(test_skus))}) "
+            f"OR product_id IN ({','.join('?' * len(prod_ids))})",
+            [*test_skus, *prod_ids],
+        )
+    else:
+        _conn.execute(
+            "DELETE FROM stock_movements WHERE reference IN ('PO-2026-001', 'ROAST-2026-001')"
+        )
     if prod_ids:
         _conn.execute(
             f"DELETE FROM stock_items WHERE product_id IN ({','.join('?' * len(prod_ids))})",
