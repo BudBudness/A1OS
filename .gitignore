@@ -1,0 +1,83 @@
+# Logs
+*.log
+*.log.*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+.venv/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Temp files
+*.tmp
+*.temp
+*.lock
+*.pid
+*.swp
+*.swo
+*~
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+*.crt
+*.secret
+secrets/
+*.jks
+
+# Databases (except schema)
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups
+*.tar.gz
+*.tgz
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+a1os_*.db
+billions.db
+*.a1os.db
+
+# Expose protection
+.exposed.*
+
+# SQLite runtime files
+*.db-shm
+*.db-wal
+
+# Runtime backups
+backups/immutable/
+
+# Logs
+*.log
+nohup.out
+
+# Forensics artifacts
+browser_forensics.js
+browser_runtime_probe.html
+frontend_forensics.js
+frontend_forensics.json
+
+# Node artifacts (if not needed)
+node_modules/
+
+# Playwright MCP artifacts
+.playwright-mcp/

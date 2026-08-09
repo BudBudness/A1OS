@@ -1,0 +1,37 @@
+factory:
+  version: "2.2"
+  name: "A1OS Intelligence Command Center"
+
+pipeline:
+  - discover_products
+  - analyze_capabilities
+  - inspect_agents
+  - inspect_workflows
+  - generate_insights
+  - create_intelligence_report
+
+intelligence:
+
+  products:
+    - health_analysis
+    - capability_analysis
+    - lifecycle_analysis
+
+  agents:
+    - availability
+    - activity
+    - performance
+
+  workflows:
+    - execution_tracking
+    - automation_tracking
+    - failure_detection
+
+  analytics:
+    - trends
+    - recommendations
+    - anomalies
+
+  executive:
+    - factory_summary
+    - intelligence_report

@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "runtime": "A1OS",
+  "services": [
+    {
+      "name": "a1os-core",
+      "type": "control-plane",
+      "database": "data/a1os.db",
+      "health_local": "http://127.0.0.1:3011/v1/health",
+      "adapter": [
+        "ops/adapters/restart-core.sh"
+      ]
+    },
+    {
+      "name": "education-os",
+      "type": "application",
+      "database": "products/education-os/deployments/little-oaks/data/education.db",
+      "health_local": "https://little-oaks.pyongcity.org/api/health",
+      "adapter": [
+        "ops/adapters/restart-education-web.sh"
+      ]
+    },
+    {
+      "name": "platform-api",
+      "type": "application",
+      "database": "products/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
+      "health_local": "http://127.0.0.1:3013/health",
+      "adapter": [
+        "ops/adapters/restart-platform-api.sh"
+      ]
+    },
+    {
+      "name": "roastery",
+      "type": "application",
+      "database": null,
+      "health_local": "https://roastery.pyongcity.org",
+      "adapter": [
+        "ops/adapters/restart-coffee-web.sh"
+      ]
+    },
+    {
+      "name": "cloudflare-edge-observer",
+      "type": "observer",
+      "database": null,
+      "health_local": "external",
+      "adapter": []
+    }
+  ]
+}

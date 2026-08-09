@@ -1,0 +1,715 @@
+====================================================================
+A1OS RUNTIME-V2 PRODUCTION INTEGRATION INVENTORY
+====================================================================
+GENERATED: 2026-07-22T21:18:41+03:00
+
+=== RUNTIME ENTRYPOINTS ===
+./core/state.py:171:        await self.runtime.execute(
+./core/state.py:602:        result = await self.capabilities.execute(
+./core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+./core/api.py:1:from fastapi import FastAPI, HTTPException, Header
+./core/api.py:10:app = FastAPI(title="A1OS Core API", version="1.0.0")
+./core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./core/execution/framework.py:35:if __name__ == "__main__": ExecutionEngine().process_queue()
+./core/execution/v2/dispatcher/engine.py:31:                return asyncio.run(result)
+./core/execution/v2/recovery.py:14:                self.dispatcher.dispatch(data.get("decision"))
+./core/optimization_loop.py:19:if __name__ == "__main__":
+./core/optimization_loop.py:20:    asyncio.run(run_optimization())
+./core/runtime.py:29:        self.worker_task = asyncio.create_task(self._durable_worker())
+./core/runtime.py:93:                    output = system.execute(
+./core/utils/inject.py:19:if __name__ == "__main__":
+./core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+./applications/executive_dashboard/monitor.py:8:if __name__ == "__main__":
+./apps/mobile/api.py:1:from fastapi import FastAPI, HTTPException
+./apps/mobile/api.py:7:app = FastAPI()
+./client_gateway.py:16:if __name__ == "__main__":
+./main.py:1:import uvicorn
+./main.py:18:if __name__ == "__main__":
+./main.py:19:    uvicorn.run(
+./bin/query.py:16:if __name__ == "__main__":
+./cron_matrix_daemon.py:55:if __name__ == "__main__": run_loop()
+./gateway.py:1:from fastapi import FastAPI, Request, HTTPException
+./gateway.py:5:app = FastAPI()
+./a1ctl:76:if __name__ == "__main__":
+./dashboard_ui.py:72:if __name__ == "__main__":
+./manifest.json:3:  "gateway": "ACTIVE (FastAPI + Uvicorn)",
+./deploy_generic_ledger.py:100:if __name__ == "__main__":
+./launcher.py:21:if __name__ == "__main__":
+./infra/messaging/bus.py:18:        tasks = [asyncio.create_task(self._safely_execute(h, topic, payload)) for h in self._subscribers[topic]]
+./modules/orchestrator.py:21:if __name__ == "__main__":
+./modules/research/synthesizer.py:10:        return self.dispatcher.dispatch(decision, context=context)
+./run_matrix_operations.py:88:if __name__ == "__main__":
+./telemetry_dash.py:55:if __name__ == "__main__":
+./ops/executive.py:22:if __name__ == "__main__": analyze_and_act()
+./ops/a1os_secondary_runtime.sh:15:python3 -m uvicorn main:app --host 127.0.0.1 --port "$PORT" \
+./orchestration/workflow/engine.py:14:            result = self.dispatcher.dispatch(task)
+./runtime/engine.py:27:                tg.create_task(self._worker("scheduler", 60))
+./runtime/engine.py:28:                tg.create_task(self._worker("runtime_monitor", 30))
+./runtime/scheduler/worker_scheduler.py:72:            await self.dispatcher.dispatch(
+./scheduler/replenishment_daemon.py:17:if __name__ == "__main__":
+./scripts/supervisor.sh:3:python3 -c "import asyncio; from manager import A1OSManager; asyncio.run(A1OSManager().heartbeat_loop())"
+./scripts/a1os_harden.sh:398:pkill -f "uvicorn.*3011" 2>/dev/null || true
+./scripts/a1os_production_hardening.sh:282:        'asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))',
+./scripts/a1os_production_hardening.sh:283:        'increment("api.execute.accepted", f"target={payload.target}")\n    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))'
+./scripts/a1os_failover_orchestrator.sh:44:    nohup python3 -m uvicorn main:app \
+./security/confirmed_bypass_candidates.txt:258:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/confirmed_bypass_candidates.txt:263:0079:         result = await system.runtime.execute(
+./security/confirmed_bypass_candidates.txt:282:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/confirmed_bypass_candidates.txt:287:0053:             result = await system.runtime.execute(
+./security/confirmed_bypass_candidates.txt:377:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/confirmed_bypass_candidates.txt:382:0171:         await self.runtime.execute(
+./security/confirmed_bypass_candidates.txt:396:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/confirmed_bypass_candidates.txt:401:0085:     asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/confirmed_bypass_candidates.txt:591:0014: if __name__ == "__main__":
+./security/confirmed_bypass_candidates.txt:606:0014: if __name__ == "__main__":
+./security/confirmed_bypass_candidates.txt:621:0014: if __name__ == "__main__":
+./security/confirmed_bypass_candidates.txt:695:0024:                 asyncio.create_task(worker.process(task["payload"]))
+./security/confirmed_bypass_classification.txt:92:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/confirmed_bypass_classification.txt:98:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/confirmed_bypass_classification.txt:116:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/confirmed_bypass_classification.txt:122:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/confirmed_bypass_classification.txt:128:CALL: system.execute('__spoofed_read_only_capability__', read_only=True, safe=True, trusted=True, operation='execute')
+./security/confirmed_bypass_classification.txt:134:CALL: system.execute('__future_registered_capability__', operation='execute')
+./security/confirmed_bypass_classification.txt:140:CALL: system.execute('__spoofed_read_only_capability__', operation='replacement')
+./security/confirmed_bypass_classification.txt:146:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/confirmed_bypass_classification.txt:152:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/confirmed_bypass_classification.txt:158:CALL: system.capabilities.execute(capability, entity_id='primary-device', operation='repair', action='repair')
+./security/confirmed_bypass_classification.txt:164:CALL: system.capabilities.execute('repair', capability='digital_world_recovery', entity_id='primary-device')
+./security/confirmed_bypass_classification.txt:170:CALL: system.execute('repair', capability='digital_world_recovery', entity_id='primary-device', authorization={'authorized': True, 'allowed': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-id', 'confidence': 1.0}})
+./security/confirmed_bypass_classification.txt:176:CALL: system.execute('execute', capability='unknown_future_consequential_capability', entity_id='primary-device')
+./security/confirmed_bypass_classification.txt:194:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/confirmed_bypass_classification.txt:200:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/confirmed_bypass_classification.txt:212:CALL: system.execute('__operational_unknown_consequential_capability__', entity_id=ENTITY)
+./security/confirmed_bypass_classification.txt:218:CALL: dispatcher.dispatch(target='default', payload={})
+./security/confirmed_bypass_classification.txt:224:CALL: dispatcher.dispatch(target='default', payload={'capability': 'unknown.capability', 'entity_id': 'runtime', 'action': 'dispatch'})
+./security/confirmed_bypass_classification.txt:230:CALL: dispatcher.dispatch(target='default', payload={'capability': 'health', 'entity_id': 'runtime', 'action': 'read'})
+./security/confirmed_bypass_classification.txt:236:CALL: dispatcher.dispatch(target='default', payload={'capability': 'digital_world_recovery', 'entity_id': 'runtime', 'action': 'recover'})
+./security/confirmed_bypass_classification.txt:278:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/confirmed_bypass_classification.txt:284:CALL: self.capabilities.execute(future_capability, operation='consequential_operation')
+./security/confirmed_bypass_classification.txt:320:CALL: self.capabilities.execute(action, **kwargs)
+./security/confirmed_bypass_classification.txt:434:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/confirmed_bypass_classification.txt:458:CALL: system.execute(action, **{k: v for k, v in payload.items() if k not in {'target', 'action', 'role'}})
+./security/confirmed_bypass_classification.txt:578:CALL: dispatcher.dispatch(decision)
+./security/confirmed_bypass_classification.txt:584:CALL: dispatcher.dispatch(decision)
+./security/confirmed_bypass_classification.txt:632:CALL: self.dispatcher.dispatch(task)
+./security/confirmed_bypass_classification.txt:704:CALL: self.dispatcher.dispatch(decision, context=context)
+./security/confirmed_bypass_classification.txt:896:CALL: self.dispatcher.dispatch(data.get('decision'))
+./security/verified_consequential_bypasses.txt:57:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/verified_consequential_bypasses.txt:107:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/verified_consequential_bypasses.txt:164:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/verified_consequential_bypasses.txt:169:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/scheduler_authorization_regression_test.py:26:    result = await scheduler.dispatcher.dispatch(
+./security/scheduler_authorization_regression_test.py:35:    result = await scheduler.dispatcher.dispatch(
+./security/scheduler_authorization_regression_test.py:46:    result = await scheduler.dispatcher.dispatch(
+./security/scheduler_authorization_regression_test.py:66:if __name__ == "__main__":
+./security/scheduler_authorization_regression_test.py:67:    asyncio.run(main())
+./security/runtime_v2_integration_inventory.txt:7:./core/state.py:171:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:8:./core/state.py:602:        result = await self.capabilities.execute(
+./security/runtime_v2_integration_inventory.txt:9:./core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:10:./core/api.py:1:from fastapi import FastAPI, HTTPException, Header
+./security/runtime_v2_integration_inventory.txt:11:./core/api.py:10:app = FastAPI(title="A1OS Core API", version="1.0.0")
+./security/runtime_v2_integration_inventory.txt:12:./core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:13:./core/execution/framework.py:35:if __name__ == "__main__": ExecutionEngine().process_queue()
+./security/runtime_v2_integration_inventory.txt:14:./core/execution/v2/dispatcher/engine.py:31:                return asyncio.run(result)
+./security/runtime_v2_integration_inventory.txt:15:./core/execution/v2/recovery.py:14:                self.dispatcher.dispatch(data.get("decision"))
+./security/runtime_v2_integration_inventory.txt:16:./core/optimization_loop.py:19:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:17:./core/optimization_loop.py:20:    asyncio.run(run_optimization())
+./security/runtime_v2_integration_inventory.txt:18:./core/runtime.py:29:        self.worker_task = asyncio.create_task(self._durable_worker())
+./security/runtime_v2_integration_inventory.txt:19:./core/runtime.py:93:                    output = system.execute(
+./security/runtime_v2_integration_inventory.txt:20:./core/utils/inject.py:19:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:21:./core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:22:./applications/executive_dashboard/monitor.py:8:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:23:./apps/mobile/api.py:1:from fastapi import FastAPI, HTTPException
+./security/runtime_v2_integration_inventory.txt:24:./apps/mobile/api.py:7:app = FastAPI()
+./security/runtime_v2_integration_inventory.txt:25:./client_gateway.py:16:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:26:./main.py:1:import uvicorn
+./security/runtime_v2_integration_inventory.txt:27:./main.py:18:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:28:./main.py:19:    uvicorn.run(
+./security/runtime_v2_integration_inventory.txt:29:./bin/query.py:16:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:30:./cron_matrix_daemon.py:55:if __name__ == "__main__": run_loop()
+./security/runtime_v2_integration_inventory.txt:31:./gateway.py:1:from fastapi import FastAPI, Request, HTTPException
+./security/runtime_v2_integration_inventory.txt:32:./gateway.py:5:app = FastAPI()
+./security/runtime_v2_integration_inventory.txt:33:./a1ctl:76:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:34:./dashboard_ui.py:72:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:35:./manifest.json:3:  "gateway": "ACTIVE (FastAPI + Uvicorn)",
+./security/runtime_v2_integration_inventory.txt:36:./deploy_generic_ledger.py:100:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:37:./launcher.py:21:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:38:./infra/messaging/bus.py:18:        tasks = [asyncio.create_task(self._safely_execute(h, topic, payload)) for h in self._subscribers[topic]]
+./security/runtime_v2_integration_inventory.txt:39:./modules/orchestrator.py:21:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:40:./modules/research/synthesizer.py:10:        return self.dispatcher.dispatch(decision, context=context)
+./security/runtime_v2_integration_inventory.txt:41:./run_matrix_operations.py:88:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:42:./telemetry_dash.py:55:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:43:./ops/executive.py:22:if __name__ == "__main__": analyze_and_act()
+./security/runtime_v2_integration_inventory.txt:44:./ops/a1os_secondary_runtime.sh:15:python3 -m uvicorn main:app --host 127.0.0.1 --port "$PORT" \
+./security/runtime_v2_integration_inventory.txt:45:./orchestration/workflow/engine.py:14:            result = self.dispatcher.dispatch(task)
+./security/runtime_v2_integration_inventory.txt:46:./runtime/engine.py:27:                tg.create_task(self._worker("scheduler", 60))
+./security/runtime_v2_integration_inventory.txt:47:./runtime/engine.py:28:                tg.create_task(self._worker("runtime_monitor", 30))
+./security/runtime_v2_integration_inventory.txt:48:./runtime/scheduler/worker_scheduler.py:72:            await self.dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:49:./scheduler/replenishment_daemon.py:17:if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:50:./scripts/supervisor.sh:3:python3 -c "import asyncio; from manager import A1OSManager; asyncio.run(A1OSManager().heartbeat_loop())"
+./security/runtime_v2_integration_inventory.txt:51:./scripts/a1os_harden.sh:398:pkill -f "uvicorn.*3011" 2>/dev/null || true
+./security/runtime_v2_integration_inventory.txt:52:./scripts/a1os_production_hardening.sh:282:        'asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))',
+./security/runtime_v2_integration_inventory.txt:53:./scripts/a1os_production_hardening.sh:283:        'increment("api.execute.accepted", f"target={payload.target}")\n    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))'
+./security/runtime_v2_integration_inventory.txt:54:./scripts/a1os_failover_orchestrator.sh:44:    nohup python3 -m uvicorn main:app \
+./security/runtime_v2_integration_inventory.txt:55:./security/confirmed_bypass_candidates.txt:258:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:56:./security/confirmed_bypass_candidates.txt:263:0079:         result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:57:./security/confirmed_bypass_candidates.txt:282:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:58:./security/confirmed_bypass_candidates.txt:287:0053:             result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:59:./security/confirmed_bypass_candidates.txt:377:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:60:./security/confirmed_bypass_candidates.txt:382:0171:         await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:61:./security/confirmed_bypass_candidates.txt:396:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:62:./security/confirmed_bypass_candidates.txt:401:0085:     asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:63:./security/confirmed_bypass_candidates.txt:591:0014: if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:64:./security/confirmed_bypass_candidates.txt:606:0014: if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:65:./security/confirmed_bypass_candidates.txt:621:0014: if __name__ == "__main__":
+./security/runtime_v2_integration_inventory.txt:66:./security/confirmed_bypass_candidates.txt:695:0024:                 asyncio.create_task(worker.process(task["payload"]))
+./security/runtime_v2_integration_inventory.txt:67:./security/confirmed_bypass_classification.txt:92:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:68:./security/confirmed_bypass_classification.txt:98:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:69:./security/confirmed_bypass_classification.txt:116:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:70:./security/confirmed_bypass_classification.txt:122:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:71:./security/confirmed_bypass_classification.txt:128:CALL: system.execute('__spoofed_read_only_capability__', read_only=True, safe=True, trusted=True, operation='execute')
+./security/runtime_v2_integration_inventory.txt:72:./security/confirmed_bypass_classification.txt:134:CALL: system.execute('__future_registered_capability__', operation='execute')
+./security/runtime_v2_integration_inventory.txt:73:./security/confirmed_bypass_classification.txt:140:CALL: system.execute('__spoofed_read_only_capability__', operation='replacement')
+./security/runtime_v2_integration_inventory.txt:74:./security/confirmed_bypass_classification.txt:146:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:75:./security/confirmed_bypass_classification.txt:152:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:76:./security/confirmed_bypass_classification.txt:158:CALL: system.capabilities.execute(capability, entity_id='primary-device', operation='repair', action='repair')
+./security/runtime_v2_integration_inventory.txt:77:./security/confirmed_bypass_classification.txt:164:CALL: system.capabilities.execute('repair', capability='digital_world_recovery', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:78:./security/confirmed_bypass_classification.txt:170:CALL: system.execute('repair', capability='digital_world_recovery', entity_id='primary-device', authorization={'authorized': True, 'allowed': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-id', 'confidence': 1.0}})
+./security/runtime_v2_integration_inventory.txt:79:./security/confirmed_bypass_classification.txt:176:CALL: system.execute('execute', capability='unknown_future_consequential_capability', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:80:./security/confirmed_bypass_classification.txt:194:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:81:./security/confirmed_bypass_classification.txt:200:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:82:./security/confirmed_bypass_classification.txt:212:CALL: system.execute('__operational_unknown_consequential_capability__', entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:83:./security/confirmed_bypass_classification.txt:218:CALL: dispatcher.dispatch(target='default', payload={})
+./security/runtime_v2_integration_inventory.txt:84:./security/confirmed_bypass_classification.txt:224:CALL: dispatcher.dispatch(target='default', payload={'capability': 'unknown.capability', 'entity_id': 'runtime', 'action': 'dispatch'})
+./security/runtime_v2_integration_inventory.txt:85:./security/confirmed_bypass_classification.txt:230:CALL: dispatcher.dispatch(target='default', payload={'capability': 'he
+./services/api/app.py:1:from fastapi import FastAPI
+./services/api/app.py:3:app=FastAPI(title="A1OS")
+./tests/full_system_integration.py:23:if __name__ == "__main__":
+./tests/integration_test.py:14:if __name__ == "__main__":
+./tests/production_verification.py:47:        self.runtime.execute_app("trading", "trade", {"risk_factor": 0.09}) # Explicit block trigger
+./tests/production_verification.py:55:if __name__ == "__main__":
+./tests/run_test.py:15:if __name__ == "__main__":
+./tests/test_abac_security.py:23:if __name__ == "__main__":
+./tests/test_dispatch_pipeline.py:18:    result = dispatcher.dispatch(decision)
+./tests/test_dispatch_pipeline.py:25:if __name__ == "__main__":
+./tests/test_modules.py:21:if __name__ == "__main__":
+./tests/test_propagation.py:13:    result = await dispatcher.dispatch(decision)
+./tests/test_system.py:9:if __name__ == "__main__":
+./tests/verify_hooks.py:11:if __name__ == "__main__":
+./tests/verify_integration.py:15:if __name__ == "__main__":
+./tests/conftest.py:13:        asyncio.run(testfunction(**kwargs))
+./main.py.pre_runtime_repair_20260720_213652:1:import uvicorn
+./main.py.pre_runtime_repair_20260720_213652:2:from fastapi import FastAPI
+./main.py.pre_runtime_repair_20260720_213652:6:app = FastAPI(title="A1OS Platform")
+./main.py.pre_runtime_repair_20260720_213652:40:if __name__ == "__main__":
+./main.py.pre_runtime_repair_20260720_213652:41:    uvicorn.run(app, host="0.0.0.0", port=3005)
+./backups/production_verification_20260720_214009/main.py:1:import uvicorn
+./backups/production_verification_20260720_214009/main.py:17:if __name__ == "__main__":
+./backups/production_verification_20260720_214009/main.py:18:    uvicorn.run(
+./backups/production_verification_20260720_214009/state.py:72:        await self.runtime.execute(
+./logs/a1os-secondary.log:5:  File "/data/data/com.termux/files/usr/lib/python3.14/site-packages/uvicorn/__main__.py", line 4, in <module>
+./logs/a1os-secondary.log:6:    uvicorn.main()
+./logs/a1os-secondary.log:18:  File "/data/data/com.termux/files/usr/lib/python3.14/site-packages/uvicorn/main.py", line 440, in main
+./logs/a1os-secondary.log:28:  File "/data/data/com.termux/files/usr/lib/python3.14/site-packages/uvicorn/main.py", line 609, in run
+./logs/a1os-secondary.log:31:  File "/data/data/com.termux/files/usr/lib/python3.14/site-packages/uvicorn/config.py", line 427, in load_app
+./logs/a1os-secondary.log:33:  File "/data/data/com.termux/files/usr/lib/python3.14/site-packages/uvicorn/importer.py", line 19, in import_from_string
+./functional_production_validation.py:53:            result = await system.runtime.execute(
+./functional_production_validation.py:79:        result = await system.runtime.execute(
+./functional_production_validation.py:247:asyncio.run(main())
+./a1os_distributed_hardening.sh:32:python3 -m uvicorn main:app --host 127.0.0.1 --port "$PORT" \
+./capability_registration_integrity_test.py:28:        result = await system.execute(
+./capability_registration_integrity_test.py:56:    unknown_gate = await system.execute(
+./capability_registration_integrity_test.py:91:        await system.execute(
+./capability_registration_integrity_test.py:120:        await system.execute(
+./capability_registration_integrity_test.py:136:    baseline = await system.execute(
+./capability_registration_integrity_test.py:186:asyncio.run(verify())
+./subsystem_execution_boundary_test.py:14:    dispatcher_result = await system.execute(
+./subsystem_execution_boundary_test.py:69:    future_result = await system.execute(
+./subsystem_execution_boundary_test.py:134:asyncio.run(verify())
+./consequential_authorization_execution_integration_test.py:92:            await system.capabilities.execute(
+./consequential_authorization_execution_integration_test.py:150:asyncio.run(verify())
+./operational_bypass_resistance_test.py:60:        lambda: system.capabilities.execute(
+./operational_bypass_resistance_test.py:70:        lambda: system.execute(
+./operational_bypass_resistance_test.py:89:        lambda: system.execute(
+./operational_bypass_resistance_test.py:145:if __name__ == "__main__":
+./operational_bypass_resistance_test.py:146:    asyncio.run(verify())
+./operational_registered_capability_bypass_test.py:116:        normal_result = await system.execute(
+./operational_registered_capability_bypass_test.py:187:if __name__ == "__main__":
+./operational_registered_capability_bypass_test.py:188:    asyncio.run(verify())
+./operational_runtime_enforcement_test.py:23:        result = await system.execute(
+./operational_runtime_enforcement_test.py:119:        result = await system.execute(
+./operational_runtime_enforcement_test.py:223:asyncio.run(verify())
+./capability_contract_integrity_test.py:224:if __name__ == "__main__":
+./capability_contract_integrity_test.py:225:    asyncio.run(main())
+./capability_policy_matrix_test.py:334:if __name__ == "__main__":
+./provenance_integrity_test.py:208:if __name__ == "__main__":
+./provenance_integrity_test.py:209:    asyncio.run(main())
+./authorization_lifecycle_integrity_test.py:248:if __name__ == "__main__":
+./authorization_lifecycle_integrity_test.py:249:    asyncio.run(main())
+./authorization_decision_integrity_test.py:184:if __name__ == "__main__":
+./authorization_decision_integrity_test.py:185:    asyncio.run(main())
+./adaptive_authorization_integrity_test.py:152:if __name__ == "__main__":
+./adaptive_authorization_integrity_test.py:153:    asyncio.run(main())
+./authorization_provenance_continuity_integrity_test.py:203:if __name__ == "__main__":
+./authorization_provenance_continuity_integrity_test.py:204:    asyncio.run(main())
+./execution_authorization_continuity_integrity_test.py:148:if __name__ == "__main__":
+./execution_authorization_continuity_integrity_test.py:149:    asyncio.run(main())
+./authorization_execution_replay_integrity_test.py:151:if __name__ == "__main__":
+./authorization_execution_replay_integrity_test.py:152:    asyncio.run(main())
+./control_plane_regression_baseline_test.py:100:if __name__ == "__main__":
+./control_plane_regression_baseline_test.py:101:    asyncio.run(main())
+./authorization_execution_commitment_integrity_test.py:146:if __name__ == "__main__":
+./authorization_execution_commitment_integrity_test.py:147:    asyncio.run(main())
+./authorization_execution_commitment_binding_test.py:131:if __name__ == "__main__":
+./authorization_execution_commitment_binding_test.py:132:    asyncio.run(main())
+./authorization_execution_commitment_expiry_integrity_test.py:103:if __name__ == "__main__":
+./authorization_execution_commitment_expiry_integrity_test.py:104:    asyncio.run(main())
+./production_path_enforcement_audit_test.py:143:if __name__ == "__main__":
+./production_path_enforcement_audit_test.py:144:    asyncio.run(main())
+./end_to_end_execution_authorization_audit_test.py:161:if __name__ == "__main__":
+./end_to_end_execution_authorization_audit_test.py:162:    asyncio.run(main())
+./dispatch_security_enforcement_test.py:25:    missing = await dispatcher.dispatch(
+./dispatch_security_enforcement_test.py:34:    unknown = await dispatcher.dispatch(
+./dispatch_security_enforcement_test.py:47:    health = await dispatcher.dispatch(
+./dispatch_security_enforcement_test.py:61:    recovery = await dispatcher.dispatch(
+./dispatch_security_enforcement_test.py:100:asyncio.run(main())
+
+=== CAPABILITY EXECUTION SURFACES ===
+./core/state.py:171:        await self.runtime.execute(
+./core/state.py:185:    async def _capability_health_check(self, **kwargs):
+./core/state.py:192:    async def _capability_diagnostics(self, **kwargs):
+./core/state.py:199:    async def _capability_recover(self, **kwargs):
+./core/state.py:213:    async def _capability_list(self, **kwargs):
+./core/state.py:567:    async def _capability_universal_consequence_gate_test(
+./core/state.py:602:        result = await self.capabilities.execute(
+./core/state.py:633:    async def _capability_adaptive_authorization_test(self, operation="run", **kwargs):
+./core/state.py:932:    async def _capability_sovereignty_policy_learning(
+./core/state.py:975:    async def _capability_service_management(self, operation="list", **kwargs):
+./core/state.py:1022:    async def _capability_process_management(self, operation="list", **kwargs):
+./core/state.py:1070:    async def _capability_network_management(self, operation="interfaces", **kwargs):
+./core/state.py:1101:    async def _capability_filesystem_management(self, operation="disk_usage", path=".", **kwargs):
+./core/state.py:1131:    async def _capability_security_audit(self, operation="open_ports", **kwargs):
+./core/state.py:1163:    async def _capability_observability(self, operation="runtime", **kwargs):
+./core/state.py:1175:    async def _capability_digital_world_model(
+./core/state.py:1310:    async def _capability_digital_world_decision(
+./core/state.py:1380:    async def _capability_digital_world_operation(
+./core/state.py:1444:    async def _capability_autonomous_recovery(
+./core/state.py:1640:    async def _capability_digital_world_graph(
+./core/state.py:1825:    async def _capability_sovereignty_policy(
+./core/state.py:1980:    async def _capability_sovereign_control(
+./core/state.py:2035:    async def _capability_autonomous_actuation(
+./core/state.py:2392:    async def _capability_digital_world_recovery(
+./core/state.py:2431:    async def _capability_digital_world_query(
+./core/state.py:2588:    async def _capability_digital_world_state(
+./core/state.py:2757:    async def _capability_digital_world_reconcile(
+./core/state.py:2887:    async def _capability_digital_world_intelligence(
+./core/state.py:3033:    async def _capability_database_repair(self, **kwargs):
+./core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+./core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./core/runtime.py:93:                    output = system.execute(
+./core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+./scripts/a1os_production_hardening.sh:282:        'asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))',
+./scripts/a1os_production_hardening.sh:283:        'increment("api.execute.accepted", f"target={payload.target}")\n    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))'
+./security/confirmed_bypass_candidates.txt:258:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/confirmed_bypass_candidates.txt:263:0079:         result = await system.runtime.execute(
+./security/confirmed_bypass_candidates.txt:282:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/confirmed_bypass_candidates.txt:287:0053:             result = await system.runtime.execute(
+./security/confirmed_bypass_candidates.txt:377:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/confirmed_bypass_candidates.txt:382:0171:         await self.runtime.execute(
+./security/confirmed_bypass_candidates.txt:396:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/confirmed_bypass_candidates.txt:401:0085:     asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/confirmed_bypass_classification.txt:92:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/confirmed_bypass_classification.txt:98:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/confirmed_bypass_classification.txt:116:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/confirmed_bypass_classification.txt:122:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/confirmed_bypass_classification.txt:128:CALL: system.execute('__spoofed_read_only_capability__', read_only=True, safe=True, trusted=True, operation='execute')
+./security/confirmed_bypass_classification.txt:134:CALL: system.execute('__future_registered_capability__', operation='execute')
+./security/confirmed_bypass_classification.txt:140:CALL: system.execute('__spoofed_read_only_capability__', operation='replacement')
+./security/confirmed_bypass_classification.txt:146:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/confirmed_bypass_classification.txt:152:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/confirmed_bypass_classification.txt:158:CALL: system.capabilities.execute(capability, entity_id='primary-device', operation='repair', action='repair')
+./security/confirmed_bypass_classification.txt:164:CALL: system.capabilities.execute('repair', capability='digital_world_recovery', entity_id='primary-device')
+./security/confirmed_bypass_classification.txt:170:CALL: system.execute('repair', capability='digital_world_recovery', entity_id='primary-device', authorization={'authorized': True, 'allowed': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-id', 'confidence': 1.0}})
+./security/confirmed_bypass_classification.txt:176:CALL: system.execute('execute', capability='unknown_future_consequential_capability', entity_id='primary-device')
+./security/confirmed_bypass_classification.txt:194:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/confirmed_bypass_classification.txt:200:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/confirmed_bypass_classification.txt:212:CALL: system.execute('__operational_unknown_consequential_capability__', entity_id=ENTITY)
+./security/confirmed_bypass_classification.txt:278:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/confirmed_bypass_classification.txt:284:CALL: self.capabilities.execute(future_capability, operation='consequential_operation')
+./security/confirmed_bypass_classification.txt:320:CALL: self.capabilities.execute(action, **kwargs)
+./security/confirmed_bypass_classification.txt:434:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/confirmed_bypass_classification.txt:458:CALL: system.execute(action, **{k: v for k, v in payload.items() if k not in {'target', 'action', 'role'}})
+./security/verified_consequential_bypasses.txt:57:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/verified_consequential_bypasses.txt:107:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/verified_consequential_bypasses.txt:164:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/verified_consequential_bypasses.txt:169:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:7:./core/state.py:171:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:8:./core/state.py:602:        result = await self.capabilities.execute(
+./security/runtime_v2_integration_inventory.txt:9:./core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:12:./core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:19:./core/runtime.py:93:                    output = system.execute(
+./security/runtime_v2_integration_inventory.txt:21:./core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:52:./scripts/a1os_production_hardening.sh:282:        'asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))',
+./security/runtime_v2_integration_inventory.txt:53:./scripts/a1os_production_hardening.sh:283:        'increment("api.execute.accepted", f"target={payload.target}")\n    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))'
+./security/runtime_v2_integration_inventory.txt:55:./security/confirmed_bypass_candidates.txt:258:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:56:./security/confirmed_bypass_candidates.txt:263:0079:         result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:57:./security/confirmed_bypass_candidates.txt:282:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:58:./security/confirmed_bypass_candidates.txt:287:0053:             result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:59:./security/confirmed_bypass_candidates.txt:377:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:60:./security/confirmed_bypass_candidates.txt:382:0171:         await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:61:./security/confirmed_bypass_candidates.txt:396:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:62:./security/confirmed_bypass_candidates.txt:401:0085:     asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:67:./security/confirmed_bypass_classification.txt:92:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:68:./security/confirmed_bypass_classification.txt:98:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:69:./security/confirmed_bypass_classification.txt:116:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:70:./security/confirmed_bypass_classification.txt:122:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:71:./security/confirmed_bypass_classification.txt:128:CALL: system.execute('__spoofed_read_only_capability__', read_only=True, safe=True, trusted=True, operation='execute')
+./security/runtime_v2_integration_inventory.txt:72:./security/confirmed_bypass_classification.txt:134:CALL: system.execute('__future_registered_capability__', operation='execute')
+./security/runtime_v2_integration_inventory.txt:73:./security/confirmed_bypass_classification.txt:140:CALL: system.execute('__spoofed_read_only_capability__', operation='replacement')
+./security/runtime_v2_integration_inventory.txt:74:./security/confirmed_bypass_classification.txt:146:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:75:./security/confirmed_bypass_classification.txt:152:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:76:./security/confirmed_bypass_classification.txt:158:CALL: system.capabilities.execute(capability, entity_id='primary-device', operation='repair', action='repair')
+./security/runtime_v2_integration_inventory.txt:77:./security/confirmed_bypass_classification.txt:164:CALL: system.capabilities.execute('repair', capability='digital_world_recovery', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:78:./security/confirmed_bypass_classification.txt:170:CALL: system.execute('repair', capability='digital_world_recovery', entity_id='primary-device', authorization={'authorized': True, 'allowed': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-id', 'confidence': 1.0}})
+./security/runtime_v2_integration_inventory.txt:79:./security/confirmed_bypass_classification.txt:176:CALL: system.execute('execute', capability='unknown_future_consequential_capability', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:80:./security/confirmed_bypass_classification.txt:194:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:81:./security/confirmed_bypass_classification.txt:200:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:82:./security/confirmed_bypass_classification.txt:212:CALL: system.execute('__operational_unknown_consequential_capability__', entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:87:./security/confirmed_bypass_classification.txt:278:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:88:./security/confirmed_bypass_classification.txt:284:CALL: self.capabilities.execute(future_capability, operation='consequential_operation')
+./security/runtime_v2_integration_inventory.txt:89:./security/confirmed_bypass_classification.txt:320:CALL: self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:90:./security/confirmed_bypass_classification.txt:434:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:91:./security/confirmed_bypass_classification.txt:458:CALL: system.execute(action, **{k: v for k, v in payload.items() if k not in {'target', 'action', 'role'}})
+./security/runtime_v2_integration_inventory.txt:97:./security/verified_consequential_bypasses.txt:57:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:98:./security/verified_consequential_bypasses.txt:107:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:99:./security/verified_consequential_bypasses.txt:164:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:100:./security/verified_consequential_bypasses.txt:169:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:106:./security/runtime_v2_integration_inventory.txt:7:./core/state.py:171:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:107:./security/runtime_v2_integration_inventory.txt:8:./core/state.py:602:        result = await self.capabilities.execute(
+./security/runtime_v2_integration_inventory.txt:108:./security/runtime_v2_integration_inventory.txt:9:./core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:111:./security/runtime_v2_integration_inventory.txt:12:./core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:118:./security/runtime_v2_integration_inventory.txt:19:./core/runtime.py:93:                    output = system.execute(
+./security/runtime_v2_integration_inventory.txt:120:./security/runtime_v2_integration_inventory.txt:21:./core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:151:./security/runtime_v2_integration_inventory.txt:52:./scripts/a1os_production_hardening.sh:282:        'asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))',
+./security/runtime_v2_integration_inventory.txt:152:./security/runtime_v2_integration_inventory.txt:53:./scripts/a1os_production_hardening.sh:283:        'increment("api.execute.accepted", f"target={payload.target}")\n    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))'
+./security/runtime_v2_integration_inventory.txt:154:./security/runtime_v2_integration_inventory.txt:55:./security/confirmed_bypass_candidates.txt:258:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:155:./security/runtime_v2_integration_inventory.txt:56:./security/confirmed_bypass_candidates.txt:263:0079:         result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:156:./security/runtime_v2_integration_inventory.txt:57:./security/confirmed_bypass_candidates.txt:282:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:157:./security/runtime_v2_integration_inventory.txt:58:./security/confirmed_bypass_candidates.txt:287:0053:             result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:158:./security/runtime_v2_integration_inventory.txt:59:./security/confirmed_bypass_candidates.txt:377:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:159:./security/runtime_v2_integration_inventory.txt:60:./security/confirmed_bypass_candidates.txt:382:0171:         await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:160:./security/runtime_v2_integration_inventory.txt:61:./security/confirmed_bypass_candidates.txt:396:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:161:./security/runtime_v2_integration_inventory.txt:62:./security/confirmed_bypass_candidates.txt:401:0085:     asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:166:./security/runtime_v2_integration_inventory.txt:67:./security/confirmed_bypass_classification.txt:92:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:167:./security/runtime_v2_integration_inventory.txt:68:./security/confirmed_bypass_classification.txt:98:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:168:./security/runtime_v2_integration_inventory.txt:69:./security/confirmed_bypass_classification.txt:116:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:169:./security/runtime_v2_integration_inventory.txt:70:./security/confirmed_bypass_classification.txt:122:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:170:./security/runtime_v2_integration_inventory.txt:71:./security/confirmed_bypass_classification.txt:128:CALL: system.execute('__spoofed_read_only_capability__', read_only=True, safe=True, trusted=True, operation='execute')
+./security/runtime_v2_integration_inventory.txt:171:./security/runtime_v2_integration_inventory.txt:72:./security/confirmed_bypass_classification.txt:134:CALL: system.execute('__future_registered_capability__', operation='execute')
+./security/runtime_v2_integration_inventory.txt:172:./security/runtime_v2_integration_inventory.txt:73:./security/confirmed_bypass_classification.txt:140:CALL: system.execute('__spoofed_read_only_capability__', operation='replacement')
+./security/runtime_v2_integration_inventory.txt:173:./security/runtime_v2_integration_inventory.txt:74:./security/confirmed_bypass_classification.txt:146:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:174:./security/runtime_v2_integration_inventory.txt:75:./security/confirmed_bypass_classification.txt:152:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:175:./security/runtime_v2_integration_inventory.txt:76:./security/confirmed_bypass_classification.txt:158:CALL: system.capabilities.execute(capability, entity_id='primary-device', operation='repair', action='repair')
+./security/runtime_v2_integration_inventory.txt:176:./security/runtime_v2_integration_inventory.txt:77:./security/confirmed_bypass_classification.txt:164:CALL: system.capabilities.execute('repair', capability='digital_world_recovery', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:177:./security/runtime_v2_integration_inventory.txt:78:./security/confirmed_bypass_classification.txt:170:CALL: system.execute('repair', capability='digital_world_recovery', entity_id='primary-device', authorization={'authorized': True, 'allowed': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-id', 'confidence': 1.0}})
+./security/runtime_v2_integration_inventory.txt:178:./security/runtime_v2_integration_inventory.txt:79:./security/confirmed_bypass_classification.txt:176:CALL: system.execute('execute', capability='unknown_future_consequential_capability', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:179:./security/runtime_v2_integration_inventory.txt:80:./security/confirmed_bypass_classification.txt:194:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:180:./security/runtime_v2_integration_inventory.txt:81:./security/confirmed_bypass_classification.txt:200:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:181:./security/runtime_v2_integration_inventory.txt:82:./security/confirmed_bypass_classification.txt:212:CALL: system.execute('__operational_unknown_consequential_capability__', entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:189:./tests/production_verification.py:47:        self.runtime.execute_app("trading", "trade", {"risk_factor": 0.09}) # Explicit block trigger
+./security/runtime_v2_integration_inventory.txt:209:./backups/production_verification_20260720_214009/state.py:72:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:216:./functional_production_validation.py:53:            result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:217:./functional_production_validation.py:79:        result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:220:./capability_registration_integrity_test.py:28:        result = await system.execute(
+./security/runtime_v2_integration_inventory.txt:221:./capability_registration_integrity_test.py:56:    unknown_gate = await system.execute(
+./security/runtime_v2_integration_inventory.txt:222:./capability_registration_integrity_test.py:91:        await system.execute(
+./security/runtime_v2_integration_inventory.txt:223:./capability_registration_integrity_test.py:120:        await system.execute(
+./security/runtime_v2_integration_inventory.txt:224:./capability_registration_integrity_test.py:136:    baseline = await system.execute(
+./security/runtime_v2_integration_inventory.txt:226:./subsystem_execution_boundary_test.py:14:    dispatcher_result = await system.execute(
+./security/runtime_v2_integration_inventory.txt:227:./subsystem_execution_boundary_test.py:69:    future_result = await system.execute(
+./security/runtime_v2_integration_inventory.txt:229:./consequential_authorization_execution_integration_test.py:92:            await system.capabilities.execute(
+./security/runtime_v2_integration_inventory.txt:231:./operational_bypass_resistance_test.py:60:        lambda: system.capabilities.execute(
+./security/runtime_v2_integration_inventory.txt:232:./operational_bypass_resistance_test.py:70:        lambda: system.execute(
+./security/runtime_v2_integration_inventory.txt:233:./operational_bypass_resistance_test.py:89:        lambda: system.execute(
+./security/runtime_v2_integration_inventory.txt:236:./operational_registered_capability_bypass_test.py:116:        normal_result = await system.execute(
+./security/runtime_v2_integration_inventory.txt:239:./operational_runtime_enforcement_test.py:23:        result = await system.execute(
+./security/runtime_v2_integration_inventory.txt:240:./operational_runtime_enforcement_test.py:119:        result = await system.execute(
+./security/runtime_v2_integration_inventory.txt:278:./core/state.py:171:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:279:./core/state.py:185:    async def _capability_health_check(self, **kwargs):
+./security/runtime_v2_integration_inventory.txt:280:./core/state.py:192:    async def _capability_diagnostics(self, **kwargs):
+./security/runtime_v2_integration_inventory.txt:281:./core/state.py:199:    async def _capability_recover(self, **kwargs):
+./security/runtime_v2_integration_inventory.txt:282:./core/state.py:213:    async def _capability_list(self, **kwargs):
+./security/runtime_v2_integration_inventory.txt:283:./core/state.py:567:    async def _capability_universal_consequence_gate_test(
+./security/runtime_v2_integration_inventory.txt:284:./core/state.py:602:        result = await self.capabilities.execute(
+./security/runtime_v2_integration_inventory.txt:285:./core/state.py:633:    async def _capability_adaptive_authorization_test(self, operation="run", **kwargs):
+./security/runtime_v2_integration_inventory.txt:286:./core/state.py:932:    async def _capability_sovereignty_policy_learning(
+./security/runtime_v2_integration_inventory.txt:287:./core/state.py:975:    async def _capability_service_management(self, operation="list", **kwargs):
+./security/runtime_v2_integration_inventory.txt:288:./core/state.py:1022:    async def _capability_process_management(self, operation="list", **kwargs):
+./security/runtime_v2_integration_inventory.txt:289:./core/state.py:1070:    async def _capability_network_management(self, operation="interfaces", **kwargs):
+./security/runtime_v2_integration_inventory.txt:290:./core/state.py:1101:    async def _capability_filesystem_management(self, operation="disk_usage", path=".", **kwargs):
+./security/runtime_v2_integration_inventory.txt:291:./core/state.py:1131:    async def _capability_security_audit(self, operation="open_ports", **kwargs):
+./security/runtime_v2_integration_inventory.txt:292:./core/state.py:1163:    async def _capability_observability(self, operation="runtime", **kwargs):
+./security/runtime_v2_integration_inventory.txt:293:./core/state.py:1175:    async def _capability_digital_world_model(
+./security/runtime_v2_integration_inventory.txt:294:./core/state.py:1310:    async def _capability_digital_world_decision(
+./security/runtime_v2_integration_inventory.txt:295:./core/state.py:1380:    async def _capability_digital_world_operation(
+./security/runtime_v2_integration_inventory.txt:296:./core/state.py:1444:    async def _capability_autonomous_recovery(
+./security/runtime_v2_integration_inventory.txt:297:./core/state.py:1640:    async def _capability_digital_world_graph(
+./security/runtime_v2_integration_inventory.txt:298:./core/state.py:1825:    async def _capability_sovereignty_policy(
+./security/runtime_v2_integration_inventory.txt:299:./core/state.py:1980:    async def _capability_sovereign_control(
+./security/runtime_v2_integration_inventory.txt:300:./core/state.py:2035:    async def _capability_autonomous_actuation(
+./security/runtime_v2_integration_inventory.txt:301:./core/state.py:2392:    async def _capability_digital_world_recovery(
+./security/runtime_v2_integration_inventory.txt:302:./core/state.py:2431:    async def _capability_digital_world_query(
+./security/runtime_v2_integration_inventory.txt:303:./core/state.py:2588:    async def _capability_digital_world_state(
+./security/runtime_v2_integration_inventory.txt:304:./core/state.py:2757:    async def _capability_digital_world_reconcile(
+./security/runtime_v2_integration_inventory.txt:305:./core/state.py:2887:    async def _capability_digital_world_intelligence(
+./security/runtime_v2_integration_inventory.txt:306:./core/state.py:3033:    async def _capability_database_repair(self, **kwargs):
+./security/runtime_v2_integration_inventory.txt:307:./core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:308:./core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:309:./core/runtime.py:93:                    output = system.execute(
+./security/runtime_v2_integration_inventory.txt:310:./core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:311:./scripts/a1os_production_hardening.sh:282:        'asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))',
+./security/runtime_v2_integration_inventory.txt:312:./scripts/a1os_production_hardening.sh:283:        'increment("api.execute.accepted", f"target={payload.target}")\n    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))'
+./security/runtime_v2_integration_inventory.txt:313:./security/confirmed_bypass_candidates.txt:258:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:314:./security/confirmed_bypass_candidates.txt:263:0079:         result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:315:./security/confirmed_bypass_candidates.txt:282:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:316:./security/confirmed_bypass_candidates.txt:287:0053:             result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:317:./security/confirmed_bypass_candidates.txt:377:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:318:./security/confirmed_bypass_candidates.txt:382:0171:         await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:319:./security/confirmed_bypass_candidates.txt:396:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:320:./security/confirmed_bypass_candidates.txt:401:0085:     asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:321:./security/confirmed_bypass_classification.txt:92:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:322:./security/confirmed_bypass_classification.txt:98:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:323:./security/confirmed_bypass_classification.txt:116:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:324:./security/confirmed_bypass_classification.txt:122:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:325:./security/confirmed_bypass_classification.txt:128:CALL: system.execute('__spoofed_read_only_capability__', read_only=True, safe=True, trusted=True, operation='execute')
+./security/runtime_v2_integration_inventory.txt:326:./security/confirmed_bypass_classification.txt:134:CALL: system.execute('__future_registered_capability__', operation='execute')
+./security/runtime_v2_integration_inventory.txt:327:./security/confirmed_bypass_classification.txt:140:CALL: system.execute('__spoofed_read_only_capability__', operation='replacement')
+./security/runtime_v2_integration_inventory.txt:328:./security/confirmed_bypass_classification.txt:146:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:329:./security/confirmed_bypass_classification.txt:152:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:330:./security/confirmed_bypass_classification.txt:158:CALL: system.capabilities.execute(capability, entity_id='primary-device', operation='repair', action='repair')
+./security/runtime_v2_integration_inventory.txt:331:./security/confirmed_bypass_classification.txt:164:CALL: system.capabilities.execute('repair', capability='digital_world_recovery', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:332:./security/confirmed_bypass_classification.txt:170:CALL: system.execute('repair', capability='digital_world_recovery', entity_id='primary-device', authorization={'authorized': True, 'allowed': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-id', 'confidence': 1.0}})
+./security/runtime_v2_integration_inventory.txt:333:./security/confirmed_bypass_classification.txt:176:CALL: system.execute('execute', capability='unknown_future_consequential_capability', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:334:./security/confirmed_bypass_classification.txt:194:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:335:./security/confirmed_bypass_classification.txt:200:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:336:./security/confirmed_bypass_classification.txt:212:CALL: system.execute('__operational_unknown_consequential_capability__', entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:337:./security/confirmed_bypass_classification.txt:278:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:338:./security/confirmed_bypass_classification.txt:284:CALL: self.capabilities.execute(future_capability, operation='consequential_operation')
+./security/runtime_v2_integration_inventory.txt:339:./security/confirmed_bypass_classification.txt:320:CALL: self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:340:./security/confirmed_bypass_classification.txt:434:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:341:./security/confirmed_bypass_classification.txt:458:CALL: system.execute(action, **{k: v for k, v in payload.items() if k not in {'target', 'action', 'role'}})
+./security/runtime_v2_integration_inventory.txt:342:./security/verified_consequential_bypasses.txt:57:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:343:./security/verified_consequential_bypasses.txt:107:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:344:./security/verified_consequential_bypasses.txt:164:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:345:./security/verified_consequential_bypasses.txt:169:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:346:./security/runtime_v2_integration_inventory.txt:7:./core/state.py:171:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:347:./security/runtime_v2_integration_inventory.txt:8:./core/state.py:602:        result = await self.capabilities.execute(
+./security/runtime_v2_integration_inventory.txt:348:./security/runtime_v2_integration_inventory.txt:9:./core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:349:./security/runtime_v2_integration_inventory.txt:12:./core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:350:./security/runtime_v2_integration_inventory.txt:19:./core/runtime.py:93:                    output = system.execute(
+./security/runtime_v2_integration_inventory.txt:351:./security/runtime_v2_integration_inventory.txt:21:./core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:352:./security/runtime_v2_integration_inventory.txt:52:./scripts/a1os_production_hardening.sh:282:        'asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))',
+./security/runtime_v2_integration_inventory.txt:353:./security/runtime_v2_integration_inventory.txt:53:./scripts/a1os_production_hardening.sh:283:        'increment("api.execute.accepted", f"target={payload.target}")\n    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))'
+./security/runtime_v2_integration_inventory.txt:354:./security/runtime_v2_integration_inventory.txt:55:./security/confirmed_bypass_candidates.txt:258:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:355:./security/runtime_v2_integration_inventory.txt:56:./security/confirmed_bypass_candidates.txt:263:0079:         result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:356:./security/runtime_v2_integration_inventory.txt:57:./security/confirmed_bypass_candidates.txt:282:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:357:./security/runtime_v2_integration_inventory.txt:58:./security/confirmed_bypass_candidates.txt:287:0053:             result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:358:./security/runtime_v2_integration_inventory.txt:59:./security/confirmed_bypass_candidates.txt:377:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:359:./security/runtime_v2_integration_inventory.txt:60:./security/confirmed_bypass_candidates.txt:382:0171:         await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:360:./security/runtime_v2_integration_inventory.txt:61:./security/confirmed_bypass_candidates.txt:396:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:361:./security/runtime_v2_integration_inventory.txt:62:./security/confirmed_bypass_candidates.txt:401:0085:     asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:362:./security/runtime_v2_integration_inventory.txt:67:./security/confirmed_bypass_classification.txt:92:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:363:./security/runtime_v2_integration_inventory.txt:68:./security/confirmed_bypass_classification.txt:98:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:364:./security/runtime_v2_integration_inventory.txt:69:./security/confirmed_bypass_classification.txt:116:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:365:./security/runtime_v2_integration_inventory.txt:70:./security/confirmed_bypass_classification.txt:122:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:366:./security/runtime_v2_integration_inventory.txt:71:./security/confirmed_bypass_classification.txt:128:CALL: system.execute('__spoofed_read_only_capability__', read_only=True, safe=True, trusted=True, operation='execute')
+./security/runtime_v2_integration_inventory.txt:367:./security/runtime_v2_integration_inventory.txt:72:./security/confirmed_bypass_classification.txt:134:CALL: system.execute('__future_registered_capability__', operation='execute')
+./security/runtime_v2_integration_inventory.txt:368:./security/runtime_v2_integration_inventory.txt:73:./security/confirmed_bypass_classification.txt:140:CALL: system.execute('__spoofed_read_only_capability__', operation='replacement')
+./security/runtime_v2_integration_inventory.txt:369:./security/runtime_v2_integration_inventory.txt:74:./security/confirmed_bypass_classification.txt:146:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:370:./security/runtime_v2_integration_inventory.txt:75:./security/confirmed_bypass_classification.txt:152:CALL: system.execute('universal_consequence_gate_test', operation='run')
+./security/runtime_v2_integration_inventory.txt:371:./security/runtime_v2_integration_inventory.txt:76:./security/confirmed_bypass_classification.txt:158:CALL: system.capabilities.execute(capability, entity_id='primary-device', operation='repair', action='repair')
+./security/runtime_v2_integration_inventory.txt:372:./security/runtime_v2_integration_inventory.txt:77:./security/confirmed_bypass_classification.txt:164:CALL: system.capabilities.execute('repair', capability='digital_world_recovery', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:373:./security/runtime_v2_integration_inventory.txt:78:./security/confirmed_bypass_classification.txt:170:CALL: system.execute('repair', capability='digital_world_recovery', entity_id='primary-device', authorization={'authorized': True, 'allowed': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-id', 'confidence': 1.0}})
+./security/runtime_v2_integration_inventory.txt:374:./security/runtime_v2_integration_inventory.txt:79:./security/confirmed_bypass_classification.txt:176:CALL: system.execute('execute', capability='unknown_future_consequential_capability', entity_id='primary-device')
+./security/runtime_v2_integration_inventory.txt:375:./security/runtime_v2_integration_inventory.txt:80:./security/confirmed_bypass_classification.txt:194:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:376:./security/runtime_v2_integration_inventory.txt:81:./security/confirmed_bypass_classification.txt:200:CALL: system.execute(TARGET, entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:377:./security/runtime_v2_integration_inventory.txt:82:./security/confirmed_bypass_classification.txt:212:CALL: system.execute('__operational_unknown_consequential_capability__', entity_id=ENTITY)
+./security/runtime_v2_integration_inventory.txt:378:./security/runtime_v2_integration_inventory.txt:87:./security/confirmed_bypass_classification.txt:278:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:379:./security/runtime_v2_integration_inventory.txt:88:./security/confirmed_bypass_classification.txt:284:CALL: self.capabilities.execute(future_capability, operation='consequential_operation')
+./security/runtime_v2_integration_inventory.txt:380:./security/runtime_v2_integration_inventory.txt:89:./security/confirmed_bypass_classification.txt:320:CALL: self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:381:./security/runtime_v2_integration_inventory.txt:90:./security/confirmed_bypass_classification.txt:434:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:382:./security/runtime_v2_integration_inventory.txt:91:./security/confirmed_bypass_classification.txt:458:CALL: system.execute(action, **{k: v for k, v in payload.items() if k not in {'target', 'action', 'role'}})
+./security/runtime_v2_integration_inventory.txt:383:./security/runtime_v2_integration_inventory.txt:97:./security/verified_consequential_bypasses.txt:57:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./security/runtime_v2_integration_inventory.txt:384:./security/runtime_v2_integration_inventory.txt:98:./security/verified_consequential_bypasses.txt:107:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:385:./security/runtime_v2_integration_inventory.txt:99:./security/verified_consequential_bypasses.txt:164:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:386:./security/runtime_v2_integration_inventory.txt:100:./security/verified_consequential_bypasses.txt:169:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:387:./security/runtime_v2_integration_inventory.txt:106:./security/runtime_v2_integration_inventory.txt:7:./core/state.py:171:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:388:./security/runtime_v2_integration_inventory.txt:107:./security/runtime_v2_integration_inventory.txt:8:./core/state.py:602:        result = await self.capabilities.execute(
+./security/runtime_v2_integration_inventory.txt:389:./security/runtime_v2_integration_inventory.txt:108:./security/runtime_v2_integration_inventory.txt:9:./core/state.py:3076:        return await self.capabilities.execute(action, **kwargs)
+./security/runtime_v2_integration_inventory.txt:390:./security/runtime_v2_integration_inventory.txt:111:./security/runtime_v2_integration_inventory.txt:12:./core/api.py:85:    asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+./security/runtime_v2_integration_inventory.txt:391:./security/runtime_v2_integration_inventory.txt:118:./security/runtime_v2_integration_inventory.txt:19:./core/runtime.py:93:                    output = system.execute(
+./security/runtime_v2_integration_inventory.txt:392:./security/runtime_v2_integration_inventory.txt:120:./security/runtime_v2_integration_inventory.txt:21:./core/state.py.pre_runtime_repair_20260720_213652:71:        await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:393:./security/runtime_v2_integration_inventory.txt:151:./security/runtime_v2_integration_inventory.txt:52:./scripts/a1os_production_hardening.sh:282:        'asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))',
+./security/runtime_v2_integration_inventory.txt:394:./security/runtime_v2_integration_inventory.txt:152:./security/runtime_v2_integration_inventory.txt:53:./scripts/a1os_production_hardening.sh:283:        'increment("api.execute.accepted", f"target={payload.target}")\n    asyncio.create_task(system.runtime.execute(task_id=entity_id, payload=raw_dict))'
+./security/runtime_v2_integration_inventory.txt:395:./security/runtime_v2_integration_inventory.txt:154:./security/runtime_v2_integration_inventory.txt:55:./security/confirmed_bypass_candidates.txt:258:CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+./security/runtime_v2_integration_inventory.txt:396:./security/runtime_v2_integration_inventory.txt:155:./security/runtime_v2_integration_inventory.txt:56:./security/confirmed_bypass_candidates.txt:263:0079:         result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:397:./security/runtime_v2_integration_inventory.txt:156:./security/runtime_v2_integration_inventory.txt:57:./security/confirmed_bypass_candidates.txt:282:CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+./security/runtime_v2_integration_inventory.txt:398:./security/runtime_v2_integration_inventory.txt:157:./security/runtime_v2_integration_inventory.txt:58:./security/confirmed_bypass_candidates.txt:287:0053:             result = await system.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:399:./security/runtime_v2_integration_inventory.txt:158:./security/runtime_v2_integration_inventory.txt:59:./security/confirmed_bypass_candidates.txt:377:CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+./security/runtime_v2_integration_inventory.txt:400:./security/runtime_v2_integration_inventory.txt:159:./security/runtime_v2_integration_inventory.txt:60:./security/confirmed_bypass_candidates.txt:382:0171:         await self.runtime.execute(
+./security/runtime_v2_integration_inventory.txt:401:./security/runtime_v2_integration_inventory.txt:160:./security/runtime_v2_integration_inventory.txt:61:./security/confirmed_bypass_candidates.txt:396:CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+./tests/production_verification.py:47:        self.runtime.execute_app("trading", "trade", {"risk_factor": 0.09}) # Explicit block trigger
+./backups/production_verification_20260720_214009/state.py:72:        await self.runtime.execute(
+./functional_production_validation.py:53:            result = await system.runtime.execute(
+./functional_production_validation.py:79:        result = await system.runtime.execute(
+./capability_registration_integrity_test.py:28:        result = await system.execute(
+./capability_registration_integrity_test.py:56:    unknown_gate = await system.execute(
+./capability_registration_integrity_test.py:91:        await system.execute(
+./capability_registration_integrity_test.py:120:        await system.execute(
+./capability_registration_integrity_test.py:136:    baseline = await system.execute(
+./subsystem_execution_boundary_test.py:14:    dispatcher_result = await system.execute(
+./subsystem_execution_boundary_test.py:69:    future_result = await system.execute(
+./consequential_authorization_execution_integration_test.py:92:            await system.capabilities.execute(
+./operational_bypass_resistance_test.py:60:        lambda: system.capabilities.execute(
+./operational_bypass_resistance_test.py:70:        lambda: system.execute(
+./operational_bypass_resistance_test.py:89:        lambda: system.execute(
+./operational_registered_capability_bypass_test.py:116:        normal_result = await system.execute(
+./operational_runtime_enforcement_test.py:23:        result = await system.execute(
+./operational_runtime_enforcement_test.py:119:        result = await system.execute(
+
+=== DISPATCH SURFACES ===
+./core/execution/v2/recovery.py:10:        self.dispatcher = DistributedDispatcher()
+./core/execution/v2/recovery.py:14:                self.dispatcher.dispatch(data.get("decision"))
+./core/dispatcher.py:118:dispatcher = Dispatcher()
+./company/runtime.py:13:        self.bus = CommunicationEngine(DistributedDispatcher("primary_node"))
+./modules/research/synthesizer.py:5:        self.dispatcher = DistributedDispatcher()
+./modules/research/synthesizer.py:10:        return self.dispatcher.dispatch(decision, context=context)
+./orchestration/workflow/engine.py:5:        self.dispatcher = DistributedDispatcher()
+./orchestration/workflow/engine.py:14:            result = self.dispatcher.dispatch(task)
+./runtime/scheduler/worker_scheduler.py:50:        self.dispatcher = Dispatcher()
+./runtime/scheduler/worker_scheduler.py:72:            await self.dispatcher.dispatch(
+./security/confirmed_bypass_candidates.txt:629:CALL: d.dispatch({'task_id': 't1', 'action': 'process_data', 'data': {}}, context={'role': 'user'})
+./security/confirmed_bypass_candidates.txt:634:0011:         d.dispatch({"task_id": "t1", "action": "process_data", "data": {}}, context={"role": "user"})
+./security/confirmed_bypass_candidates.txt:645:CALL: d.dispatch({'task_id': 't2', 'action': 'process_data', 'data': {}}, context={'role': 'guest'})
+./security/confirmed_bypass_candidates.txt:650:0018:         d.dispatch({"task_id": "t2", "action": "process_data", "data": {}}, context={"role": "guest"})
+./security/confirmed_bypass_candidates.txt:661:CALL: d.dispatch({'task_id': 'test', 'action': 'test_action', 'data': {}})
+./security/confirmed_bypass_candidates.txt:666:0010:         d.dispatch({"task_id": "test", "action": "test_action", "data": {}})
+./security/confirmed_bypass_classification.txt:218:CALL: dispatcher.dispatch(target='default', payload={})
+./security/confirmed_bypass_classification.txt:224:CALL: dispatcher.dispatch(target='default', payload={'capability': 'unknown.capability', 'entity_id': 'runtime', 'action': 'dispatch'})
+./security/confirmed_bypass_classification.txt:230:CALL: dispatcher.dispatch(target='default', payload={'capability': 'health', 'entity_id': 'runtime', 'action': 'read'})
+./security/confirmed_bypass_classification.txt:236:CALL: dispatcher.dispatch(target='default', payload={'capability': 'digital_world_recovery', 'entity_id': 'runtime', 'action': 'recover'})
+./security/confirmed_bypass_classification.txt:566:CALL: d.dispatch({'task_id': 't1', 'action': 'process_data', 'data': {}}, context={'role': 'user'})
+./security/confirmed_bypass_classification.txt:572:CALL: d.dispatch({'task_id': 't2', 'action': 'process_data', 'data': {}}, context={'role': 'guest'})
+./security/confirmed_bypass_classification.txt:578:CALL: dispatcher.dispatch(decision)
+./security/confirmed_bypass_classification.txt:584:CALL: dispatcher.dispatch(decision)
+./security/confirmed_bypass_classification.txt:590:CALL: d.dispatch({'task_id': 'test', 'action': 'test_action', 'data': {}})
+./security/confirmed_bypass_classification.txt:632:CALL: self.dispatcher.dispatch(task)
+./security/confirmed_bypass_classification.txt:704:CALL: self.dispatcher.dispatch(decision, context=context)
+./security/confirmed_bypass_classification.txt:896:CALL: self.dispatcher.dispatch(data.get('decision'))
+./security/verified_consequential_bypasses.txt:359:CALL: d.dispatch({'task_id': 't1', 'action': 'process_data', 'data': {}}, context={'role': 'user'})
+./security/verified_consequential_bypasses.txt:364:CALL: d.dispatch({'task_id': 't2', 'action': 'process_data', 'data': {}}, context={'role': 'guest'})
+./security/verified_consequential_bypasses.txt:372:CALL: d.dispatch({'task_id': 'test', 'action': 'test_action', 'data': {}})
+./security/scheduler_authorization_regression_test.py:26:    result = await scheduler.dispatcher.dispatch(
+./security/scheduler_authorization_regression_test.py:35:    result = await scheduler.dispatcher.dispatch(
+./security/scheduler_authorization_regression_test.py:46:    result = await scheduler.dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:15:./core/execution/v2/recovery.py:14:                self.dispatcher.dispatch(data.get("decision"))
+./security/runtime_v2_integration_inventory.txt:40:./modules/research/synthesizer.py:10:        return self.dispatcher.dispatch(decision, context=context)
+./security/runtime_v2_integration_inventory.txt:45:./orchestration/workflow/engine.py:14:            result = self.dispatcher.dispatch(task)
+./security/runtime_v2_integration_inventory.txt:48:./runtime/scheduler/worker_scheduler.py:72:            await self.dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:83:./security/confirmed_bypass_classification.txt:218:CALL: dispatcher.dispatch(target='default', payload={})
+./security/runtime_v2_integration_inventory.txt:84:./security/confirmed_bypass_classification.txt:224:CALL: dispatcher.dispatch(target='default', payload={'capability': 'unknown.capability', 'entity_id': 'runtime', 'action': 'dispatch'})
+./security/runtime_v2_integration_inventory.txt:85:./security/confirmed_bypass_classification.txt:230:CALL: dispatcher.dispatch(target='default', payload={'capability': 'health', 'entity_id': 'runtime', 'action': 'read'})
+./security/runtime_v2_integration_inventory.txt:86:./security/confirmed_bypass_classification.txt:236:CALL: dispatcher.dispatch(target='default', payload={'capability': 'digital_world_recovery', 'entity_id': 'runtime', 'action': 'recover'})
+./security/runtime_v2_integration_inventory.txt:92:./security/confirmed_bypass_classification.txt:578:CALL: dispatcher.dispatch(decision)
+./security/runtime_v2_integration_inventory.txt:93:./security/confirmed_bypass_classification.txt:584:CALL: dispatcher.dispatch(decision)
+./security/runtime_v2_integration_inventory.txt:94:./security/confirmed_bypass_classification.txt:632:CALL: self.dispatcher.dispatch(task)
+./security/runtime_v2_integration_inventory.txt:95:./security/confirmed_bypass_classification.txt:704:CALL: self.dispatcher.dispatch(decision, context=context)
+./security/runtime_v2_integration_inventory.txt:96:./security/confirmed_bypass_classification.txt:896:CALL: self.dispatcher.dispatch(data.get('decision'))
+./security/runtime_v2_integration_inventory.txt:101:./security/scheduler_authorization_regression_test.py:26:    result = await scheduler.dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:102:./security/scheduler_authorization_regression_test.py:35:    result = await scheduler.dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:103:./security/scheduler_authorization_regression_test.py:46:    result = await scheduler.dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:114:./security/runtime_v2_integration_inventory.txt:15:./core/execution/v2/recovery.py:14:                self.dispatcher.dispatch(data.get("decision"))
+./security/runtime_v2_integration_inventory.txt:139:./security/runtime_v2_integration_inventory.txt:40:./modules/research/synthesizer.py:10:        return self.dispatcher.dispatch(decision, context=context)
+./security/runtime_v2_integration_inventory.txt:144:./security/runtime_v2_integration_inventory.txt:45:./orchestration/workflow/engine.py:14:            result = self.dispatcher.dispatch(task)
+./security/runtime_v2_integration_inventory.txt:147:./security/runtime_v2_integration_inventory.txt:48:./runtime/scheduler/worker_scheduler.py:72:            await self.dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:182:./security/runtime_v2_integration_inventory.txt:83:./security/confirmed_bypass_classification.txt:218:CALL: dispatcher.dispatch(target='default', payload={})
+./security/runtime_v2_integration_inventory.txt:183:./security/runtime_v2_integration_inventory.txt:84:./security/confirmed_bypass_classification.txt:224:CALL: dispatcher.dispatch(target='default', payload={'capability': 'unknown.capability', 'entity_id': 'runtime', 'action': 'dispatch'})
+./security/runtime_v2_integration_inventory.txt:184:./security/runtime_v2_integration_inventory.txt:85:./security/confirmed_bypass_classification.txt:230:CALL: dispatcher.dispatch(target='default', payload={'capability': 'he
+./security/runtime_v2_integration_inventory.txt:193:./tests/test_dispatch_pipeline.py:18:    result = dispatcher.dispatch(decision)
+./security/runtime_v2_integration_inventory.txt:196:./tests/test_propagation.py:13:    result = await dispatcher.dispatch(decision)
+./security/runtime_v2_integration_inventory.txt:271:./dispatch_security_enforcement_test.py:25:    missing = await dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:272:./dispatch_security_enforcement_test.py:34:    unknown = await dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:273:./dispatch_security_enforcement_test.py:47:    health = await dispatcher.dispatch(
+./security/runtime_v2_integration_inventory.txt:274:./dispatch_security_enforcement_test.py:61:    recovery = await dispatcher.dispatch(
+./tests/full_system_integration.py:9:    d = DistributedDispatcher()
+./tests/test_abac_security.py:6:    d = DistributedDispatcher()
+./tests/test_abac_security.py:11:        d.dispatch({"task_id": "t1", "action": "process_data", "data": {}}, context={"role": "user"})
+./tests/test_abac_security.py:18:        d.dispatch({"task_id": "t2", "action": "process_data", "data": {}}, context={"role": "guest"})
+./tests/test_dispatch_pipeline.py:13:    dispatcher = DistributedDispatcher()
+./tests/test_dispatch_pipeline.py:18:    result = dispatcher.dispatch(decision)
+./tests/test_propagation.py:13:    result = await dispatcher.dispatch(decision)
+./tests/verify_integration.py:6:    d = DistributedDispatcher()
+./tests/verify_integration.py:10:        d.dispatch({"task_id": "test", "action": "test_action", "data": {}})
+./dispatch_security_enforcement_test.py:20:    dispatcher = Dispatcher()
+./dispatch_security_enforcement_test.py:25:    missing = await dispatcher.dispatch(
+./dispatch_security_enforcement_test.py:34:    unknown = await dispatcher.dispatch(
+./dispatch_security_enforcement_test.py:47:    health = await dispatcher.dispatch(
+./dispatch_security_enforcement_test.py:61:    recovery = await dispatcher.dispatch(
+
+=== CONTRACT REGISTRY ===
+CONTRACTS: 27
+adaptive_authorization_test         test_only          non_dispatchable _capability_adaptive_authorization_test
+autonomous_actuation                consequential      dispatchable     _capability_autonomous_actuation
+autonomous_recovery                 consequential      dispatchable     _capability_autonomous_recovery
+database_repair                     consequential      dispatchable     _capability_database_repair
+diagnostics                         read_only          dispatchable     _capability_diagnostics
+digital_world_decision              consequential      dispatchable     _capability_digital_world_decision
+digital_world_graph                 read_only          dispatchable     _capability_digital_world_graph
+digital_world_intelligence          read_only          dispatchable     _capability_digital_world_intelligence
+digital_world_model                 read_only          dispatchable     _capability_digital_world_model
+digital_world_operation             consequential      dispatchable     _capability_digital_world_operation
+digital_world_query                 read_only          dispatchable     _capability_digital_world_query
+digital_world_reconcile             consequential      dispatchable     _capability_digital_world_reconcile
+digital_world_recovery              consequential      dispatchable     _capability_digital_world_recovery
+digital_world_state                 read_only          dispatchable     _capability_digital_world_state
+filesystem_management               consequential      dispatchable     _capability_filesystem_management
+health_check                        read_only          dispatchable     _capability_health_check
+list                                not_a_capability   non_dispatchable _capability_list
+network_management                  consequential      dispatchable     _capability_network_management
+observability                       read_only          dispatchable     _capability_observability
+process_management                  consequential      dispatchable     _capability_process_management
+recover                             consequential      dispatchable     _capability_recover
+security_audit                      read_only          dispatchable     _capability_security_audit
+service_management                  consequential      dispatchable     _capability_service_management
+sovereign_control                   consequential      dispatchable     _capability_sovereign_control
+sovereignty_policy                  internal           non_dispatchable _capability_sovereignty_policy
+sovereignty_policy_learning         internal           non_dispatchable _capability_sovereignty_policy_learning
+universal_consequence_gate_test     test_only          non_dispatchable _capability_universal_consequence_gate_test
+
+=== SECURITY BOUNDARY ===
+core/state.py:96:                "_verify_authorization_provenance",
+core/state.py:522:        provenance = self._authorization_provenance_record(
+core/state.py:824:    def _authorization_provenance_record(
+core/state.py:888:    def _verify_authorization_provenance(self, record):
+core/dispatcher.py:8:from security.authorization_adapter import AuthorizationAdapter
+core/dispatcher.py:15:        self.authorization_adapter = AuthorizationAdapter()
+core/dispatcher.py:40:        authorization = await self.authorization_adapter.authorize(
+core/dispatcher.py:67:            and not self.authorization_adapter.verify_provenance(provenance)
+core/dispatcher.py:76:        payload["_authorization_provenance"] = provenance
+security/authorization_adapter.py:7:class AuthorizationAdapter:
+security/authorization_adapter.py:36:    async def authorize(self, capability, kwargs=None):
+security/authorization_adapter.py:158:    def verify_provenance(record):
+
+=== GIT STATE ===
+## main...origin/main
+?? security/runtime_v2_integration_inventory.txt
+f911d17 (HEAD -> main, origin/main, origin/HEAD) security: reconcile runtime execution contracts and close scheduler bypass
+5770da7 security: enforce authorization at runtime dispatch boundary
+adb4ac2 (tag: v1.1.5-end-to-end-execution-authorization-audit) security: verify end to end execution authorization path
+1f26836 (tag: v1.1.4-production-path-enforcement-audit) security: audit production execution enforcement path
+8495183 (tag: v1.1.3-authorization-execution-commitment-temporal-integrity) security: enforce authorization execution commitment temporal integrity
+
+====================================================================
+PHASE 1 — RUNTIME ENTRYPOINT INVENTORY COMPLETE
+====================================================================
+NEXT: TRACE ACTUAL PRODUCTION EXECUTION PATHS

@@ -1,0 +1,20 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://github.com/BudBudness/A1OS.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+[branch "release/little-oaks-v1.1.0-director-suite"]
+	remote = origin
+	merge = refs/heads/release/little-oaks-v1.1.0-director-suite
+[branch "feature/little-oaks-v1.2-live-operations"]
+	remote = origin
+	merge = refs/heads/feature/little-oaks-v1.2-live-operations
+[user]
+	name = BudBudness
+	email = billionseddie@protonmail.com

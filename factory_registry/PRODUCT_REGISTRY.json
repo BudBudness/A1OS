@@ -1,0 +1,117 @@
+{
+  "factory_version": "2.1",
+  "generated": "2026-08-02T06:48:42.075406",
+  "products_registered": 8,
+  "products": [
+    {
+      "product": "education-os",
+      "profile": "unknown",
+      "version": "unknown",
+      "status": "registered",
+      "layers": [
+        "core",
+        "modules",
+        "deployments",
+        "database",
+        "api",
+        "web",
+        "__pycache__",
+        "WORK",
+        "ops",
+        "RELEASES",
+        "OPERATIONS",
+        "ROADMAP",
+        "intelligence",
+        "docs"
+      ]
+    },
+    {
+      "product": "business-os",
+      "profile": "unknown",
+      "version": "unknown",
+      "status": "registered",
+      "layers": [
+        "deployments",
+        "api",
+        "web",
+        "core",
+        "intelligence",
+        "docs"
+      ]
+    },
+    {
+      "product": "charity-os",
+      "profile": "unknown",
+      "version": "unknown",
+      "status": "registered",
+      "layers": [
+        "deployments"
+      ]
+    },
+    {
+      "product": "music-label-os",
+      "profile": "unknown",
+      "version": "unknown",
+      "status": "registered",
+      "layers": []
+    },
+    {
+      "product": "media-os",
+      "profile": "unknown",
+      "version": "unknown",
+      "status": "registered",
+      "layers": [
+        "api",
+        "web",
+        "core",
+        "intelligence",
+        "deployments",
+        "docs"
+      ]
+    },
+    {
+      "product": "finance-os",
+      "profile": "unknown",
+      "version": "unknown",
+      "status": "registered",
+      "layers": [
+        "api",
+        "web",
+        "core",
+        "intelligence",
+        "deployments",
+        "docs"
+      ]
+    },
+    {
+      "product": "templates",
+      "profile": "unknown",
+      "version": "unknown",
+      "status": "registered",
+      "layers": [
+        "a1os-product-template"
+      ]
+    },
+    {
+      "product": "legal-os",
+      "profile": "legal",
+      "version": "2.0",
+      "status": "orchestrated",
+      "layers": [
+        "core",
+        "intelligence",
+        "api",
+        "web",
+        "deployments",
+        "docs",
+        "operations",
+        "validation",
+        "evolution",
+        "release",
+        "runtime",
+        "intelligence_runtime"
+      ]
+    }
+  ],
+  "registry_status": "active"
+}

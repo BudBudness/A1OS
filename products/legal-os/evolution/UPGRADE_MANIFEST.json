@@ -1,0 +1,31 @@
+{
+  "product": "legal-os",
+  "factory_version": "1.9",
+  "generated": "2026-08-02T06:48:41.927636",
+  "detected_modules": [
+    "core",
+    "intelligence",
+    "api",
+    "web",
+    "deployments",
+    "docs",
+    "operations",
+    "validation",
+    "evolution",
+    "release",
+    "runtime",
+    "intelligence_runtime"
+  ],
+  "changes": [],
+  "migration_plan": [
+    "validate_current_state",
+    "apply_module_updates",
+    "verify_integrity",
+    "generate_release_report"
+  ],
+  "rollback": {
+    "enabled": true,
+    "strategy": "restore_previous_manifest"
+  },
+  "status": "upgrade_ready"
+}

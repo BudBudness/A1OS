@@ -1,0 +1,1257 @@
+A1OS RUNTIME-V2 CONFIRMED EXECUTION BYPASS REVIEW
+======================================================================
+
+[1] cron_matrix_daemon.py:13
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("SELECT id, topic, payload FROM notification_history WHERE status='FAILED_NETWORK_OUTAGE' LIMIT 5")
+CONTEXT:
+0010:     try:
+0011:         with sqlite3.connect(DB_PATH) as conn:
+0012:             c = conn.cursor()
+0013:             c.execute("SELECT id, topic, payload FROM notification_history WHERE status='FAILED_NETWORK_OUTAGE' LIMIT 5")
+0014:             records = c.fetchall()
+0015:             if records:
+0016:                 print(f"   🔄 [Cron Daemon Worker] Recovered {len(records)} deferred outage vectors. Flushing to gateway transport...")
+0017:                 for row in records:
+
+----------------------------------------------------------------------
+
+[2] cron_matrix_daemon.py:27
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("UPDATE notification_history SET status='FLUSHED_RECOVERED' WHERE id=?", (rid,))
+CONTEXT:
+0024:                     try:
+0025:                         with urllib.request.urlopen(req, timeout=2) as resp:
+0026:                             if resp.status == 200:
+0027:                                 c.execute("UPDATE notification_history SET status='FLUSHED_RECOVERED' WHERE id=?", (rid,))
+0028:                     except Exception: pass
+0029:                 conn.commit()
+0030:     except Exception: pass
+0031:
+
+----------------------------------------------------------------------
+
+[3] dashboard_ui.py:20
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT asset_name, SUM(amount) FROM finance_ledger GROUP BY asset_name')
+CONTEXT:
+0017:
+0018:         # 1. Financial Ledger Mapping with 18% VAT Split
+0019:         print("\n💸 [FINANCIAL LEDGER BALANCE SHEET]")
+0020:         c.execute("SELECT asset_name, SUM(amount) FROM finance_ledger GROUP BY asset_name")
+0021:         rows = c.fetchall()
+0022:         if not rows:
+0023:             print("   No active asset ledger pools initialized.")
+0024:         for row in rows:
+
+----------------------------------------------------------------------
+
+[4] dashboard_ui.py:35
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT sku, name, quantity, location FROM inventory_registry')
+CONTEXT:
+0032:
+0033:         # 2. Dynamic Inventory Matrix & Low Stock Alerts
+0034:         print("\n📦 [MULTI-WAREHOUSE INVENTORY & LOGISTICS CONTROL]")
+0035:         c.execute("SELECT sku, name, quantity, location FROM inventory_registry")
+0036:         rows = c.fetchall()
+0037:         if not rows:
+0038:             print("   Warehouse inventory empty.")
+0039:         for row in rows:
+
+----------------------------------------------------------------------
+
+[5] dashboard_ui.py:48
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT customer_id, name, tier, lifetime_value FROM crm_profiles ORDER BY lifetime_value DESC')
+CONTEXT:
+0045:
+0046:         # 3. Dynamic CRM Client Status Mapping
+0047:         print("\n👥 [LOYALTY MEMBER TARGET PROFILES]")
+0048:         c.execute("SELECT customer_id, name, tier, lifetime_value FROM crm_profiles ORDER BY lifetime_value DESC")
+0049:         rows = c.fetchall()
+0050:         if not rows:
+0051:             print("   CRM profile records uninitialized.")
+0052:         for row in rows:
+
+----------------------------------------------------------------------
+
+[6] dashboard_ui.py:58
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT status, COUNT(*) FROM notification_history GROUP BY status')
+CONTEXT:
+0055:
+0056:         # 4. Outbound Telemetry Network SLA Matrix
+0057:         print("\n📡 [EDGE INSTANCE CONNECTIVITY & METRICS]")
+0058:         c.execute("SELECT status, COUNT(*) FROM notification_history GROUP BY status")
+0059:         rows = c.fetchall()
+0060:         sent_count = sum(r[1] for r in rows if "SENT" in r[0] or "FLUSHED" in r[0])
+0061:         fail_count = sum(r[1] for r in rows if "FAILED" in r[0])
+0062:         total_sync = sent_count + fail_count
+
+----------------------------------------------------------------------
+
+[7] deploy_generic_ledger.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('\n        CREATE TABLE IF NOT EXISTS finance_ledger (\n            id TEXT PRIMARY KEY,\n            asset_name TEXT,\n            amount REAL,\n            timestamp TEXT DEFAULT CURRENT_TIMESTAMP\n        );\n    ')
+CONTEXT:
+0007:     c = conn.cursor()
+0008:
+0009:     # Ensure finance table exists
+0010:     c.execute("""
+0011:         CREATE TABLE IF NOT EXISTS finance_ledger (
+0012:             id TEXT PRIMARY KEY,
+0013:             asset_name TEXT,
+0014:             amount REAL,
+0015:             timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+0016:         );
+0017:     """)
+0018:
+0019:     # Clean old static data and seed dynamic retail revenue lines
+0020:     c.execute("DELETE FROM finance_ledger;")
+0021:     revenue_payloads = [
+
+----------------------------------------------------------------------
+
+[8] deploy_generic_ledger.py:20
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('DELETE FROM finance_ledger;')
+CONTEXT:
+0017:     """)
+0018:
+0019:     # Clean old static data and seed dynamic retail revenue lines
+0020:     c.execute("DELETE FROM finance_ledger;")
+0021:     revenue_payloads = [
+0022:         ("REV-001", "Premium Tier License", 1800000.00),
+0023:         ("REV-002", "Hardware Sales (Kampala)", 2450000.00),
+0024:         ("REV-003", "Studio Bookings (Mbarara)", 620000.00)
+
+----------------------------------------------------------------------
+
+[9] run_matrix_operations.py:16
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("SELECT id FROM notification_history WHERE status LIKE 'FAILED%' LIMIT 5")
+CONTEXT:
+0013:         try:
+0014:             with sqlite3.connect(DB_PATH, timeout=10.0) as conn:
+0015:                 c = conn.cursor()
+0016:                 c.execute("SELECT id FROM notification_history WHERE status LIKE 'FAILED%' LIMIT 5")
+0017:                 failed_tasks = c.fetchall()
+0018:
+0019:                 if failed_tasks:
+0020:                     for task in failed_tasks:
+
+----------------------------------------------------------------------
+
+[10] run_matrix_operations.py:52
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO inventory_registry (sku, name, quantity, location) VALUES (?, ?, ?, ?) ON CONFLICT(sku) DO UPDATE SET quantity = quantity + EXCLUDED.quantity', (prod_sku, prod_name, stock_change, prod_loc))
+CONTEXT:
+0049:                 # 1. Randomly choose a product and mutate stock or insert if new
+0050:                 prod_sku, prod_name, prod_loc = random.choice(products)
+0051:                 stock_change = random.randint(1, 4)
+0052:                 c.execute(
+0053:                     "INSERT INTO inventory_registry (sku, name, quantity, location) "
+0054:                     "VALUES (?, ?, ?, ?) "
+0055:                     "ON CONFLICT(sku) DO UPDATE SET quantity = quantity + EXCLUDED.quantity",
+0056:                     (prod_sku, prod_name, stock_change, prod_loc)
+0057:                 )
+0058:
+0059:                 # 2. Randomly select a customer and scale up lifetime value spend
+0060:                 cust_id, cust_name = random.choice(customers)
+0061:                 spend_increment = random.choice([150000.0, 300100.0, 450000.0])
+
+----------------------------------------------------------------------
+
+[11] run_matrix_operations.py:63
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("INSERT INTO crm_profiles (customer_id, name, tier, lifetime_value, updated_at) VALUES (?, ?, 'BRONZE', ?, datetime('now')) ON CONFLICT(customer_id) DO UPDATE SET lifetime_value = lifetime_value + EXCLUDED.lifetime_value", (cust_id, cust_name, spend_increment))
+CONTEXT:
+0060:                 cust_id, cust_name = random.choice(customers)
+0061:                 spend_increment = random.choice([150000.0, 300100.0, 450000.0])
+0062:
+0063:                 c.execute(
+0064:                     "INSERT INTO crm_profiles (customer_id, name, tier, lifetime_value, updated_at) "
+0065:                     "VALUES (?, ?, 'BRONZE', ?, datetime('now')) "
+0066:                     "ON CONFLICT(customer_id) DO UPDATE SET lifetime_value = lifetime_value + EXCLUDED.lifetime_value",
+0067:                     (cust_id, cust_name, spend_increment)
+0068:                 )
+0069:
+0070:                 # 3. Recalculate and scale tier badges based on the updated spending metrics
+0071:                 c.execute(
+0072:                     "UPDATE crm_profiles SET tier = CASE "
+
+----------------------------------------------------------------------
+
+[12] run_matrix_operations.py:71
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("UPDATE crm_profiles SET tier = CASE WHEN lifetime_value >= 1000000.0 THEN 'GOLD' WHEN lifetime_value >= 500000.0 THEN 'SILVER' ELSE 'BRONZE' END")
+CONTEXT:
+0068:                 )
+0069:
+0070:                 # 3. Recalculate and scale tier badges based on the updated spending metrics
+0071:                 c.execute(
+0072:                     "UPDATE crm_profiles SET tier = CASE "
+0073:                     "WHEN lifetime_value >= 1000000.0 THEN 'GOLD' "
+0074:                     "WHEN lifetime_value >= 500000.0 THEN 'SILVER' "
+0075:                     "ELSE 'BRONZE' END"
+0076:                 )
+0077:
+0078:                 # 4. Drop a random telemetry log indicating high throughput processing
+0079:                 c.execute(
+0080:                     "INSERT INTO notification_history (id, status) VALUES (hex(randomblob(16)), 'SENT')"
+
+----------------------------------------------------------------------
+
+[13] run_matrix_operations.py:79
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("INSERT INTO notification_history (id, status) VALUES (hex(randomblob(16)), 'SENT')")
+CONTEXT:
+0076:                 )
+0077:
+0078:                 # 4. Drop a random telemetry log indicating high throughput processing
+0079:                 c.execute(
+0080:                     "INSERT INTO notification_history (id, status) VALUES (hex(randomblob(16)), 'SENT')"
+0081:                 )
+0082:
+0083:                 conn.commit()
+0084:         except Exception:
+0085:             pass
+
+----------------------------------------------------------------------
+
+[14] run_matrix_operations.py:21
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("UPDATE notification_history SET status = 'SENT' WHERE id = ?", (task[0],))
+CONTEXT:
+0018:
+0019:                 if failed_tasks:
+0020:                     for task in failed_tasks:
+0021:                         c.execute(
+0022:                             "UPDATE notification_history SET status = 'SENT' WHERE id = ?",
+0023:                             (task[0],)
+0024:                         )
+0025:                     conn.commit()
+0026:         except Exception:
+0027:             pass
+0028:         time.sleep(2.5)
+
+----------------------------------------------------------------------
+
+[15] functional_production_validation.py:79
+METHOD: execute
+RECEIVER: system.runtime
+CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+CONTEXT:
+0076:
+0077:         system.bus.subscribe("task.completed", validation_listener)
+0078:
+0079:         result = await system.runtime.execute(
+0080:             task_id=f"event-validation-{int(time.time())}",
+0081:             payload={
+0082:                 "target": "sales",
+0083:                 "role": "system",
+0084:                 "action": "event_propagation_test",
+0085:                 "data": {"validation": True}
+0086:             }
+0087:         )
+0088:
+0089:         await asyncio.sleep(0.25)
+0090:
+0091:         if events_seen or result.get("status") == "completed":
+
+----------------------------------------------------------------------
+
+[16] functional_production_validation.py:53
+METHOD: execute
+RECEIVER: system.runtime
+CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+CONTEXT:
+0050:
+0051:     for target in modules:
+0052:         try:
+0053:             result = await system.runtime.execute(
+0054:                 task_id=f"prod-validation-{target}-{int(time.time()*1000)}",
+0055:                 payload={
+0056:                     "target": target,
+0057:                     "role": "user",
+0058:                     "action": "production_validation",
+0059:                     "data": {"source": "functional-production-validation"}
+0060:                 }
+0061:             )
+0062:             record(
+0063:                 f"Module execution: {target}",
+0064:                 "PASS",
+0065:                 json.dumps(result, default=str)
+
+----------------------------------------------------------------------
+
+[17] operational_registered_capability_bypass_test.py:88
+METHOD: execute
+RECEIVER: registry
+CALL: registry.execute(TARGET, action=ACTION, entity_id=ENTITY, authorization={'authorized': True, 'allowed': True, 'autonomous_authorization': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-authorization', 'policy_decision': 'autonomous_authorization', 'confidence': 1.0}})
+CONTEXT:
+0085:
+0086:     # 3. Caller-supplied forged authorization must not replace the
+0087:     # authorization/provenance generated by the centralized gate.
+0088:     forged_result = await registry.execute(
+0089:         TARGET,
+0090:         action=ACTION,
+0091:         entity_id=ENTITY,
+0092:         authorization={
+0093:             "authorized": True,
+0094:             "allowed": True,
+0095:             "autonomous_authorization": True,
+0096:             "decision": "autonomous_authorization",
+0097:             "provenance": {
+0098:                 "authorization_id": "forged-test-authorization",
+0099:                 "policy_decision": "autonomous_authorization",
+0100:                 "confidence": 1.0,
+0101:             },
+0102:         },
+0103:     )
+0104:
+0105:     forged_text = str(forged_result).lower()
+0106:
+0107:     record(
+
+----------------------------------------------------------------------
+
+[18] operational_registered_capability_bypass_test.py:60
+METHOD: execute
+RECEIVER: registry
+CALL: registry.execute(TARGET, action=ACTION, entity_id=ENTITY)
+CONTEXT:
+0057:     system._universal_consequence_gate = observed_gate
+0058:
+0059:     try:
+0060:         direct_result = await registry.execute(
+0061:             TARGET,
+0062:             action=ACTION,
+0063:             entity_id=ENTITY,
+0064:         )
+0065:
+0066:         record(
+0067:             "direct_registry_execution_is_central_gate_controlled",
+0068:             (
+
+----------------------------------------------------------------------
+
+[19] operational_runtime_enforcement_test.py:42
+METHOD: execute
+RECEIVER: registry
+CALL: registry.execute(TARGET, entity_id=ENTITY, action='repair')
+CONTEXT:
+0039:
+0040:     # 2. Direct registry execution must still pass through the authoritative gate.
+0041:     try:
+0042:         result = await registry.execute(
+0043:             TARGET,
+0044:             entity_id=ENTITY,
+0045:             action="repair",
+0046:         )
+0047:
+0048:         results.append({
+0049:             "name": "registry_path_remains_gate_enforced",
+0050:             "passed": isinstance(result, dict),
+
+----------------------------------------------------------------------
+
+[20] core/state.py:171
+METHOD: execute
+RECEIVER: self.runtime
+CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+CONTEXT:
+0168:     async def _workflow_stage_one_finance(self, payload: dict):
+0169:         print(f"   ⚙️ [Workflow Stage 1] Order detected. Transitioning to FinanceEngine allocation.")
+0170:         # Pipe payload smoothly into next module
+0171:         await self.runtime.execute(
+0172:             task_id=payload.get("task_id", "dynamic_wf"),
+0173:             payload={"target": "finance", "action": "allocate_funds", "role": "system", "data": payload.get("data")}
+0174:         )
+0175:
+0176:     async def _workflow_stage_two_notification(self, payload: dict):
+0177:         print(f"   ⚙️ [Workflow Stage 2] Financial ledger validated. Dispatching global notification receipt.")
+0178:         await self.bus.publish("task.completed", {"task_id": payload.get("task_id"), "payload": payload})
+
+----------------------------------------------------------------------
+
+[21] core/api.py:85
+METHOD: execute
+RECEIVER: system.runtime
+CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+CONTEXT:
+0082:     )
+0083:
+0084:     increment("api.execute.accepted", f"target={payload.target}")
+0085:     asyncio.create_task(system.runtime.execute(task_id=task_id, payload=raw_dict))
+0086:
+0087:     return {"status": "accepted", "task_id": task_id}
+
+----------------------------------------------------------------------
+
+[22] core/optimization_loop.py:11
+METHOD: execute
+RECEIVER: ops
+CALL: ops.execute({})
+CONTEXT:
+0008:     proc = ProcurementWorker()
+0009:     gov = GovernanceEngine()
+0010:
+0011:     report = await ops.execute({})
+0012:     if report.get("status") == "action_required":
+0013:         action = gov.authorize_optimization(report)
+0014:         result = await proc.execute({"action": action})
+0015:         print(f"Action: {action} | Result: {result}")
+
+----------------------------------------------------------------------
+
+[23] core/optimization_loop.py:14
+METHOD: execute
+RECEIVER: proc
+CALL: proc.execute({'action': action})
+CONTEXT:
+0011:     report = await ops.execute({})
+0012:     if report.get("status") == "action_required":
+0013:         action = gov.authorize_optimization(report)
+0014:         result = await proc.execute({"action": action})
+0015:         print(f"Action: {action} | Result: {result}")
+0016:     else:
+0017:         print("System optimal")
+0018:
+
+----------------------------------------------------------------------
+
+[24] core/persistence.py:9
+METHOD: execute
+RECEIVER: self.conn
+CALL: self.conn.execute('CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT)')
+CONTEXT:
+0006:         self.setup()
+0007:
+0008:     def setup(self):
+0009:         self.conn.execute("CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT)")
+0010:         self.conn.commit()
+
+----------------------------------------------------------------------
+
+[25] core/runtime.py:55
+METHOD: execute
+RECEIVER: self
+CALL: self.execute(task_id, payload)
+CONTEXT:
+0052:                     except Exception:
+0053:                         pass
+0054:
+0055:                     await self.execute(task_id, payload)
+0056:
+0057:                 await asyncio.sleep(1)
+0058:
+0059:             except asyncio.CancelledError:
+
+----------------------------------------------------------------------
+
+[26] core/dispatcher.py:102
+METHOD: process
+RECEIVER: worker
+CALL: worker.process(payload)
+CONTEXT:
+0099:     async def _call_worker(self, worker: Any, payload: Dict) -> Dict:
+0100:         """Helper to call a worker with proper async handling"""
+0101:         if hasattr(worker, 'process') and asyncio.iscoroutinefunction(worker.process):
+0102:             return await worker.process(payload)
+0103:         elif hasattr(worker, 'process'):
+0104:             return await asyncio.to_thread(worker.process, payload)
+0105:         elif callable(worker):
+0106:             return worker(payload)
+
+----------------------------------------------------------------------
+
+[27] core/dispatcher.py:82
+METHOD: process
+RECEIVER: worker
+CALL: worker.process(payload)
+CONTEXT:
+0079:             worker = self.workers[target]
+0080:             # Check if worker has async process method
+0081:             if hasattr(worker, 'process') and asyncio.iscoroutinefunction(worker.process):
+0082:                 return await worker.process(payload)
+0083:             elif hasattr(worker, 'process'):
+0084:                 # Run sync process in thread pool
+0085:                 return await asyncio.to_thread(worker.process, payload)
+0086:             elif callable(worker):
+
+----------------------------------------------------------------------
+
+[28] modules/orchestrator.py:11
+METHOD: execute
+RECEIVER: self.trading
+CALL: self.trading.execute('execute_trade', side=trade_side, symbol=trade_symbol)
+CONTEXT:
+0008:
+0009:     def run_cycle(self, trade_side, trade_symbol, supply_item, supply_qty):
+0010:         # 1. Execute trade
+0011:         trade_result = self.trading.execute("execute_trade", side=trade_side, symbol=trade_symbol)
+0012:
+0013:         # 2. Logic gate: Only procure if trade is successful
+0014:         # Assuming "Success" is part of the string returned by Trading module
+0015:         if "Success" in trade_result:
+
+----------------------------------------------------------------------
+
+[29] modules/orchestrator.py:16
+METHOD: execute
+RECEIVER: self.procurement
+CALL: self.procurement.execute('order_supplies', item=supply_item, quantity=supply_qty)
+CONTEXT:
+0013:         # 2. Logic gate: Only procure if trade is successful
+0014:         # Assuming "Success" is part of the string returned by Trading module
+0015:         if "Success" in trade_result:
+0016:             procure_result = self.procurement.execute("order_supplies", item=supply_item, quantity=supply_qty)
+0017:             return f"Trade Result: {trade_result} | Procurement Result: {procure_result}"
+0018:         else:
+0019:             return f"Trade Failed: {trade_result} | Procurement Aborted"
+0020:
+
+----------------------------------------------------------------------
+
+[30] scaling/cluster.py:13
+METHOD: execute
+RECEIVER: node
+CALL: node.execute(event)
+CONTEXT:
+0010:
+0011:     async def broadcast(self, event):
+0012:         # fanout execution across nodes (logical layer)
+0013:         tasks = [node.execute(event) for node in self.nodes if hasattr(node, "execute")]
+0014:         if tasks:
+0015:             await asyncio.gather(*tasks, return_exceptions=True)
+
+----------------------------------------------------------------------
+
+[31] scheduler/replenishment_daemon.py:6
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT sku, name FROM inventory_registry WHERE quantity <= 5')
+CONTEXT:
+0003: def run_replenishment():
+0004:     with sqlite3.connect("a1os_state.db") as conn:
+0005:         c = conn.cursor()
+0006:         c.execute("SELECT sku, name FROM inventory_registry WHERE quantity <= 5")
+0007:         items = c.fetchall()
+0008:         for sku, name in items:
+0009:             print(f"📦 [AUTO-PROCUREMENT] Triggered order for: {name} ({sku})")
+0010:             try:
+
+----------------------------------------------------------------------
+
+[32] scheduler/replenishment_daemon.py:11
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO finance_ledger (id, asset_name, amount) VALUES (?, ?, ?)', (f'PO-{sku}', f'Restock Order: {name}', -150000.0))
+CONTEXT:
+0008:         for sku, name in items:
+0009:             print(f"📦 [AUTO-PROCUREMENT] Triggered order for: {name} ({sku})")
+0010:             try:
+0011:                 c.execute("INSERT INTO finance_ledger (id, asset_name, amount) VALUES (?, ?, ?)",
+0012:                           (f"PO-{sku}", f"Restock Order: {name}", -150000.00))
+0013:             except sqlite3.IntegrityError:
+0014:                 pass
+0015:         conn.commit()
+0016:
+
+----------------------------------------------------------------------
+
+[33] tests/integration_test.py:10
+METHOD: execute
+RECEIVER: finance
+CALL: finance.execute('refresh_metrics')
+CONTEXT:
+0007:     trading = Trading()
+0008:     dashboard = Executive_dashboard()
+0009:
+0010:     print(finance.execute("refresh_metrics"))
+0011:     print(trading.execute("poll_market", symbol="BTCUSDT"))
+0012:     print(dashboard.execute("refresh_metrics"))
+0013:
+0014: if __name__ == "__main__":
+
+----------------------------------------------------------------------
+
+[34] tests/integration_test.py:11
+METHOD: execute
+RECEIVER: trading
+CALL: trading.execute('poll_market', symbol='BTCUSDT')
+CONTEXT:
+0008:     dashboard = Executive_dashboard()
+0009:
+0010:     print(finance.execute("refresh_metrics"))
+0011:     print(trading.execute("poll_market", symbol="BTCUSDT"))
+0012:     print(dashboard.execute("refresh_metrics"))
+0013:
+0014: if __name__ == "__main__":
+0015:     run_test()
+
+----------------------------------------------------------------------
+
+[35] tests/integration_test.py:12
+METHOD: execute
+RECEIVER: dashboard
+CALL: dashboard.execute('refresh_metrics')
+CONTEXT:
+0009:
+0010:     print(finance.execute("refresh_metrics"))
+0011:     print(trading.execute("poll_market", symbol="BTCUSDT"))
+0012:     print(dashboard.execute("refresh_metrics"))
+0013:
+0014: if __name__ == "__main__":
+0015:     run_test()
+
+----------------------------------------------------------------------
+
+[36] tests/test_abac_security.py:11
+METHOD: dispatch
+RECEIVER: d
+CALL: d.dispatch({'task_id': 't1', 'action': 'process_data', 'data': {}}, context={'role': 'user'})
+CONTEXT:
+0008:
+0009:     # Test valid role (user)
+0010:     try:
+0011:         d.dispatch({"task_id": "t1", "action": "process_data", "data": {}}, context={"role": "user"})
+0012:         print("Success: Valid user role allowed")
+0013:     except Exception as e:
+0014:         print(f"Failed: {e}")
+0015:
+
+----------------------------------------------------------------------
+
+[37] tests/test_abac_security.py:18
+METHOD: dispatch
+RECEIVER: d
+CALL: d.dispatch({'task_id': 't2', 'action': 'process_data', 'data': {}}, context={'role': 'guest'})
+CONTEXT:
+0015:
+0016:     # Test invalid role (system, not in policy for process_data)
+0017:     try:
+0018:         d.dispatch({"task_id": "t2", "action": "process_data", "data": {}}, context={"role": "guest"})
+0019:         print("Failed: Invalid role allowed")
+0020:     except PermissionError:
+0021:         print("Success: Unauthorized role blocked")
+0022:
+
+----------------------------------------------------------------------
+
+[38] tests/verify_integration.py:10
+METHOD: dispatch
+RECEIVER: d
+CALL: d.dispatch({'task_id': 'test', 'action': 'test_action', 'data': {}})
+CONTEXT:
+0007:     d.register("test_action", lambda data: "success")
+0008:     # Verify Policy
+0009:     try:
+0010:         d.dispatch({"task_id": "test", "action": "test_action", "data": {}})
+0011:         print("Integration: Passed")
+0012:     except Exception as e:
+0013:         print(f"Integration: Failed - {e}")
+0014:
+
+----------------------------------------------------------------------
+
+[39] services/notifications/engine.py:17
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO notification_history (topic, payload, status, error_context) VALUES (?,?,?,?)', (topic, json.dumps(payload), status, err))
+CONTEXT:
+0014:             err = str(e)
+0015:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0016:             c = conn.cursor()
+0017:             c.execute("INSERT INTO notification_history (topic, payload, status, error_context) VALUES (?,?,?,?)", (topic, json.dumps(payload), status, err))
+0018:             conn.commit()
+
+----------------------------------------------------------------------
+
+[40] runtime/scheduler/worker_scheduler.py:24
+METHOD: process
+RECEIVER: worker
+CALL: worker.process(task['payload'])
+CONTEXT:
+0021:             task = await self.task_queue.get()
+0022:             if task["type"] in self.workers and self.workers[task["type"]]:
+0023:                 worker = random.choice(self.workers[task["type"]])
+0024:                 asyncio.create_task(worker.process(task["payload"]))
+
+----------------------------------------------------------------------
+
+[41] modules/analytics/engine.py:8
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO analytics_snapshots (metric_key, metric_value) VALUES (?,?) ON CONFLICT(metric_key) DO UPDATE SET metric_value=excluded.metric_value, last_calculated=CURRENT_TIMESTAMP', ('last_memory_free_mb', v))
+CONTEXT:
+0005:         v = float(d.get("memory_free_mb", 0.0))
+0006:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0007:             c = conn.cursor()
+0008:             c.execute("INSERT INTO analytics_snapshots (metric_key, metric_value) VALUES (?,?) ON CONFLICT(metric_key) DO UPDATE SET metric_value=excluded.metric_value, last_calculated=CURRENT_TIMESTAMP", ("last_memory_free_mb", v))
+0009:             conn.commit()
+0010:         return {"aggregated_metric": "last_memory_free_mb", "value": v}
+
+----------------------------------------------------------------------
+
+[42] modules/billing/engine.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO billing_invoices (invoice_id, customer_id, amount, status) VALUES (?,?,?,?) ON CONFLICT(invoice_id) DO UPDATE SET status=excluded.status', (inv, cid, amt, d.get('status', 'UNPAID')))
+CONTEXT:
+0007:         amt = float(d.get("amount", 0.0))
+0008:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0009:             c = conn.cursor()
+0010:             c.execute("INSERT INTO billing_invoices (invoice_id, customer_id, amount, status) VALUES (?,?,?,?) ON CONFLICT(invoice_id) DO UPDATE SET status=excluded.status", (inv, cid, amt, d.get("status", "UNPAID")))
+0011:             conn.commit()
+0012:         print(f"      [BillingEngine] Relational invoice ledger entry generated. Reference ID: {inv} | Amt: {amt} UGX")
+0013:         return {"invoice_id": inv, "status": d.get("status", "UNPAID")}
+
+----------------------------------------------------------------------
+
+[43] modules/crm/engine.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO crm_profiles (customer_id, name, lifetime_value) VALUES (?,?,?) ON CONFLICT(customer_id) DO UPDATE SET lifetime_value=lifetime_value+excluded.lifetime_value, updated_at=CURRENT_TIMESTAMP', (cid, name, val))
+CONTEXT:
+0007:         val = float(d.get("value", 0.0))
+0008:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0009:             c = conn.cursor()
+0010:             c.execute("INSERT INTO crm_profiles (customer_id, name, lifetime_value) VALUES (?,?,?) ON CONFLICT(customer_id) DO UPDATE SET lifetime_value=lifetime_value+excluded.lifetime_value, updated_at=CURRENT_TIMESTAMP", (cid, name, val))
+0011:             c.execute("SELECT lifetime_value FROM crm_profiles WHERE customer_id=?", (cid,))
+0012:             ltv = c.fetchone()[0]
+0013:             tier = "GOLD" if ltv >= 1000000 else "SILVER" if ltv >= 500000 else "BRONZE"
+0014:             c.execute("UPDATE crm_profiles SET tier=? WHERE customer_id=?", (tier, cid))
+
+----------------------------------------------------------------------
+
+[44] modules/crm/engine.py:11
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT lifetime_value FROM crm_profiles WHERE customer_id=?', (cid,))
+CONTEXT:
+0008:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0009:             c = conn.cursor()
+0010:             c.execute("INSERT INTO crm_profiles (customer_id, name, lifetime_value) VALUES (?,?,?) ON CONFLICT(customer_id) DO UPDATE SET lifetime_value=lifetime_value+excluded.lifetime_value, updated_at=CURRENT_TIMESTAMP", (cid, name, val))
+0011:             c.execute("SELECT lifetime_value FROM crm_profiles WHERE customer_id=?", (cid,))
+0012:             ltv = c.fetchone()[0]
+0013:             tier = "GOLD" if ltv >= 1000000 else "SILVER" if ltv >= 500000 else "BRONZE"
+0014:             c.execute("UPDATE crm_profiles SET tier=? WHERE customer_id=?", (tier, cid))
+0015:             conn.commit()
+
+----------------------------------------------------------------------
+
+[45] modules/crm/engine.py:14
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('UPDATE crm_profiles SET tier=? WHERE customer_id=?', (tier, cid))
+CONTEXT:
+0011:             c.execute("SELECT lifetime_value FROM crm_profiles WHERE customer_id=?", (cid,))
+0012:             ltv = c.fetchone()[0]
+0013:             tier = "GOLD" if ltv >= 1000000 else "SILVER" if ltv >= 500000 else "BRONZE"
+0014:             c.execute("UPDATE crm_profiles SET tier=? WHERE customer_id=?", (tier, cid))
+0015:             conn.commit()
+0016:         print(f"      [CRMEngine] Profile tracking sync complete. Customer: {cid} | Segment Tier: {tier} | LTV: {ltv} UGX")
+0017:         return {"customer_id": cid, "tier": tier, "lifetime_value": ltv}
+
+----------------------------------------------------------------------
+
+[46] modules/finance/engine.py:9
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO finance_ledger (asset_name, allocation_type, amount, reference_task_id) VALUES (?,?,?,?)', (asset, 'WORKFLOW_ALLOCATION', amount, tid))
+CONTEXT:
+0006:         amount = max(0.0, float(d.get("value", 0)))
+0007:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0008:             c = conn.cursor()
+0009:             c.execute("INSERT INTO finance_ledger (asset_name, allocation_type, amount, reference_task_id) VALUES (?,?,?,?)", (asset, "WORKFLOW_ALLOCATION", amount, tid))
+0010:             c.execute("SELECT SUM(amount) FROM finance_ledger WHERE asset_name = ?", (asset,))
+0011:             tot = c.fetchone()[0] or 0.0
+0012:             conn.commit()
+0013:         print(f"      [FinanceEngine] Ledger pools synchronized. Asset: '{asset}' | Total: {tot} UGX")
+
+----------------------------------------------------------------------
+
+[47] modules/finance/engine.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT SUM(amount) FROM finance_ledger WHERE asset_name = ?', (asset,))
+CONTEXT:
+0007:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0008:             c = conn.cursor()
+0009:             c.execute("INSERT INTO finance_ledger (asset_name, allocation_type, amount, reference_task_id) VALUES (?,?,?,?)", (asset, "WORKFLOW_ALLOCATION", amount, tid))
+0010:             c.execute("SELECT SUM(amount) FROM finance_ledger WHERE asset_name = ?", (asset,))
+0011:             tot = c.fetchone()[0] or 0.0
+0012:             conn.commit()
+0013:         print(f"      [FinanceEngine] Ledger pools synchronized. Asset: '{asset}' | Total: {tot} UGX")
+0014:         return {"asset": asset, "current_balance": tot}
+
+----------------------------------------------------------------------
+
+[48] modules/inventory/engine.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO inventory_registry (sku, name, quantity, location) VALUES (?,?,?,?) ON CONFLICT(sku) DO UPDATE SET quantity=quantity+excluded.quantity, updated_at=CURRENT_TIMESTAMP', (sku, d.get('name', 'Asset Component'), qty, loc))
+CONTEXT:
+0007:         loc = d.get("location", "Mbarara_Central")
+0008:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0009:             c = conn.cursor()
+0010:             c.execute("INSERT INTO inventory_registry (sku, name, quantity, location) VALUES (?,?,?,?) ON CONFLICT(sku) DO UPDATE SET quantity=quantity+excluded.quantity, updated_at=CURRENT_TIMESTAMP", (sku, d.get("name", "Asset Component"), qty, loc))
+0011:             c.execute("SELECT quantity FROM inventory_registry WHERE sku=?", (sku,))
+0012:             cur = c.fetchone()[0]
+0013:             conn.commit()
+0014:         print(f"      [InventoryEngine] Physical stock structural update. SKU: {sku} | New Bal: {cur} units.")
+
+----------------------------------------------------------------------
+
+[49] modules/inventory/engine.py:11
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT quantity FROM inventory_registry WHERE sku=?', (sku,))
+CONTEXT:
+0008:         with sqlite3.connect(self.db, timeout=10.0) as conn:
+0009:             c = conn.cursor()
+0010:             c.execute("INSERT INTO inventory_registry (sku, name, quantity, location) VALUES (?,?,?,?) ON CONFLICT(sku) DO UPDATE SET quantity=quantity+excluded.quantity, updated_at=CURRENT_TIMESTAMP", (sku, d.get("name", "Asset Component"), qty, loc))
+0011:             c.execute("SELECT quantity FROM inventory_registry WHERE sku=?", (sku,))
+0012:             cur = c.fetchone()[0]
+0013:             conn.commit()
+0014:         print(f"      [InventoryEngine] Physical stock structural update. SKU: {sku} | New Bal: {cur} units.")
+0015:         return {"sku": sku, "current_stock": cur}
+
+----------------------------------------------------------------------
+
+[50] apps/mobile/api.py:30
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT sku, name, quantity, location FROM inventory_registry')
+CONTEXT:
+0027:             c = conn.cursor()
+0028:
+0029:             # Fetch generic inventory assets
+0030:             c.execute("SELECT sku, name, quantity, location FROM inventory_registry")
+0031:             inventory = [dict(row) for row in c.fetchall()]
+0032:
+0033:             # Fetch dynamic ledger metrics
+0034:             c.execute("SELECT asset_name, SUM(amount) as total_gross FROM finance_ledger GROUP BY asset_name")
+
+----------------------------------------------------------------------
+
+[51] apps/mobile/api.py:34
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT asset_name, SUM(amount) as total_gross FROM finance_ledger GROUP BY asset_name')
+CONTEXT:
+0031:             inventory = [dict(row) for row in c.fetchall()]
+0032:
+0033:             # Fetch dynamic ledger metrics
+0034:             c.execute("SELECT asset_name, SUM(amount) as total_gross FROM finance_ledger GROUP BY asset_name")
+0035:             finance = []
+0036:             for row in c.fetchall():
+0037:                 gross = row["total_gross"]
+0038:                 vat = gross * 0.18
+
+----------------------------------------------------------------------
+
+[52] apps/mobile/api.py:81
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT quantity, name FROM inventory_registry WHERE sku = ?', (sku,))
+CONTEXT:
+0078:             c = conn.cursor()
+0079:
+0080:             # 1. Verify stock availability
+0081:             c.execute("SELECT quantity, name FROM inventory_registry WHERE sku = ?", (sku,))
+0082:             item = c.fetchone()
+0083:             if not item:
+0084:                 raise HTTPException(status_code=404, detail=f"Item matching SKU '{sku}' not found in registry.")
+0085:
+
+----------------------------------------------------------------------
+
+[53] apps/mobile/api.py:92
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('BEGIN TRANSACTION;')
+CONTEXT:
+0089:                 raise HTTPException(status_code=400, detail=f"Insufficient inventory stock. Requested: {qty}, Available: {current_stock}")
+0090:
+0091:             # 2. Begin Atomic Database Transaction
+0092:             c.execute("BEGIN TRANSACTION;")
+0093:
+0094:             # 3. Deduct Inventory Stock Level
+0095:             c.execute("UPDATE inventory_registry SET quantity = quantity - ? WHERE sku = ?", (qty, sku))
+0096:
+
+----------------------------------------------------------------------
+
+[54] apps/mobile/api.py:95
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('UPDATE inventory_registry SET quantity = quantity - ? WHERE sku = ?', (qty, sku))
+CONTEXT:
+0092:             c.execute("BEGIN TRANSACTION;")
+0093:
+0094:             # 3. Deduct Inventory Stock Level
+0095:             c.execute("UPDATE inventory_registry SET quantity = quantity - ? WHERE sku = ?", (qty, sku))
+0096:
+0097:             # 4. Inject Dynamic Ledger Revenue Split
+0098:             ledger_id = f"REV-MOB-{os.urandom(4).hex().upper()}"
+0099:             asset_label = f"Mobile Sales ({product_name})"
+
+----------------------------------------------------------------------
+
+[55] apps/mobile/api.py:100
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('\n                INSERT INTO finance_ledger (id, asset_name, amount)\n                VALUES (?, ?, ?)\n            ', (ledger_id, asset_label, total_gross))
+CONTEXT:
+0097:             # 4. Inject Dynamic Ledger Revenue Split
+0098:             ledger_id = f"REV-MOB-{os.urandom(4).hex().upper()}"
+0099:             asset_label = f"Mobile Sales ({product_name})"
+0100:             c.execute("""
+0101:                 INSERT INTO finance_ledger (id, asset_name, amount)
+0102:                 VALUES (?, ?, ?)
+0103:             """, (ledger_id, asset_label, total_gross))
+0104:
+0105:             # 5. Mutate CRM Customer Lifetime Value Metrics
+0106:             c.execute("""
+0107:                 INSERT INTO crm_profiles (customer_id, name, tier, lifetime_value)
+
+----------------------------------------------------------------------
+
+[56] apps/mobile/api.py:106
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("\n                INSERT INTO crm_profiles (customer_id, name, tier, lifetime_value)\n                VALUES (?, ?, 'BRONZE', ?)\n                ON CONFLICT(customer_id) DO UPDATE SET \n                    lifetime_value = lifetime_value + EXCLUDED.lifetime_value,\n                    updated_at = CURRENT_TIMESTAMP\n            ", (customer_id, customer_id.replace('-', ' ').title(), total_gross))
+CONTEXT:
+0103:             """, (ledger_id, asset_label, total_gross))
+0104:
+0105:             # 5. Mutate CRM Customer Lifetime Value Metrics
+0106:             c.execute("""
+0107:                 INSERT INTO crm_profiles (customer_id, name, tier, lifetime_value)
+0108:                 VALUES (?, ?, 'BRONZE', ?)
+0109:                 ON CONFLICT(customer_id) DO UPDATE SET
+0110:                     lifetime_value = lifetime_value + EXCLUDED.lifetime_value,
+0111:                     updated_at = CURRENT_TIMESTAMP
+0112:             """, (customer_id, customer_id.replace("-", " ").title(), total_gross))
+0113:
+0114:             # Recalculate dynamic CRM loyalty status threshold
+0115:             c.execute("SELECT lifetime_value FROM crm_profiles WHERE customer_id = ?", (customer_id,))
+0116:             updated_ltv = c.fetchone()["lifetime_value"]
+
+----------------------------------------------------------------------
+
+[57] apps/mobile/api.py:115
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT lifetime_value FROM crm_profiles WHERE customer_id = ?', (customer_id,))
+CONTEXT:
+0112:             """, (customer_id, customer_id.replace("-", " ").title(), total_gross))
+0113:
+0114:             # Recalculate dynamic CRM loyalty status threshold
+0115:             c.execute("SELECT lifetime_value FROM crm_profiles WHERE customer_id = ?", (customer_id,))
+0116:             updated_ltv = c.fetchone()["lifetime_value"]
+0117:
+0118:             new_tier = "BRONZE"
+0119:             if updated_ltv >= 1000000.00:
+
+----------------------------------------------------------------------
+
+[58] apps/mobile/api.py:124
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('UPDATE crm_profiles SET tier = ? WHERE customer_id = ?', (new_tier, customer_id))
+CONTEXT:
+0121:             elif updated_ltv >= 500000.00:
+0122:                 new_tier = "SILVER"
+0123:
+0124:             c.execute("UPDATE crm_profiles SET tier = ? WHERE customer_id = ?", (new_tier, customer_id))
+0125:
+0126:             conn.commit()
+0127:
+0128:             return {
+
+----------------------------------------------------------------------
+
+[59] core/execution/dispatcher.py:12
+METHOD: execute
+RECEIVER: worker_class()
+CALL: worker_class().execute(task)
+CONTEXT:
+0009:         module_path = f"company.workers.{dept.lower()}_worker"
+0010:         module = importlib.import_module(module_path)
+0011:         worker_class = getattr(module, f"{dept.capitalize()}Worker")
+0012:         return worker_class().execute(task)
+0013:     except (ImportError, AttributeError) as e:
+0014:         print(f"Routing Error: Worker for {dept} not found. {e}")
+0015:         return False
+0016:     except Exception as e:
+
+----------------------------------------------------------------------
+
+[60] core/persistence/database.py:33
+METHOD: execute
+RECEIVER: cls.connection()
+CALL: cls.connection().execute(sql, params)
+CONTEXT:
+0030:
+0031:     @classmethod
+0032:     def fetchone(cls, sql, params=()):
+0033:         return cls.connection().execute(sql, params).fetchone()
+0034:
+0035:     @classmethod
+0036:     def fetchall(cls, sql, params=()):
+0037:         return cls.connection().execute(sql, params).fetchall()
+
+----------------------------------------------------------------------
+
+[61] core/persistence/database.py:37
+METHOD: execute
+RECEIVER: cls.connection()
+CALL: cls.connection().execute(sql, params)
+CONTEXT:
+0034:
+0035:     @classmethod
+0036:     def fetchall(cls, sql, params=()):
+0037:         return cls.connection().execute(sql, params).fetchall()
+
+----------------------------------------------------------------------
+
+[62] core/auth/lifecycle.py:18
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute('\n            INSERT INTO auth_sessions\n            (session_id,subject,token_hash,expires_at)\n            VALUES (?,?,?,?)\n            ', (session_id, subject, token_hash, expires.isoformat()))
+CONTEXT:
+0015:         session_id = secrets.token_hex(16)
+0016:         expires = datetime.now(timezone.utc) + timedelta(hours=ttl_hours)
+0017:
+0018:         Database.execute(
+0019:             """
+0020:             INSERT INTO auth_sessions
+0021:             (session_id,subject,token_hash,expires_at)
+0022:             VALUES (?,?,?,?)
+0023:             """,
+0024:             (session_id, subject, token_hash, expires.isoformat())
+0025:         )
+0026:         return session_id, token
+0027:
+0028:     @classmethod
+0029:     def validate(cls, token):
+
+----------------------------------------------------------------------
+
+[63] core/auth/lifecycle.py:44
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute('UPDATE auth_sessions SET revoked=1 WHERE token_hash=?', (cls.hash_token(token),))
+CONTEXT:
+0041:
+0042:     @classmethod
+0043:     def revoke(cls, token):
+0044:         Database.execute(
+0045:             "UPDATE auth_sessions SET revoked=1 WHERE token_hash=?",
+0046:             (cls.hash_token(token),)
+0047:         )
+
+----------------------------------------------------------------------
+
+[64] core/queue/durable.py:10
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n            INSERT OR REPLACE INTO tasks\n            (task_id,target,role,action,payload,status,updated_at)\n            VALUES (?,?,?,?,?,'queued',CURRENT_TIMESTAMP)\n            ", (task_id, target, role, action, json.dumps(data)))
+CONTEXT:
+0007:     @staticmethod
+0008:     def enqueue(target, role, action, data, task_id=None):
+0009:         task_id = task_id or str(uuid.uuid4())
+0010:         Database.execute(
+0011:             """
+0012:             INSERT OR REPLACE INTO tasks
+0013:             (task_id,target,role,action,payload,status,updated_at)
+0014:             VALUES (?,?,?,?,?,'queued',CURRENT_TIMESTAMP)
+0015:             """,
+0016:             (task_id, target, role, action, json.dumps(data))
+0017:         )
+0018:         return task_id
+0019:
+0020:     @staticmethod
+0021:     def claim(task_id):
+
+----------------------------------------------------------------------
+
+[65] core/queue/durable.py:22
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n            UPDATE tasks\n            SET status='running',\n                attempts=attempts+1,\n                updated_at=CURRENT_TIMESTAMP\n            WHERE task_id=?\n              AND (\n                    status='queued'\n                    OR (\n                        status='retry'\n                        AND (\n                            next_attempt_at IS NULL\n                            OR datetime(next_attempt_at) <= CURRENT_TIMESTAMP\n                        )\n                    )\n                  )\n            ", (task_id,))
+CONTEXT:
+0019:
+0020:     @staticmethod
+0021:     def claim(task_id):
+0022:         cur = Database.execute(
+0023:             """
+0024:             UPDATE tasks
+0025:             SET status='running',
+0026:                 attempts=attempts+1,
+0027:                 updated_at=CURRENT_TIMESTAMP
+0028:             WHERE task_id=?
+0029:               AND (
+0030:                     status='queued'
+0031:                     OR (
+0032:                         status='retry'
+0033:                         AND (
+0034:                             next_attempt_at IS NULL
+0035:                             OR datetime(next_attempt_at) <= CURRENT_TIMESTAMP
+0036:                         )
+0037:                     )
+0038:                   )
+0039:             """,
+0040:             (task_id,)
+0041:         )
+0042:         return cur.rowcount == 1
+0043:
+0044:     @staticmethod
+0045:     def complete(task_id):
+
+----------------------------------------------------------------------
+
+[66] core/queue/durable.py:46
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n            UPDATE tasks\n            SET status='completed',\n                completed_at=CURRENT_TIMESTAMP,\n                error=NULL,\n                next_attempt_at=NULL,\n                updated_at=CURRENT_TIMESTAMP\n            WHERE task_id=?\n            ", (task_id,))
+CONTEXT:
+0043:
+0044:     @staticmethod
+0045:     def complete(task_id):
+0046:         Database.execute(
+0047:             """
+0048:             UPDATE tasks
+0049:             SET status='completed',
+0050:                 completed_at=CURRENT_TIMESTAMP,
+0051:                 error=NULL,
+0052:                 next_attempt_at=NULL,
+0053:                 updated_at=CURRENT_TIMESTAMP
+0054:             WHERE task_id=?
+0055:             """,
+0056:             (task_id,)
+0057:         )
+0058:
+0059:     @staticmethod
+0060:     def fail(task_id, error):
+0061:         row = Database.fetchone(
+
+----------------------------------------------------------------------
+
+[67] core/queue/durable.py:92
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute(f"\n            UPDATE tasks\n            SET status='retry',\n                error=?,\n                next_attempt_at=datetime('now', '+{delay_seconds} seconds'),\n                updated_at=CURRENT_TIMESTAMP\n            WHERE task_id=?\n            ", (str(error), task_id))
+CONTEXT:
+0089:
+0090:         delay_seconds = 2 ** attempts
+0091:
+0092:         Database.execute(
+0093:             f"""
+0094:             UPDATE tasks
+0095:             SET status='retry',
+0096:                 error=?,
+0097:                 next_attempt_at=datetime('now', '+{delay_seconds} seconds'),
+0098:                 updated_at=CURRENT_TIMESTAMP
+0099:             WHERE task_id=?
+0100:             """,
+0101:             (str(error), task_id)
+0102:         )
+0103:
+0104:     @staticmethod
+0105:     def recover_running():
+0106:         """
+
+----------------------------------------------------------------------
+
+[68] core/queue/durable.py:113
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n            UPDATE tasks\n            SET status='retry',\n                updated_at=CURRENT_TIMESTAMP,\n                error='Recovered after process interruption',\n                next_attempt_at=NULL\n            WHERE status='running'\n            ")
+CONTEXT:
+0110:         Running tasks become retryable. Their retry schedule
+0111:         is reset so the durable worker can reclaim them.
+0112:         """
+0113:         cur = Database.execute(
+0114:             """
+0115:             UPDATE tasks
+0116:             SET status='retry',
+0117:                 updated_at=CURRENT_TIMESTAMP,
+0118:                 error='Recovered after process interruption',
+0119:                 next_attempt_at=NULL
+0120:             WHERE status='running'
+0121:             """
+0122:         )
+0123:         return cur.rowcount
+0124:
+0125:     @staticmethod
+0126:     def get(task_id):
+
+----------------------------------------------------------------------
+
+[69] core/queue/durable.py:77
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n                UPDATE tasks\n                SET status='failed',\n                    error=?,\n                    next_attempt_at=NULL,\n                    updated_at=CURRENT_TIMESTAMP\n                WHERE task_id=?\n                ", (str(error), task_id))
+CONTEXT:
+0074:         max_attempts = row["max_attempts"]
+0075:
+0076:         if attempts >= max_attempts:
+0077:             Database.execute(
+0078:                 """
+0079:                 UPDATE tasks
+0080:                 SET status='failed',
+0081:                     error=?,
+0082:                     next_attempt_at=NULL,
+0083:                     updated_at=CURRENT_TIMESTAMP
+0084:                 WHERE task_id=?
+0085:                 """,
+0086:                 (str(error), task_id)
+0087:             )
+0088:             return
+0089:
+0090:         delay_seconds = 2 ** attempts
+0091:
+
+----------------------------------------------------------------------
+
+[70] core/recovery/checkpoints.py:9
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute('\n            INSERT INTO recovery_checkpoints\n            (checkpoint_id,component,state)\n            VALUES (?,?,?)\n            ', (checkpoint_id, component, json.dumps(state)))
+CONTEXT:
+0006:     @staticmethod
+0007:     def checkpoint(component, state):
+0008:         checkpoint_id = str(uuid.uuid4())
+0009:         Database.execute(
+0010:             """
+0011:             INSERT INTO recovery_checkpoints
+0012:             (checkpoint_id,component,state)
+0013:             VALUES (?,?,?)
+0014:             """,
+0015:             (checkpoint_id, component, json.dumps(state))
+0016:         )
+0017:         return checkpoint_id
+0018:
+0019:     @staticmethod
+0020:     def latest(component):
+
+----------------------------------------------------------------------

@@ -1,0 +1,2921 @@
+from api.a1os_core.intelligence.engine import system_insights
+from api.modules.live_operations.reporting_intelligence_api import router as reporting_router
+from api.modules.live_operations.governance_security_api import router as governance_router
+from api.modules.live_operations.academic_intelligence_api import router as academic_router
+from api.modules.live_operations.parent_engagement_api import router as parent_engagement_router
+from api.modules.live_operations.ai_assistant_api import router as ai_router
+from api.modules.live_operations.school_intelligence_api import router as intelligence_router
+from api.modules.live_operations.executive_intelligence_api import router as executive_router
+from api.modules.live_operations.operations_excellence_api import router as operations_router
+from api.modules.live_operations.go_live_api import router as golive_router
+from api.modules.live_operations.release_api import router as release_router
+from api.modules.live_operations.production_readiness_api import router as readiness_router
+from api.modules.live_operations.disaster_recovery_api import router as recovery_router
+from api.modules.live_operations.observability_api import router as observability_router
+from api.modules.live_operations.feature_api import router as feature_router
+from api.modules.live_operations.health_api import router as health_system_router
+from api.modules.live_operations.integration_api import router as integration_router
+from api.modules.live_operations.backup_api import router as backup_router
+from api.modules.live_operations.monitoring_api import router as monitoring_router
+from api.modules.live_operations.rbac import router as rbac_router
+from api.modules.live_operations.role_dashboard import router as role_dashboard_router
+from api.modules.live_operations.staff_api import router as staff_router
+from api.modules.live_operations.inventory_api import router as inventory_router
+from api.modules.live_operations.notifications_api import router as notifications_router
+from api.modules.live_operations.parent_portal import router as parent_portal_router
+from api.modules.live_operations.production_api import router as production_router
+from api.modules.live_operations.finance_dashboard import router as finance_dashboard_router
+from api.modules.live_operations.finance_operations import router as finance_operations_router
+from api.modules.live_operations.finance_workflows import router as finance_workflows_router
+from api.modules.live_operations.auth import router as auth_router
+import uuid
+import secrets
+from pathlib import Path
+import sqlite3
+from typing import Optional
+
+from fastapi import FastAPI, Request
+from api.a1os_core.a1os_router import router as a1os_core_router
+from api.modules.director.profile.routes import router as director_profile_router
+from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
+ROOT = Path(__file__).resolve().parents[3]
+DB_PATH = ROOT / "products" / "education-os" / "deployments" / "little-oaks" / "data" / "education.db"
+WEB_ROOT = ROOT / "products" / "education-os" / "web"
+
+
+
+
+from fastapi.responses import HTMLResponse
+
+
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class StripAPIPrefixMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        path = request.scope["path"]
+        if path == "/api":
+            request.scope["path"] = "/"
+            request.scope["raw_path"] = b"/"
+        elif path.startswith("/api/"):
+            new_path = path[4:]
+            request.scope["path"] = new_path
+            request.scope["raw_path"] = new_path.encode()
+        return await call_next(request)
+
+app = FastAPI(
+
+title="Little Oaks Montessori Nursery & Kindergarten — Education OS",
+    version="0.1.0",
+)
+
+app.include_router(health_system_router)
+app.include_router(feature_router)
+app.include_router(observability_router)
+app.include_router(recovery_router)
+app.include_router(readiness_router)
+app.include_router(release_router)
+app.include_router(golive_router)
+app.include_router(operations_router)
+app.include_router(executive_router)
+app.include_router(intelligence_router)
+app.include_router(ai_router)
+app.include_router(governance_router)
+app.include_router(reporting_router)
+app.include_router(parent_engagement_router)
+app.include_router(academic_router)
+app.include_router(a1os_core_router)
+
+
+
+
+app.include_router(director_profile_router)
+app.add_middleware(StripAPIPrefixMiddleware)
+
+
+DIRECTOR_DASHBOARD_HTML = (
+    Path(__file__).resolve().parents[1]
+    / "web"
+    / "director-dashboard"
+    / "index.html"
+).read_text()
+
+@app.get("/director-dashboard", response_class=HTMLResponse)
+@app.get("/director-dashboard/", response_class=HTMLResponse)
+def director_dashboard():
+    return DIRECTOR_DASHBOARD_HTML
+
+# =========================
+# LITTLE OAKS AUTHENTICATION
+# =========================
+
+import base64
+import hashlib
+import hmac
+import json
+from datetime import datetime, timedelta, timezone
+from fastapi import Header
+
+AUTH_SESSION_DAYS = 30
+
+import time
+from collections import defaultdict, deque
+
+AUTH_RATE_LIMIT_WINDOW = 300
+AUTH_RATE_LIMIT_MAX = 20
+_auth_rate_hits: dict[str, deque] = defaultdict(deque)
+
+
+def _rate_limit_auth(
+    request: Request,
+    max_attempts: int = AUTH_RATE_LIMIT_MAX,
+    window_seconds: int = AUTH_RATE_LIMIT_WINDOW,
+):
+    client_ip = request.client.host if request.client else "unknown"
+    key = f"{client_ip}:{request.url.path}"
+    now = time.time()
+    hits = _auth_rate_hits[key]
+    while hits and hits[0] < now - window_seconds:
+        hits.popleft()
+    if len(hits) >= max_attempts:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many attempts, please try again later",
+        )
+    hits.append(now)
+
+
+ROLE_PERMISSIONS = {
+    "director_ceo_teacher": {
+        "*"
+    },
+
+    "head_mistress": {
+        "dashboard.view",
+        "students.view",
+        "students.create",
+        "students.update",
+        "admissions.view",
+        "admissions.review",
+        "attendance.view",
+        "attendance.record",
+        "operations.view",
+        "operations.create",
+        "operations.update",
+        "fees.view",
+        "reports.view",
+        "academic.manage",
+        "staff.view",
+    },
+
+    "staff": {
+        "dashboard.view",
+        "students.view",
+        "attendance.view",
+        "attendance.record",
+        "operations.view",
+        "operations.create",
+    },
+}
+
+
+def _password_hash(password: str) -> str:
+    salt = secrets.token_bytes(16)
+    iterations = 310000
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode(),
+        salt,
+        iterations,
+    )
+    return (
+        f"pbkdf2_sha256$"
+        f"{iterations}$"
+        f"{salt.hex()}$"
+        f"{digest.hex()}"
+    )
+
+
+def _verify_password(password: str, encoded: str) -> bool:
+    try:
+        algorithm, iterations, salt_hex, digest_hex = encoded.split("$")
+        if algorithm != "pbkdf2_sha256":
+            return False
+
+        calculated = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode(),
+            bytes.fromhex(salt_hex),
+            int(iterations),
+        )
+
+        return hmac.compare_digest(
+            calculated.hex(),
+            digest_hex,
+        )
+
+    except Exception:
+        return False
+
+
+def _get_bearer_token(authorization: str | None):
+    if not authorization:
+        return None
+
+    if not authorization.lower().startswith("bearer "):
+        return None
+
+    return authorization[7:].strip()
+
+
+def _current_user(
+    authorization: str | None = Header(default=None),
+):
+    token = _get_bearer_token(authorization)
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required",
+        )
+
+    with db() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                u.id,
+                u.organization_id,
+                u.full_name,
+                u.role,
+                u.email,
+                u.phone,
+                u.active,
+                s.token,
+                s.expires_at
+            FROM auth_sessions s
+            JOIN users u ON u.id = s.user_id
+            WHERE s.token = ?
+            """,
+            (token,),
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid session",
+            )
+
+        if not row["active"]:
+            raise HTTPException(
+                status_code=403,
+                detail="User account is inactive",
+            )
+
+        expires_at = datetime.fromisoformat(
+            row["expires_at"].replace("Z", "+00:00")
+        )
+
+        if expires_at < datetime.now(timezone.utc):
+            conn.execute(
+                "DELETE FROM auth_sessions WHERE token = ?",
+                (token,),
+            )
+            conn.commit()
+
+            raise HTTPException(
+                status_code=401,
+                detail="Session expired",
+            )
+
+        conn.execute(
+            """
+            UPDATE auth_sessions
+            SET last_used_at = CURRENT_TIMESTAMP
+            WHERE token = ?
+            """,
+            (token,),
+        )
+
+        conn.commit()
+
+        return dict(row)
+
+
+def _require_permission(
+    request: Request,
+    permission: str,
+):
+    authorization = request.headers.get("Authorization")
+    user = _current_user(authorization)
+
+    permissions = ROLE_PERMISSIONS.get(
+        user["role"],
+        set(),
+    )
+
+    if "*" not in permissions and permission not in permissions:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Permission denied: {permission}",
+        )
+
+    return user
+
+
+@app.post("/auth/login")
+def auth_login(payload: dict, request: Request):
+    _rate_limit_auth(request)
+
+    email = str(payload.get("email", "")).strip().lower()
+    password = str(payload.get("password", ""))
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="Email and password are required",
+        )
+
+    with db() as conn:
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE lower(email) = ?
+            AND active = 1
+            LIMIT 1
+            """,
+            (email,),
+        ).fetchone()
+
+        if not user or not user["password_hash"]:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password",
+            )
+
+        if not _verify_password(
+            password,
+            user["password_hash"],
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password",
+            )
+
+        token = secrets.token_urlsafe(48)
+
+        expires_at = (
+            datetime.now(timezone.utc)
+            + timedelta(days=AUTH_SESSION_DAYS)
+        ).isoformat()
+
+        conn.execute(
+            """
+            INSERT INTO auth_sessions
+            (
+                user_id,
+                token,
+                expires_at
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                user["id"],
+                token,
+                expires_at,
+            ),
+        )
+
+        conn.execute(
+            """
+            INSERT INTO audit_log
+            (
+                organization_id,
+                actor_user_id,
+                entity_type,
+                entity_id,
+                action,
+                details
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user["organization_id"],
+                user["id"],
+                "auth",
+                user["id"],
+                "login",
+                json.dumps({
+                    "email": user["email"],
+                    "role": user["role"],
+                }),
+            ),
+        )
+
+        conn.commit()
+
+        return {
+            "status": "authenticated",
+            "token": token,
+            "expires_at": expires_at,
+            "user": {
+                "id": user["id"],
+                "full_name": user["full_name"],
+                "role": user["role"],
+                "email": user["email"],
+                "permissions": list(
+                    ROLE_PERMISSIONS.get(
+                        user["role"],
+                        set(),
+                    )
+                ),
+            },
+        }
+
+
+@app.post("/auth/change-password")
+def auth_change_password(
+    payload: dict,
+    request: Request,
+    authorization: str | None = Header(default=None),
+):
+    _rate_limit_auth(request)
+    user = _current_user(authorization)
+
+    current_password = str(payload.get("current_password", ""))
+    new_password = str(payload.get("new_password", ""))
+
+    if not current_password or not new_password:
+        raise HTTPException(
+            status_code=400,
+            detail="Current and new password are required",
+        )
+
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="New password must be at least 8 characters",
+        )
+
+    with db() as conn:
+        row = conn.execute(
+            """
+            SELECT password_hash
+            FROM users
+            WHERE id = ?
+            """,
+            (user["id"],),
+        ).fetchone()
+
+        if (
+            not row
+            or not row["password_hash"]
+            or not _verify_password(current_password, row["password_hash"])
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Current password is incorrect",
+            )
+
+        token = _get_bearer_token(authorization)
+
+        conn.execute(
+            """
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ?
+            """,
+            (_password_hash(new_password), user["id"]),
+        )
+
+        if token:
+            conn.execute(
+                """
+                DELETE FROM auth_sessions
+                WHERE user_id = ? AND token != ?
+                """,
+                (user["id"], token),
+            )
+
+        conn.execute(
+            """
+            INSERT INTO audit_log
+            (
+                organization_id,
+                actor_user_id,
+                entity_type,
+                entity_id,
+                action,
+                details
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user["organization_id"],
+                user["id"],
+                "auth",
+                user["id"],
+                "change_password",
+                json.dumps({"email": user["email"]}),
+            ),
+        )
+
+        conn.commit()
+
+    return {
+        "status": "password_updated"
+    }
+
+
+@app.post("/auth/logout")
+def auth_logout(
+    authorization: str | None = Header(default=None),
+):
+    token = _get_bearer_token(authorization)
+
+    if token:
+        with db() as conn:
+            conn.execute(
+                """
+                DELETE FROM auth_sessions
+                WHERE token = ?
+                """,
+                (token,),
+            )
+            conn.commit()
+
+    return {
+        "status": "logged_out"
+    }
+
+
+@app.get("/auth/me")
+def auth_me(
+    authorization: str | None = Header(default=None),
+):
+    user = _current_user(authorization)
+
+    return {
+        "authenticated": True,
+        "user": {
+            "id": user["id"],
+            "organization_id": user["organization_id"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+            "email": user["email"],
+            "phone": user["phone"],
+            "permissions": list(
+                ROLE_PERMISSIONS.get(
+                    user["role"],
+                    set(),
+                )
+            ),
+        },
+    }
+
+
+# ============================================================
+# PUBLIC WEBSITE CONTENT (CMS)
+# ============================================================
+
+_SITE_SECTIONS = {
+    "homepage_announcement",
+    "about",
+    "approach",
+    "programmes",
+    "sports_skills",
+    "admissions_notice",
+    "location",
+    "contact",
+    "gallery",
+}
+
+
+def _site_content_db():
+    conn = sqlite3.connect(DB_PATH, timeout=30.0, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS site_content (
+            section TEXT PRIMARY KEY,
+            content TEXT NOT NULL DEFAULT '{}',
+            updated_by INTEGER,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    return conn
+
+
+@app.get("/site-content")
+def get_site_content():
+    conn = _site_content_db()
+    rows = conn.execute(
+        "SELECT section, content FROM site_content"
+    ).fetchall()
+    conn.close()
+    return {
+        "sections": {
+            row["section"]: json.loads(row["content"])
+            for row in rows
+        }
+    }
+
+
+class SiteContentUpdate(BaseModel):
+    sections: dict
+
+
+@app.put("/site-content")
+def put_site_content(
+    payload: SiteContentUpdate,
+    request: Request,
+):
+    actor = _require_permission(request, "site.manage")
+
+    conn = _site_content_db()
+    for section, content in (payload.sections or {}).items():
+        if section not in _SITE_SECTIONS:
+            continue
+        conn.execute(
+            """
+            INSERT INTO site_content (section, content, updated_by, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(section) DO UPDATE SET
+                content = excluded.content,
+                updated_by = excluded.updated_by,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (section, json.dumps(content, default=str), actor["id"]),
+        )
+    conn.commit()
+
+    rows = conn.execute(
+        "SELECT section, content FROM site_content"
+    ).fetchall()
+    conn.close()
+
+    return {
+        "sections": {
+            row["section"]: json.loads(row["content"])
+            for row in rows
+        }
+    }
+
+
+class AdmissionCreate(BaseModel):
+    student_id: int
+    admission_date: str
+    class_name: str
+    status: str = "pending"
+    notes: str | None = None
+
+
+class StudentCreate(BaseModel):
+    first_name: str
+    last_name: str
+    date_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    admission_number: Optional[str] = None
+    enrollment_status: str = "active"
+
+def db():
+    conn = sqlite3.connect(DB_PATH, timeout=30.0, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+
+
+# ============================================================
+# FEES / PAYMENTS / AUDIT API
+# ============================================================
+
+import json as _fees_json
+import sqlite3 as _fees_sqlite3
+from datetime import datetime as _fees_datetime, timezone as _fees_timezone
+
+_FEES_DB = str(
+    __import__("pathlib").Path(__file__).resolve().parents[1]
+    / "deployments/little-oaks/data/education.db"
+)
+
+def _fees_db():
+    conn = _fees_sqlite3.connect(_FEES_DB, timeout=30.0, isolation_level=None)
+    conn.row_factory = _fees_sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+def _fees_audit(conn, actor, entity_type, entity_id, action, details=None):
+    actor = actor or {}
+    conn.execute(
+        """
+        INSERT INTO audit_log
+        (organization_id, actor_user_id, entity_type, entity_id, action, details)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            actor.get("organization_id"),
+            actor.get("id"),
+            entity_type,
+            entity_id,
+            action,
+            _fees_json.dumps(details or {}, default=str),
+        ),
+    )
+
+def _fees_status(amount, amount_paid):
+    amount = float(amount or 0)
+    amount_paid = float(amount_paid or 0)
+
+    if amount_paid <= 0:
+        return "outstanding"
+    if amount_paid < amount:
+        return "partially_paid"
+    return "paid"
+
+@app.post("/fees", status_code=201)
+def create_fee(payload: dict, request: Request):
+    actor = _require_permission(request, "fees.create")
+
+    required = ["student_id", "academic_period", "fee_type", "amount"]
+    missing = [x for x in required if payload.get(x) in (None, "")]
+
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"missing_fields": missing},
+        )
+
+    amount = float(payload["amount"])
+
+    if amount <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="amount must be greater than zero",
+        )
+
+    conn = _fees_db()
+
+    student = conn.execute(
+        """
+        SELECT id
+        FROM students
+        WHERE id = ? AND organization_id = ?
+        """,
+        (payload["student_id"], actor["organization_id"]),
+    ).fetchone()
+
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    cur = conn.execute(
+        """
+        INSERT INTO fee_obligations
+        (
+            organization_id,
+            student_id,
+            academic_period,
+            fee_type,
+            amount,
+            amount_paid,
+            due_date,
+            status
+        )
+        VALUES (?, ?, ?, ?, ?, 0, ?, 'outstanding')
+        """,
+        (
+            actor["organization_id"],
+            payload["student_id"],
+            payload["academic_period"],
+            payload["fee_type"],
+            amount,
+            payload.get("due_date"),
+        ),
+    )
+
+    fee_id = cur.lastrowid
+
+    _fees_audit(
+        conn,
+        actor,
+        "fee_obligation",
+        fee_id,
+        "created",
+        {
+            "student_id": payload["student_id"],
+            "amount": amount,
+            "fee_type": payload["fee_type"],
+        },
+    )
+
+    conn.commit()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM fee_obligations
+        WHERE id = ?
+        """,
+        (fee_id,),
+    ).fetchone()
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+
+
+@app.get("/alerts")
+def list_alerts(request: Request):
+    actor = _require_permission(request, "operations.view")
+
+    organization_id = actor["organization_id"]
+    alerts = []
+
+    with db() as conn:
+        outstanding_students = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM students s
+            WHERE s.organization_id = ?
+              AND s.enrollment_status = 'active'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM attendance a
+                  WHERE a.student_id = s.id
+                    AND a.organization_id = s.organization_id
+              )
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        guardian_coverage = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM students
+            WHERE organization_id = ?
+              AND (
+                  guardian_name IS NULL
+                  OR TRIM(guardian_name) = ''
+                  OR guardian_phone IS NULL
+                  OR TRIM(guardian_phone) = ''
+              )
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        attendance_absences = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM attendance
+            WHERE organization_id = ?
+              AND status = 'absent'
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+    if outstanding_students:
+        alerts.append({
+            "type": "attendance",
+            "severity": "warning",
+            "title": "Attendance coverage requires attention",
+            "message": (
+                f"{outstanding_students} active student(s) have no attendance "
+                "record yet."
+            ),
+            "count": outstanding_students,
+        })
+
+    if guardian_coverage:
+        alerts.append({
+            "type": "guardian_coverage",
+            "severity": "warning",
+            "title": "Guardian information incomplete",
+            "message": (
+                f"{guardian_coverage} student(s) have incomplete guardian "
+                "contact information."
+            ),
+            "count": guardian_coverage,
+        })
+
+    if attendance_absences:
+        alerts.append({
+            "type": "attendance_absence",
+            "severity": "info",
+            "title": "Attendance absences recorded",
+            "message": (
+                f"{attendance_absences} absence record(s) require operational "
+                "visibility."
+            ),
+            "count": attendance_absences,
+        })
+
+    if not alerts:
+        alerts.append({
+            "type": "system",
+            "severity": "success",
+            "title": "Operations healthy",
+            "message": "No operational alerts detected.",
+            "count": 0,
+        })
+
+    return {
+        "alerts": alerts,
+        "total": len(alerts),
+    }
+
+def _page_params(request, default_limit=None, max_limit=500):
+    limit = default_limit
+    raw_limit = request.query_params.get("limit")
+    if raw_limit is not None:
+        try:
+            limit = int(raw_limit)
+        except (TypeError, ValueError):
+            limit = default_limit
+    try:
+        offset = int(request.query_params.get("offset", "0"))
+    except (TypeError, ValueError):
+        offset = 0
+    if limit is not None:
+        limit = max(0, min(limit, max_limit))
+    offset = max(offset, 0)
+    return limit, offset
+
+
+def _pagination_sql(limit, offset):
+    if limit is not None:
+        return " LIMIT ? OFFSET ?", [limit, offset]
+    if offset:
+        return " OFFSET ?", [offset]
+    return "", []
+
+
+@app.get("/reports")
+def reports(request: Request):
+    actor = _require_permission(request, "reports.view")
+
+    organization_id = actor["organization_id"]
+
+    with db() as conn:
+        students = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM students
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        parents = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM parents
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
+
+        academic_terms_count = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM academic_terms
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+        class_levels = conn.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM classrooms
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()["total"]
+
+    fees_conn = _fees_db()
+
+    fees = fees_conn.execute(
+        """
+        SELECT
+            COALESCE(SUM(amount), 0) AS total_billed,
+            COALESCE(SUM(amount_paid), 0) AS total_paid,
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN amount > amount_paid
+                        THEN amount - amount_paid
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS total_outstanding,
+            COUNT(*) AS total_records
+        FROM fee_obligations
+        WHERE organization_id = ?
+        """,
+        (organization_id,),
+    ).fetchone()
+
+    fees_conn.close()
+
+    attendance_data = dict(attendance)
+    attendance_data["rate"] = (
+        round(attendance_data["present"] / attendance_data["total"] * 100, 1)
+        if attendance_data.get("total")
+        else None
+    )
+
+    fees_data = {
+        "total_billed_ugx": float(fees["total_billed"] or 0),
+        "total_paid_ugx": float(fees["total_paid"] or 0),
+        "total_outstanding_ugx": float(fees["total_outstanding"] or 0),
+        "total_records": fees["total_records"],
+    }
+    billed = fees_data["total_billed_ugx"]
+    fees_data["collection_rate"] = (
+        round(fees_data["total_paid_ugx"] / billed * 100, 1) if billed else None
+    )
+
+    return {
+        "students": {
+            "total": students,
+        },
+        "parents_guardians": {
+            "total": parents,
+        },
+        "attendance": attendance_data,
+        "fees": fees_data,
+        "academic": {
+            "years": academic_terms_count,
+            "periods": academic_terms_count,
+            "class_levels": class_levels,
+        },
+    }
+
+@app.get("/parents")
+def list_parents(request: Request):
+    actor = _require_permission(request, "parents.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
+
+    conn = db()
+    try:
+        where = ["organization_id = ?"]
+        params = [actor["organization_id"]]
+        if search:
+            like = f"%{search}%"
+            where.append("(full_name LIKE ? OR phone LIKE ? OR email LIKE ?)")
+            params.extend([like, like, like])
+
+        where_sql = "WHERE " + " AND ".join(where)
+        total = conn.execute(
+            f"SELECT COUNT(*) AS total FROM parents {where_sql}",
+            params,
+        ).fetchone()["total"]
+
+        page_sql, page_params = _pagination_sql(limit, offset)
+        rows = conn.execute(
+            f"""
+            SELECT *
+            FROM parents
+            {where_sql}
+            ORDER BY created_at DESC, id DESC
+            {page_sql}
+            """,
+            params + page_params,
+        ).fetchall()
+
+        return {
+            "count": total,
+            "limit": limit,
+            "offset": offset,
+            "parents": [dict(row) for row in rows],
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/fees")
+def list_fees(request: Request):
+    actor = _require_permission(request, "fees.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
+
+    conn = _fees_db()
+
+    where = ["f.organization_id = ?"]
+    params = [actor["organization_id"]]
+    if search:
+        like = f"%{search}%"
+        where.append(
+            "(f.fee_type LIKE ? OR f.status LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ?)"
+        )
+        params.extend([like, like, like, like])
+
+    where_sql = "WHERE " + " AND ".join(where)
+    page_sql, page_params = _pagination_sql(limit, offset)
+    rows = conn.execute(
+        f"""
+        SELECT
+            f.*,
+            s.first_name,
+            s.last_name
+        FROM fee_obligations f
+        LEFT JOIN students s ON s.id = f.student_id
+        {where_sql}
+        ORDER BY f.created_at DESC, f.id DESC
+        {page_sql}
+        """,
+        params + page_params,
+    ).fetchall()
+
+    result = [dict(row) for row in rows]
+    conn.close()
+    return result
+
+
+@app.get("/fees/{fee_id}")
+def get_fee(fee_id: int, request: Request):
+    actor = _require_permission(request, "fees.view")
+
+    conn = _fees_db()
+
+    row = conn.execute(
+        """
+        SELECT
+            f.*,
+            s.first_name,
+            s.last_name
+        FROM fee_obligations f
+        LEFT JOIN students s ON s.id = f.student_id
+        WHERE f.id = ?
+          AND f.organization_id = ?
+        """,
+        (fee_id, actor["organization_id"]),
+    ).fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Fee obligation not found")
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.patch("/fees/{fee_id}")
+def update_fee(fee_id: int, payload: dict, request: Request):
+    actor = _require_permission(request, "fees.update")
+
+    allowed = {
+        "academic_period",
+        "fee_type",
+        "amount",
+        "due_date",
+    }
+
+    updates = {
+        key: value
+        for key, value in payload.items()
+        if key in allowed
+    }
+
+    if not updates:
+        raise HTTPException(
+            status_code=422,
+            detail="No editable fields supplied",
+        )
+
+    conn = _fees_db()
+
+    current = conn.execute(
+        """
+        SELECT *
+        FROM fee_obligations
+        WHERE id = ?
+          AND organization_id = ?
+        """,
+        (fee_id, actor["organization_id"]),
+    ).fetchone()
+
+    if not current:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Fee obligation not found")
+
+    if "amount" in updates:
+        updates["amount"] = float(updates["amount"])
+        if updates["amount"] <= 0:
+            conn.close()
+            raise HTTPException(
+                status_code=422,
+                detail="amount must be greater than zero",
+            )
+
+    assignments = ", ".join(f"{key} = ?" for key in updates)
+    values = list(updates.values())
+
+    conn.execute(
+        f"""
+        UPDATE fee_obligations
+        SET {assignments},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+          AND organization_id = ?
+        """,
+        values + [fee_id, actor["organization_id"]],
+    )
+
+    _fees_audit(
+        conn,
+        actor,
+        "fee_obligation",
+        fee_id,
+        "updated",
+        {"fields": list(updates.keys())},
+    )
+
+    conn.commit()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM fee_obligations
+        WHERE id = ?
+        """,
+        (fee_id,),
+    ).fetchone()
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.post("/payments", status_code=201)
+def create_payment(payload: dict, request: Request):
+    actor = _require_permission(request, "payments.create")
+
+    required = [
+        "student_id",
+        "amount",
+        "payment_method",
+        "payment_reference",
+    ]
+
+    missing = [x for x in required if payload.get(x) in (None, "")]
+
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"missing_fields": missing},
+        )
+
+    amount = float(payload["amount"])
+
+    if amount <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="amount must be greater than zero",
+        )
+
+    conn = _fees_db()
+
+    student = conn.execute(
+        """
+        SELECT id
+        FROM students
+        WHERE id = ?
+          AND organization_id = ?
+        """,
+        (payload["student_id"], actor["organization_id"]),
+    ).fetchone()
+
+    if not student:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    obligation_id = payload.get("fee_obligation_id")
+
+    if obligation_id:
+        obligation = conn.execute(
+            """
+            SELECT *
+            FROM fee_obligations
+            WHERE id = ?
+              AND student_id = ?
+              AND organization_id = ?
+            """,
+            (
+                obligation_id,
+                payload["student_id"],
+                actor["organization_id"],
+            ),
+        ).fetchone()
+
+        if not obligation:
+            conn.close()
+            raise HTTPException(
+                status_code=404,
+                detail="Fee obligation not found",
+            )
+
+        outstanding = float(obligation["amount"]) - float(
+            obligation["amount_paid"] or 0
+        )
+
+        if amount > outstanding:
+            conn.close()
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": "Payment exceeds outstanding balance",
+                    "outstanding": outstanding,
+                },
+            )
+
+    cur = conn.execute(
+        """
+        INSERT INTO payments
+        (
+            organization_id,
+            student_id,
+            fee_obligation_id,
+            payment_reference,
+            amount,
+            payment_method,
+            transaction_reference,
+            verification_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            actor["organization_id"],
+            payload["student_id"],
+            obligation_id,
+            payload["payment_reference"],
+            amount,
+            payload["payment_method"],
+            payload.get("transaction_reference"),
+            payload.get("verification_status", "verified"),
+        ),
+    )
+
+    payment_id = cur.lastrowid
+
+    if obligation_id:
+        conn.execute(
+            """
+            UPDATE fee_obligations
+            SET
+                amount_paid = amount_paid + ?,
+                status = CASE
+                    WHEN amount_paid + ? >= amount THEN 'paid'
+                    WHEN amount_paid + ? > 0 THEN 'partially_paid'
+                    ELSE 'outstanding'
+                END,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+              AND organization_id = ?
+            """,
+            (
+                amount,
+                amount,
+                amount,
+                obligation_id,
+                actor["organization_id"],
+            ),
+        )
+
+    _fees_audit(
+        conn,
+        actor,
+        "payment",
+        payment_id,
+        "created",
+        {
+            "student_id": payload["student_id"],
+            "amount": amount,
+            "payment_method": payload["payment_method"],
+            "fee_obligation_id": obligation_id,
+        },
+    )
+
+    conn.commit()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM payments
+        WHERE id = ?
+        """,
+        (payment_id,),
+    ).fetchone()
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.get("/payments")
+def list_payments(request: Request):
+    actor = _require_permission(request, "payments.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
+
+    conn = _fees_db()
+
+    where = ["organization_id = ?"]
+    params = [actor["organization_id"]]
+    if search:
+        like = f"%{search}%"
+        where.append(
+            "(payment_reference LIKE ? OR payment_method LIKE ? OR verification_status LIKE ?)"
+        )
+        params.extend([like, like, like])
+
+    where_sql = "WHERE " + " AND ".join(where)
+    page_sql, page_params = _pagination_sql(limit, offset)
+    rows = conn.execute(
+        f"""
+        SELECT *
+        FROM payments
+        {where_sql}
+        ORDER BY paid_at DESC, id DESC
+        {page_sql}
+        """,
+        params + page_params,
+    ).fetchall()
+
+    result = [dict(row) for row in rows]
+    conn.close()
+    return result
+
+
+@app.get("/payments/{payment_id}")
+def get_payment(payment_id: int, request: Request):
+    actor = _require_permission(request, "payments.view")
+
+    conn = _fees_db()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM payments
+        WHERE id = ?
+          AND organization_id = ?
+        """,
+        (payment_id, actor["organization_id"]),
+    ).fetchone()
+
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    result = dict(row)
+    conn.close()
+    return result
+
+
+@app.get("/audit")
+def list_audit_logs(request: Request):
+    actor = _require_permission(request, "audit.view")
+    limit, offset = _page_params(request, default_limit=100)
+    search = (request.query_params.get("search") or "").strip()
+
+    conn = _fees_db()
+
+    where = ["a.organization_id = ?"]
+    params = [actor["organization_id"]]
+    if search:
+        like = f"%{search}%"
+        where.append("(a.entity_type LIKE ? OR a.action LIKE ? OR u.full_name LIKE ?)")
+        params.extend([like, like, like])
+
+    where_sql = "WHERE " + " AND ".join(where)
+    page_sql, page_params = _pagination_sql(limit, offset)
+    rows = conn.execute(
+        f"""
+        SELECT
+            a.*,
+            u.full_name AS actor_name,
+            u.email AS actor_email
+        FROM audit_log a
+        LEFT JOIN users u ON u.id = a.actor_user_id
+        {where_sql}
+        ORDER BY a.created_at DESC, a.id DESC
+        {page_sql}
+        """,
+        params + page_params,
+    ).fetchall()
+
+    result = [dict(row) for row in rows]
+    conn.close()
+    return result
+
+
+@app.get("/v1/health")
+def v1_health():
+    return {
+        "status": "healthy",
+        "product": "Education OS",
+        "deployment": "Little Oaks Montessori Nursery & Kindergarten",
+        "database": "connected"
+    }
+
+@app.get("/health")
+def health():
+    conn = db()
+    try:
+        conn.execute("SELECT 1")
+        return {
+            "status": "healthy",
+            "product": "Education OS",
+            "deployment": "Little Oaks Montessori Nursery & Kindergarten",
+            "database": "connected",
+        }
+    finally:
+        conn.close()
+
+@app.get("/organization")
+def organization(request: Request):
+    _require_permission(request, "dashboard.view")
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT * FROM organization ORDER BY id LIMIT 1"
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Organization not configured"
+            )
+
+        return dict(row)
+    finally:
+        conn.close()
+
+@app.post("/students", status_code=201)
+def create_student(payload: StudentCreate, request: Request):
+    _require_permission(request, "students.create")
+    with db() as conn:
+        organization = conn.execute(
+            """
+            SELECT id
+            FROM organization
+            ORDER BY id
+            LIMIT 1
+            """
+        ).fetchone()
+
+        if not organization:
+            raise HTTPException(
+                status_code=500,
+                detail="Organization not configured",
+            )
+
+        if payload.admission_number:
+            admission_number = payload.admission_number
+        else:
+            next_number = conn.execute(
+                """
+                SELECT COALESCE(MAX(id), 0) + 1
+                FROM students
+                """
+            ).fetchone()[0]
+            admission_number = f"LO-{next_number:06d}"
+
+        try:
+            cursor = conn.execute(
+                """
+                INSERT INTO students
+                (
+                    organization_id,
+                    admission_number,
+                    first_name,
+                    last_name,
+                    date_of_birth,
+                    gender,
+                    enrollment_status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    organization["id"],
+                    admission_number,
+                    payload.first_name,
+                    payload.last_name,
+                    payload.date_of_birth,
+                    payload.gender,
+                    payload.enrollment_status,
+                ),
+            )
+
+            conn.commit()
+        except sqlite3.IntegrityError:
+            raise HTTPException(
+                status_code=409,
+                detail="Admission number already in use",
+            )
+
+        return {
+            "status": "created",
+            "student_id": cursor.lastrowid,
+            "organization_id": organization["id"],
+        }
+
+
+@app.get("/students")
+def list_students(request: Request):
+    _require_permission(request, "students.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
+    conn = db()
+
+    try:
+        where = []
+        params = []
+        if search:
+            like = f"%{search}%"
+            where.append(
+                "(first_name LIKE ? OR last_name LIKE ? OR admission_number LIKE ?)"
+            )
+            params.extend([like, like, like])
+
+        where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+        total = conn.execute(
+            f"SELECT COUNT(*) AS total FROM students {where_sql}",
+            params,
+        ).fetchone()["total"]
+
+        page_sql, page_params = _pagination_sql(limit, offset)
+        rows = conn.execute(
+            f"""
+            SELECT *
+            FROM students
+            {where_sql}
+            ORDER BY created_at DESC, id DESC
+            {page_sql}
+            """,
+            params + page_params,
+        ).fetchall()
+
+        return {
+            "count": total,
+            "limit": limit,
+            "offset": offset,
+            "students": [dict(row) for row in rows],
+        }
+
+    finally:
+        conn.close()
+
+@app.get("/students/{student_id}")
+def get_student(student_id: int, request: Request):
+    _require_permission(request, "students.view")
+    conn = db()
+
+    try:
+        row = conn.execute(
+            "SELECT * FROM students WHERE id=?",
+            (student_id,),
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        return dict(row)
+
+    finally:
+        conn.close()
+
+
+@app.patch("/students/{student_id}")
+def update_student(student_id: int, payload: dict, request: Request):
+    _require_permission(request, "students.update")
+
+    allowed = {
+        "first_name",
+        "last_name",
+        "date_of_birth",
+        "gender",
+        "class_level",
+        "enrollment_status",
+        "guardian_name",
+        "guardian_phone",
+    }
+
+    updates = {key: value for key, value in payload.items() if key in allowed}
+
+    if not updates:
+        raise HTTPException(
+            status_code=422,
+            detail="No editable fields supplied",
+        )
+
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT id FROM students WHERE id=?",
+            (student_id,),
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        set_sql = ", ".join(f"{key} = ?" for key in updates)
+        conn.execute(
+            f"UPDATE students SET {set_sql}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            list(updates.values()) + [student_id],
+        )
+        conn.commit()
+
+        return {
+            "status": "updated",
+            "student_id": student_id,
+            "updated_fields": list(updates.keys()),
+        }
+    finally:
+        conn.close()
+
+
+@app.patch("/students/{student_id}/status")
+def update_student_status(student_id: int, payload: dict, request: Request):
+    _require_permission(request, "students.update")
+
+    new_status = (payload or {}).get("enrollment_status")
+    allowed_statuses = {"active", "inactive", "graduated", "transferred", "withdrawn"}
+    if not new_status or new_status not in allowed_statuses:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "enrollment_status must be one of: "
+                "active, inactive, graduated, transferred, withdrawn"
+            ),
+        )
+
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT id FROM students WHERE id=?",
+            (student_id,),
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        conn.execute(
+            "UPDATE students SET enrollment_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (new_status, student_id),
+        )
+        conn.commit()
+
+        return {
+            "status": "updated",
+            "student_id": student_id,
+            "enrollment_status": new_status,
+        }
+    finally:
+        conn.close()
+
+
+class AttendanceSessionCreate(BaseModel):
+    attendance_date: str
+    class_name: str
+    notes: Optional[str] = None
+
+
+class AttendanceRecordCreate(BaseModel):
+    student_id: int
+    status: str
+    notes: Optional[str] = None
+
+
+class SchoolOperationCreate(BaseModel):
+    operation_type: str
+    title: str
+    description: Optional[str] = None
+    assigned_to: Optional[int] = None
+    due_date: Optional[str] = None
+    status: str = "open"
+
+
+@app.post("/operations", status_code=201)
+def create_school_operation(payload: SchoolOperationCreate, request: Request):
+    _require_permission(request, "operations.create")
+    allowed_statuses = {"open", "in_progress", "completed", "cancelled"}
+
+    if payload.status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"status must be one of: {', '.join(sorted(allowed_statuses))}",
+        )
+
+    if not payload.operation_type.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="operation_type is required",
+        )
+
+    if not payload.title.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="title is required",
+        )
+
+    with db() as conn:
+        organization = conn.execute(
+            "SELECT id FROM organization ORDER BY id LIMIT 1"
+        ).fetchone()
+
+        if not organization:
+            raise HTTPException(
+                status_code=500,
+                detail="Organization not configured",
+            )
+
+        cursor = conn.execute(
+            """
+            INSERT INTO school_operations
+            (
+                organization_id,
+                operation_type,
+                title,
+                description,
+                assigned_to,
+                due_date,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                organization["id"],
+                payload.operation_type,
+                payload.title,
+                payload.description,
+                payload.assigned_to,
+                payload.due_date,
+                payload.status,
+            ),
+        )
+        operation_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "operation_id": operation_id,
+        "operation_type": payload.operation_type,
+        "title": payload.title,
+        "operation_status": payload.status,
+    }
+
+
+@app.get("/operations")
+def list_school_operations(
+    status: Optional[str] = None,
+    request: Request = None,
+):
+    _require_permission(request, "operations.view")
+    limit, offset = _page_params(request)
+    with db() as conn:
+        where = []
+        params = []
+        if status:
+            where.append("status = ?")
+            params.append(status)
+
+        where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+        page_sql, page_params = _pagination_sql(limit, offset)
+        rows = conn.execute(
+            f"""
+            SELECT
+                id,
+                operation_type,
+                title,
+                description,
+                assigned_to,
+                due_date,
+                status,
+                created_at,
+                updated_at
+            FROM school_operations
+            {where_sql}
+            ORDER BY
+                CASE WHEN due_date IS NULL THEN 1 ELSE 0 END,
+                due_date ASC,
+                id DESC
+            {page_sql}
+            """,
+            params + page_params,
+        ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+@app.get("/operations/{operation_id}")
+def get_school_operation(operation_id: int, request: Request):
+    _require_permission(request, "operations.view")
+    with db() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                id,
+                operation_type,
+                title,
+                description,
+                assigned_to,
+                due_date,
+                status,
+                created_at,
+                updated_at
+            FROM school_operations
+            WHERE id = ?
+            """,
+            (operation_id,),
+        ).fetchone()
+
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail="School operation not found",
+        )
+
+    return dict(row)
+
+
+class SchoolOperationStatusUpdate(BaseModel):
+    status: str
+
+
+@app.patch("/operations/{operation_id}/status")
+def update_school_operation_status(
+    operation_id: int,
+    payload: SchoolOperationStatusUpdate,
+    request: Request,
+):
+    _require_permission(request, "operations.update")
+    allowed_statuses = {
+        "open",
+        "in_progress",
+        "completed",
+        "cancelled",
+    }
+
+    status = payload.status
+
+    if status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"status must be one of: {', '.join(sorted(allowed_statuses))}",
+        )
+
+    with db() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE school_operations
+            SET status = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (status, operation_id),
+        )
+
+        if cursor.rowcount == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="School operation not found",
+            )
+
+        conn.commit()
+
+    return {
+        "status": "updated",
+        "operation_id": operation_id,
+        "operation_status": status,
+    }
+
+
+@app.get("/attendance")
+def list_attendance(request: Request):
+    actor = _require_permission(request, "operations.view")
+    limit, offset = _page_params(request)
+    status_filter = (request.query_params.get("status") or "").strip()
+
+    conn = db()
+    try:
+        where = ["a.organization_id = ?"]
+        params = [actor["organization_id"]]
+        if status_filter:
+            where.append("a.status = ?")
+            params.append(status_filter)
+
+        where_sql = "WHERE " + " AND ".join(where)
+        total = conn.execute(
+            f"SELECT COUNT(*) AS total FROM attendance a {where_sql}",
+            params,
+        ).fetchone()["total"]
+
+        page_sql, page_params = _pagination_sql(limit, offset)
+        rows = conn.execute(
+            f"""
+            SELECT
+                a.*,
+                (s.first_name || ' ' || s.last_name) AS student_name
+            FROM attendance a
+            JOIN students s
+                ON s.id = a.student_id
+            {where_sql}
+            ORDER BY a.attendance_date DESC, a.id DESC
+            {page_sql}
+            """,
+            params + page_params,
+        ).fetchall()
+
+        return {
+            "count": total,
+            "limit": limit,
+            "offset": offset,
+            "attendance": [dict(row) for row in rows],
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/attendance/sessions", status_code=201)
+def create_attendance_session(payload: AttendanceSessionCreate, request: Request):
+    _require_permission(request, "attendance.record")
+    if payload.attendance_date.strip() == "":
+        raise HTTPException(status_code=400, detail="attendance_date is required")
+
+    if payload.class_name.strip() == "":
+        raise HTTPException(status_code=400, detail="class_name is required")
+
+    with db() as conn:
+        organization = conn.execute(
+            "SELECT id FROM organization ORDER BY id LIMIT 1"
+        ).fetchone()
+
+        if not organization:
+            raise HTTPException(
+                status_code=500,
+                detail="Organization not configured",
+            )
+
+        try:
+            cursor = conn.execute(
+                """
+                INSERT INTO attendance_sessions
+                (
+                    organization_id,
+                    session_date,
+                    class_level
+                )
+                VALUES (?, ?, ?)
+                """,
+                (
+                    organization["id"],
+                    payload.attendance_date,
+                    payload.class_name,
+                ),
+            )
+        except sqlite3.IntegrityError:
+            raise HTTPException(
+                status_code=409,
+                detail="Attendance session already exists for this organization, date, and class",
+            )
+
+        session_id = cursor.lastrowid
+        conn.commit()
+
+    return {
+        "status": "created",
+        "session_id": session_id,
+        "attendance_date": payload.attendance_date,
+        "class_name": payload.class_name,
+    }
+
+
+@app.post("/attendance/sessions/{session_id}/records", status_code=201)
+def record_attendance(
+    session_id: int,
+    payload: AttendanceRecordCreate,
+    request: Request,
+):
+    _require_permission(request, "attendance.record")
+    allowed = {"present", "absent", "late", "excused"}
+
+    if payload.status not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"status must be one of: {', '.join(sorted(allowed))}",
+        )
+
+    with db() as conn:
+        session = conn.execute(
+            "SELECT id FROM attendance_sessions WHERE id = ?",
+            (session_id,),
+        ).fetchone()
+
+        if not session:
+            raise HTTPException(
+                status_code=404,
+                detail="Attendance session not found",
+            )
+
+        student = conn.execute(
+            "SELECT id FROM students WHERE id = ?",
+            (payload.student_id,),
+        ).fetchone()
+
+        if not student:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        try:
+            cursor = conn.execute(
+                """
+                INSERT INTO attendance_records
+                (session_id, student_id, status, notes)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    session_id,
+                    payload.student_id,
+                    payload.status,
+                    payload.notes,
+                ),
+            )
+        except sqlite3.IntegrityError:
+            raise HTTPException(
+                status_code=409,
+                detail="Attendance already recorded for this student and session",
+            )
+
+        conn.commit()
+
+    return {
+        "status": "recorded",
+        "record_id": cursor.lastrowid,
+        "session_id": session_id,
+        "student_id": payload.student_id,
+        "attendance_status": payload.status,
+    }
+
+
+@app.get("/attendance/sessions")
+def list_attendance_sessions(request: Request):
+    _require_permission(request, "attendance.view")
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                id,
+                organization_id,
+                session_date AS attendance_date,
+                class_level AS class_name,
+                recorded_by,
+                created_at
+            FROM attendance_sessions
+            ORDER BY session_date DESC, id DESC
+            """
+        ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+@app.get("/attendance/sessions/{session_id}")
+def get_attendance_session(session_id: int, request: Request):
+    _require_permission(request, "attendance.view")
+    with db() as conn:
+        session = conn.execute(
+            """
+            SELECT
+                id,
+                organization_id,
+                session_date AS attendance_date,
+                class_level AS class_name,
+                recorded_by,
+                created_at
+            FROM attendance_sessions
+            WHERE id = ?
+            """,
+            (session_id,),
+        ).fetchone()
+
+        if not session:
+            raise HTTPException(
+                status_code=404,
+                detail="Attendance session not found",
+            )
+
+        records = conn.execute(
+            """
+            SELECT
+                ar.id,
+                ar.student_id,
+                s.first_name,
+                s.last_name,
+                ar.status,
+                ar.notes,
+                ar.created_at
+            FROM attendance_records ar
+            JOIN students s ON s.id = ar.student_id
+            WHERE ar.session_id = ?
+            ORDER BY s.last_name, s.first_name
+            """,
+            (session_id,),
+        ).fetchall()
+
+    result = dict(session)
+    result["records"] = [dict(row) for row in records]
+    return result
+
+
+@app.post("/admissions")
+def create_admission(admission: AdmissionCreate, request: Request):
+    _require_permission(request, "admissions.review")
+    conn = db()
+
+    student = conn.execute(
+        """
+        SELECT
+            id,
+            first_name,
+            last_name
+        FROM students
+        WHERE id = ?
+        """,
+        (admission.student_id,)
+    ).fetchone()
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    organization = conn.execute(
+        "SELECT id FROM organization ORDER BY id LIMIT 1"
+    ).fetchone()
+
+    if not organization:
+        raise HTTPException(
+            status_code=500,
+            detail="Organization not configured"
+        )
+
+    application_reference = (
+        f"LO-{admission.student_id:06d}-"
+        f"{uuid.uuid4().hex[:8].upper()}"
+    )
+
+    applicant_name = f"{student['first_name']} {student['last_name']}"
+
+    cur = conn.execute(
+        """
+        INSERT INTO admissions
+        (
+            organization_id,
+            application_reference,
+            applicant_name,
+            requested_class,
+            status,
+            decision_notes,
+            student_id,
+            admission_date,
+            class_name,
+            notes
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            organization["id"],
+            application_reference,
+            applicant_name,
+            admission.class_name,
+            admission.status,
+            admission.notes,
+            admission.student_id,
+            admission.admission_date,
+            admission.class_name,
+            admission.notes,
+        ),
+    )
+
+    conn.commit()
+
+    return {
+        "status": "created",
+        "admission_id": cur.lastrowid,
+        "student_id": admission.student_id,
+        "admission_date": admission.admission_date,
+        "class_name": admission.class_name,
+        "admission_status": admission.status,
+    }
+
+
+@app.get("/admissions")
+def list_admissions(request: Request):
+    _require_permission(request, "admissions.view")
+    limit, offset = _page_params(request)
+    conn = db()
+
+    page_sql, page_params = _pagination_sql(limit, offset)
+    rows = conn.execute(
+        f'''
+        SELECT
+            a.id,
+            a.student_id,
+            s.first_name,
+            s.last_name,
+            a.admission_date,
+            a.class_name,
+            a.status,
+            a.notes,
+            a.created_at
+        FROM admissions a
+        JOIN students s ON s.id = a.student_id
+        ORDER BY a.created_at DESC
+        {page_sql}
+        '''
+        ,
+        page_params,
+    ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+@app.get("/admissions/{admission_id}")
+def get_admission(admission_id: int, request: Request):
+    _require_permission(request, "admissions.view")
+    conn = db()
+
+    row = conn.execute(
+        '''
+        SELECT
+            a.id,
+            a.student_id,
+            s.first_name,
+            s.last_name,
+            a.admission_date,
+            a.class_name,
+            a.status,
+            a.notes,
+            a.created_at
+        FROM admissions a
+        JOIN students s ON s.id = a.student_id
+        WHERE a.id = ?
+        ''',
+        (admission_id,)
+    ).fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Admission not found")
+
+    return dict(row)
+
+
+@app.patch("/admissions/{admission_id}/status")
+def update_admission_status(admission_id: int, status: str, request: Request):
+    _require_permission(request, "admissions.review")
+    conn = db()
+
+    cur = conn.execute(
+        "UPDATE admissions SET status = ? WHERE id = ?",
+        (status, admission_id)
+    )
+
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Admission not found")
+
+    conn.commit()
+
+    return {
+        "status": "updated",
+        "admission_id": admission_id,
+        "admission_status": status,
+    }
+
+
+# =========================
+# EDUCATION OS FRONTEND
+# =========================
+
+# ============================================================
+# LITTLE OAKS SCHOOL INTELLIGENCE
+# ============================================================
+
+@app.get("/staff")
+def list_staff(request: Request):
+    actor = _require_permission(request, "staff.view")
+    organization_id = actor["organization_id"]
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, full_name, email, role
+            FROM users
+            WHERE organization_id=?
+            ORDER BY full_name
+            """,
+            (organization_id,),
+        ).fetchall()
+
+    return {
+        "staff": [dict(row) for row in rows]
+    }
+
+
+@app.get("/intelligence/summary")
+def director_intelligence_summary(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    with db() as conn:
+        students = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM students
+            WHERE organization_id=?
+            """,
+            (organization_id,),
+        ).fetchone()[0]
+
+        try:
+            parents = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM parents
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()[0]
+        except Exception:
+            parents = 0
+
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
+
+    total_attendance = int(attendance["total"] or 0)
+    present = int(attendance["present"] or 0)
+    absent = int(attendance["absent"] or 0)
+
+    attendance_rate = (
+        round((present / total_attendance) * 100, 2)
+        if total_attendance else 0
+    )
+
+    return {
+        "organization_id": organization_id,
+        "students": int(students or 0),
+        "parents": int(parents or 0),
+        "attendance": {
+            "total": total_attendance,
+            "present": present,
+            "absent": absent,
+            "late": 0,
+            "attendance_rate": attendance_rate,
+        },
+        "fees": {
+            "billed": 0,
+            "collected": 0,
+            "outstanding": 0,
+            "overdue": 0,
+        },
+        "admissions": {
+            "total": 0,
+            "pending": 0,
+            "accepted": 0,
+            "rejected": 0,
+        },
+        "operations": {
+            "open": 0,
+            "in_progress": 0,
+            "completed": 0,
+            "overdue": 0,
+        },
+        "alerts": [],
+        "recent_activity": [],
+        "intelligence": {
+            "system_state": "healthy",
+            "priority": "normal",
+        },
+    }
+
+
+@app.get("/intelligence/insights")
+def director_intelligence_insights(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    insights = []
+
+    with db() as conn:
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance={"total":0,"present":0,"absent":0}
+
+        total = int(attendance["total"] or 0)
+        absent = int(attendance["absent"] or 0)
+
+    if total:
+        absence_rate = (absent / total) * 100
+
+        if absence_rate >= 20:
+            insights.append({
+                "severity": "high",
+                "category": "attendance",
+                "title": "Attendance requires attention",
+                "message": f"Absence rate is {absence_rate:.1f}%.",
+            })
+        elif absence_rate >= 10:
+            insights.append({
+                "severity": "medium",
+                "category": "attendance",
+                "title": "Attendance trend detected",
+                "message": f"Absence rate is {absence_rate:.1f}%.",
+            })
+
+    if not insights:
+        insights.append({
+            "severity": "healthy",
+            "category": "system",
+            "title": "Operations are healthy",
+            "message": "No critical operational intelligence signals detected.",
+        })
+
+    return {
+        "insights": insights,
+        "count": len(insights),
+    }
+
+
+# ============================================================
+# V1.5 AUTOMATION & INTELLIGENCE
+# ============================================================
+
+def _fee_arrears_data(conn, organization_id):
+    return [
+        dict(row)
+        for row in conn.execute(
+            """
+            SELECT
+                f.id,
+                f.student_id,
+                f.academic_period,
+                f.fee_type,
+                f.amount,
+                f.amount_paid,
+                f.due_date,
+                (f.amount - f.amount_paid) AS outstanding,
+                (s.first_name || ' ' || s.last_name) AS student_name,
+                s.guardian_name,
+                s.guardian_phone
+            FROM fee_obligations f
+            LEFT JOIN students s ON s.id = f.student_id
+            WHERE f.organization_id = ?
+              AND f.amount > f.amount_paid
+            ORDER BY outstanding DESC, f.id ASC
+            """,
+            (organization_id,),
+        ).fetchall()
+    ]
+
+
+def _days_overdue(due_date):
+    if not due_date:
+        return None
+    from datetime import date
+    try:
+        due = date.fromisoformat(str(due_date)[:10])
+    except ValueError:
+        return None
+    return max((date.today() - due).days, 0)
+
+
+@app.get("/intelligence/fee-arrears")
+def fee_arrears_intelligence(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    with db() as conn:
+        arrears = _fee_arrears_data(conn, organization_id)
+
+    total_outstanding = round(
+        sum(float(a["outstanding"] or 0) for a in arrears), 2
+    )
+    student_count = len({a["student_id"] for a in arrears})
+
+    return {
+        "organization_id": organization_id,
+        "total_outstanding_ugx": total_outstanding,
+        "students_in_arrears": student_count,
+        "arrears": arrears,
+        "count": len(arrears),
+    }
+
+
+@app.get("/intelligence/briefing")
+def director_daily_briefing(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    from datetime import date
+
+    with db() as conn:
+        students = conn.execute(
+            "SELECT COUNT(*) FROM students WHERE organization_id=?",
+            (organization_id,),
+        ).fetchone()[0]
+
+        try:
+            attendance = conn.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) AS present,
+                    SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) AS absent
+                FROM attendance
+                WHERE organization_id=?
+                """,
+                (organization_id,),
+            ).fetchone()
+        except Exception:
+            attendance = {"total": 0, "present": 0, "absent": 0}
+
+        admissions_rows = conn.execute(
+            "SELECT status, COUNT(*) AS c FROM admissions GROUP BY status"
+        ).fetchall()
+        operations_rows = conn.execute(
+            "SELECT status, COUNT(*) AS c FROM school_operations GROUP BY status"
+        ).fetchall()
+        fee_totals = conn.execute(
+            """
+            SELECT
+                COALESCE(SUM(amount), 0) AS billed,
+                COALESCE(SUM(amount_paid), 0) AS collected
+            FROM fee_obligations
+            WHERE organization_id = ?
+            """,
+            (organization_id,),
+        ).fetchone()
+        arrears = _fee_arrears_data(conn, organization_id)
+
+    total_attendance = int(attendance["total"] or 0)
+    present = int(attendance["present"] or 0)
+    attendance_rate = (
+        round(present / total_attendance * 100, 1)
+        if total_attendance
+        else None
+    )
+
+    billed = float(fee_totals["billed"] or 0)
+    collected = float(fee_totals["collected"] or 0)
+    collection_rate = round(collected / billed * 100, 1) if billed else None
+
+    total_outstanding = round(
+        sum(float(a["outstanding"] or 0) for a in arrears), 2
+    )
+    students_in_arrears = len({a["student_id"] for a in arrears})
+
+    pending_admissions = sum(
+        c for s, c in admissions_rows if s == "pending"
+    )
+    open_operations = sum(c for s, c in operations_rows if s == "open")
+
+    briefing_insights = []
+    if attendance_rate is not None and attendance_rate < 80:
+        briefing_insights.append({
+            "severity": "high" if attendance_rate < 60 else "medium",
+            "category": "attendance",
+            "title": "Attendance below target",
+            "message": f"Attendance rate is {attendance_rate:.1f}%.",
+        })
+    if students_in_arrears:
+        briefing_insights.append({
+            "severity": "high",
+            "category": "fees",
+            "title": "Fee arrears require action",
+            "message": (
+                f"{students_in_arrears} student(s) owe UGX "
+                f"{total_outstanding:,.0f}."
+            ),
+        })
+    if pending_admissions:
+        briefing_insights.append({
+            "severity": "medium",
+            "category": "admissions",
+            "title": "Admissions pending review",
+            "message": f"{pending_admissions} admission(s) are pending.",
+        })
+    if not briefing_insights:
+        briefing_insights.append({
+            "severity": "healthy",
+            "category": "system",
+            "title": "All systems healthy",
+            "message": "No priority signals for the daily briefing.",
+        })
+
+    return {
+        "briefing_date": date.today().isoformat(),
+        "kpis": {
+            "students": int(students or 0),
+            "attendance_rate": attendance_rate,
+            "collection_rate": collection_rate,
+            "total_outstanding_ugx": total_outstanding,
+            "students_in_arrears": students_in_arrears,
+            "pending_admissions": pending_admissions,
+            "open_operations": open_operations,
+        },
+        "top_arrears": arrears[:5],
+        "insights": briefing_insights,
+        "alerts": {
+            "total": len(briefing_insights),
+        },
+    }
+
+
+@app.get("/intelligence/fee-reminders")
+def automated_fee_reminders(request: Request):
+    actor = _require_permission(request, "reports.view")
+    organization_id = actor["organization_id"]
+
+    from datetime import date, datetime, timezone
+
+    today = date.today().isoformat()
+
+    with db() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                f.id,
+                f.student_id,
+                f.academic_period,
+                f.fee_type,
+                f.amount,
+                f.amount_paid,
+                f.due_date,
+                (f.amount - f.amount_paid) AS outstanding,
+                (s.first_name || ' ' || s.last_name) AS student_name,
+                s.guardian_name,
+                s.guardian_phone
+            FROM fee_obligations f
+            LEFT JOIN students s ON s.id = f.student_id
+            WHERE f.organization_id = ?
+              AND f.amount > f.amount_paid
+              AND f.due_date IS NOT NULL
+              AND f.due_date <= ?
+            ORDER BY f.due_date ASC, f.id ASC
+            """,
+            (organization_id, today),
+        ).fetchall()
+
+    reminders = []
+    for row in rows:
+        reminder = dict(row)
+        reminder["days_overdue"] = _days_overdue(reminder["due_date"])
+        reminder["channel"] = "sms" if reminder.get("guardian_phone") else "none"
+        reminders.append(reminder)
+
+    return {
+        "organization_id": organization_id,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "count": len(reminders),
+        "reminders": reminders,
+    }
+
+
+from pathlib import Path as _Path
+
+_WEB = _Path(__file__).resolve().parent.parent / "web"
+
+
+
+
+
+
+# Little Oaks Education OS v1.1.0 Director Suite
+# v1.1.0 Director Editing Suite
+
+from api.modules.live_operations import (
+    students_router,
+    parents_router,
+    classrooms_router,
+)
+
+
+from api.modules.live_operations.student_parents import router as student_parents_router
+
+app.include_router(students_router)
+app.include_router(parents_router)
+from api.modules.live_operations.attendance import router as attendance_router
+
+app.include_router(classrooms_router)
+from api.modules.live_operations.attendance_sessions import router as attendance_sessions_router
+
+app.include_router(attendance_router)
+from api.modules.live_operations.school_operations import router as school_operations_router
+
+app.include_router(attendance_sessions_router)
+from api.modules.live_operations.dashboard import router as dashboard_router
+
+app.include_router(school_operations_router)
+app.include_router(dashboard_router)
+app.include_router(student_parents_router)
+
+app.include_router(finance_operations_router)
+app.include_router(finance_workflows_router)
+
+app.include_router(role_dashboard_router)
+app.include_router(rbac_router)
+from api.security_layer import router as security_router
+app.include_router(security_router)
+
+app.mount("/", StaticFiles(directory=str(_WEB), html=True), name="education-web")
+
+app.include_router(auth_router)
+
+app.include_router(finance_dashboard_router)
+app.include_router(integration_router)
+app.include_router(backup_router)
+app.include_router(monitoring_router)
+app.include_router(staff_router)
+app.include_router(inventory_router)
+app.include_router(notifications_router)
+app.include_router(parent_portal_router)
+app.include_router(production_router)
+
+
+
+
+# Little Oaks v1.4 Finance Operations Router
+
+
+# Little Oaks v1.4 finance operations final registration
+
+
+@app.get("/v1/a1os/core/status")
+def a1os_core_status():
+    return {
+        "platform":"A1OS Core",
+        "version":"1.0",
+        "source":"Little Oaks v4.8",
+        "status":"operational"
+    }
+
+
+@app.get("/v1/a1os/intelligence/status")
+def a1os_intelligence_status():
+    return system_insights()

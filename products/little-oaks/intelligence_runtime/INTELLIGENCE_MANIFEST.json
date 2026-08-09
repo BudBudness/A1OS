@@ -1,0 +1,22 @@
+{
+  "product": "little-oaks",
+  "profile": "education",
+  "factory_version": "1.6",
+  "agents": [
+    "academic_copilot",
+    "parent_assistant",
+    "teacher_assistant",
+    "finance_advisor"
+  ],
+  "workflows": [
+    "student_progress_analysis",
+    "attendance_monitoring",
+    "fee_tracking"
+  ],
+  "analytics": [
+    "learning_insights",
+    "performance_reports"
+  ],
+  "generated": "2026-08-02T17:08:49.657959",
+  "status": "intelligence_ready"
+}

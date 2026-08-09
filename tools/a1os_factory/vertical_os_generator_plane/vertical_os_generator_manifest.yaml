@@ -1,0 +1,27 @@
+version: "6.0"
+
+plane:
+  name: vertical_os_generator
+  status: frozen
+
+capabilities:
+
+  generation:
+    - architecture_generation
+    - module_generation
+    - workflow_generation
+
+  intelligence:
+    - ai_agent_assignment
+    - domain_reasoning
+    - automation_mapping
+
+  platform:
+    - api_composition
+    - integration_mapping
+    - deployment_packaging
+
+  governance:
+    - identity_generation
+    - compliance_mapping
+    - audit_foundations

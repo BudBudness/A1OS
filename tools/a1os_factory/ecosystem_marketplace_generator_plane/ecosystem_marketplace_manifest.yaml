@@ -1,0 +1,26 @@
+version: "6.1"
+
+plane:
+  name: ecosystem_marketplace_generator
+  status: frozen
+
+capabilities:
+
+  commercialization:
+    - product_packaging
+    - edition_management
+    - marketplace_catalog
+
+  revenue:
+    - pricing_models
+    - subscriptions
+    - licensing
+
+  ecosystem:
+    - partner_enablement
+    - customer_portals
+    - marketplace_analytics
+
+  intelligence:
+    - product_insights
+    - adoption_metrics

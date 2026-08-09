@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-08-09T21:50:06Z",
+  "overall": "ok",
+  "services": [
+    {
+      "name": "a1os-core",
+      "status": "ok",
+      "http": 200
+    },
+    {
+      "name": "education-os",
+      "status": "ok",
+      "http": 200
+    },
+    {
+      "name": "platform-api",
+      "status": "ok",
+      "http": 200
+    },
+    {
+      "name": "roastery",
+      "status": "ok",
+      "http": 200
+    },
+    {
+      "name": "cloudflare-edge-observer",
+      "status": "observer"
+    }
+  ]
+}

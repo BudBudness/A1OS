@@ -1,0 +1,57 @@
+# A1OS
+
+Autonomous multi-engine AI/agent orchestration platform ("A1OS Factory"). Python monolith (`core/`, `infra/`, `api/`) plus Node tooling and productized "OS" packages under `products/`. The active product is `products/education-os` (Little Oaks Education OS): its own FastAPI app at `products/education-os/api/app.py` backed by SQLite `education.db`. Remote: `https://github.com/BudBudness/A1OS.git`, working copy on branch `main`. Repo-local OpenCode agents encode extra operational constraints — read `.opencode/agents/little-oaks.md` (live-stack ops, hard rules) and `.opencode/agents/security-auditor.md` before operating the stack or auditing it.
+
+## Environment
+
+- Repo lives under Termux on Android: `/data/data/com.termux/files/home/A1OS_RESTORED`. Two pythons coexist:
+  - Termux `/data/data/com.termux/files/usr/bin/python3` (3.14.6) — has pytest 9.1.1 and project deps; runs the live services.
+  - The `python3` on PATH (PRoot/Ubuntu, 3.14.4) has **no pytest/FastAPI** — `python3 -m pytest` fails there. Use the Termux interpreter or `pip install -r requirements.txt` first.
+- Scripts use Termux shebangs, e.g. `#!/data/data/com.termux/files/usr/bin/bash`.
+- Push auth is **HTTPS via `gh`** (account `BudBudness`, `gh auth setup-git` in the Termux HOME). The remote is `https://github.com/BudBudness/A1OS.git`. The SSH pubkey is *not* registered on GitHub, so run `git` with `HOME=/data/data/com.termux/files/home` (or `gh auth login`) — an SSH push will fail with `Permission denied (publickey)`.
+
+## Commands
+
+- Tests: `python3 -m pytest` (pytest.ini `asyncio_mode=auto`; asyncio handling in `tests/conftest.py`). CI equivalent: `python -m compileall .` and `python -m unittest discover tests`.
+- Root-level `*_test.py` (e.g. `authorization_lifecycle_integrity_test.py`) are standalone async scripts — run directly with `python3 <file>.py`.
+- Core API: `python3 main.py` → uvicorn on :3011 (`core/api.py`), binds `127.0.0.1`, reconciled hourly by the watchdog loop (`ops/a1os-reconciler.py` + `ops/services.json` + `ops/adapters/`). `a1ctl` talks to it.
+- Control CLI: `./a1ctl status` / `./a1ctl exec` — talks to the core on `http://127.0.0.1:3011/v1`.
+- education-os API: `cd products/education-os/api && python3 -m uvicorn app:app --host 127.0.0.1 --port 3012`.
+- Node tooling (`package.json`: playwright, chrome-remote-interface, react-three): `npm install`.
+
+## Runtime wiring (production topology)
+
+Canonical launch: `education-os-launch.sh` (Termux home; tracked source of truth `ops/education-os-launch.sh` — keep the two in sync, e.g. `cp ops/education-os-launch.sh ~/`). One service per port — do not move these:
+
+- **3011** — A1OS core engine (`python3 main.py`, binds `127.0.0.1`). Reconciled hourly: probe → restart via `ops/adapters/restart-core.sh` → `ops/a1os-core-launch.sh` (single-owner launcher — kills any port-owner then starts exactly one core). Manual bring-up: `ops/a1os-core-launch.sh`.
+- **3012** — education-os API (`run-production.sh` → `uvicorn api.app:app --host 127.0.0.1 --port 3012 --workers 1 --proxy-headers`).
+- **8080** — frontend + same-origin `/api` proxy (`products/education-os/web/server.py` serves `products/education-os/web`, proxies to 3012).
+- **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — `little-oaks.pyongcity.org/api/*` → 3012, everything else → 8080.
+`a1ctl` talks to the core on 3011 (`python3 main.py`). The stack is not guaranteed up at any given moment — the watchdog restarts anything it finds down on its hourly run; to bring the full stack up manually, run `education-os-launch.sh`.
+
+Watchdogs + cron (canonical source `~/crontab.txt`; installed to BOTH the `u0_a433` spool that crond reads and the `root` spool that proot `crontab -l` shows): hourly `ops/a1os-production-watchdog.sh` — the single reconcile-loop driver. It (a) runs `ops/a1os-reconciler.py` to reconcile all local services against `ops/services.json` (probe → restart via `ops/adapters/`), (b) checks public reachability + tunnel (restarts tunnel as `cloudflared tunnel --protocol http2 --config ~/.cloudflared/config.yml run a1os-prod`; kill patterns scoped to `a1os-prod`/its UUID `7fdd3dce` so other tunnels are never touched), (c) checks DB integrity. Daily 1:00 + weekly Sun 12:00 (local EAT) DB backups via `~/backup-little-oaks-education-db.sh` (tracked source `ops/backup-little-oaks-education-db.sh`; sqlite `.backup`, integrity-checked, 30-day retention). The watchdog fires a **ntfy.sh alert** on any FAIL/CRITICAL — topic read from `~/.a1os/ntfy.topic` (untracked; subscribe in the ntfy app to receive pushes). After each DB backup, `ops/push-education-backups.sh` copies the latest `education-*.db` into the **private** GitHub repo `BudBudness/a1os-backups` (local clone `~/a1os-backups`, HTTPS/`gh` auth, idempotent). Auth: `POST /auth/change-password` (authed; requires `current_password` + `new_password`, min 8 chars; invalidates other sessions); UI has a Change Password page + Logout in the sidebar. `/auth/login` and `/auth/change-password` are rate-limited (20 attempts / 300s per client IP, in-memory — keep uvicorn at `--workers 1`).
+
+## Reconcile loop (desired state vs actual)
+
+The A1OS runtime is a declarative reconcile loop, not a set of ad-hoc scripts:
+
+1. **Desired state** — `ops/services.json`: per service, the local health URL, optional public URL, and the adapter (restart) command, in `boot_order`.
+2. **Reconcile loop** — `ops/a1os-reconciler.py` (Termux python3): for each service, probe `health_local`; on failure run the adapter and re-probe with retries. Prints one `PASS`/`RECOVERED`/`FAIL`/`WARN` line per service (the watchdog timestamps + ntfy-alerts FAIL lines) and writes `state/reconciler-status.json`.
+3. **Adapters** — `ops/adapters/`: one restart script per service (thin wrappers over the canonical launchers). Adapters are spawned with `close_fds`, so the watchdog flock (fd 9) is never inherited by long-running children.
+4. **External edge observer** — optional `external_observer` URL (the Cloudflare health-checker `/status`). A service externally "down" but locally healthy is reported as `WARN` and NOT restarted (tunnel outages must not cause restart loops).
+5. **Loop driver** — `ops/a1os-production-watchdog.sh` on the hourly cron.
+
+Legacy supervisors (`a1os_supervisor.sh`, `ops/a1os_secondary_runtime.sh`, `ops/a1os_failover_orchestrator.sh`, `ops/supervisor/run.sh`) are **RETIRED** (inert `exit 0` stubs) — exactly one reconciler exists to prevent the duplicate-supervisor race that caused the core EADDRINUSE outage.
+
+## Gotchas
+
+- `.env` (repo root) and `products/education-os/.env.production` hold credentials and tokens (`SECRET_KEY`, `JWT_SECRET_KEY`, Cloudflare). Never print or commit them.
+- `products/education-os/deployments/little-oaks/data/education.db` is a tracked binary (`.gitignore` ignores `*.db`; this one was force-added) with local modifications. Release and acceptance pipelines depend on it — don't rebuild or drop it casually.
+- `./little-oaks-release.sh` runs Stage 4–7 acceptance suites, backs up the DB, commits, tags, and **pushes to origin main**. Don't run casually.
+- `data/a1os.db-shm` and `data/a1os.db-wal` are untracked SQLite WAL sidecars (covered by `*.db-shm`/`*.db-wal`); a live engine rewrites them, so ignore any `git status` noise from them.
+- `infra/` (redis/nats/postgres/minio/k8s) and `deployment/docker-compose.yml` are **planned, aspirational scaffolding — not load-bearing**. The live product runs as two Termux processes (uvicorn :3012 + web-server :8080) behind the Cloudflare tunnel. Don't treat infra as the deployment target.
+- Frontend server: single source of truth is the tracked `products/education-os/web/server.py` (`ThreadingHTTPServer`, portable `WEB` path). The reconcile adapter `ops/adapters/restart-education-web.sh` launches it as `python3 server.py` (the file has no shebang and is not directly executable). The old untracked `~/education-os-web-server.py` was retired — don't reintroduce it.
+- The watchdog holds a flock on fd 9 (`.locks/production-watchdog.lock`). The reconciler spawns adapters with `close_fds` and every launcher/restart script MUST close fd 9 in its spawned children (`9>&-`) — otherwise the long-running child (core/API/web) inherits the lock fd and silently deadlocks every later watchdog run (`flock -n || exit 0`). If `logs/production-watchdog.log` stops growing, check `ls -l /proc/<pid>/fd/9` for the holder.
+- Cron gotchas: the runit service `crond` ships DISABLED (`down` file) — if `ps` shows no `crond -n` process, run `sv up crond` (it must be up for any scheduled job to fire). crond runs as the real Termux uid `u0_a433` and ONLY reads `$PREFIX/var/spool/cron/u0_a433`; inside PRoot, `crontab` writes to the `root` spool which crond ignores. Always install to both (copy `~/crontab.txt` to `.../spool/cron/u0_a433` AND run `crontab ~/crontab.txt`).
+- Cloudflare tunnel gotchas: the public site is served by tunnel `a1os-prod` (credentials `7fdd3dce-…json` in `~/.cloudflared/config.yml`). NEVER judge tunnel health by process cmdline name — connector processes can run under misleading names (a prior setup ran `cloudflared tunnel run router-panel`/`ssh-tunnel` processes that were actually carrying a1os-prod's connectors via config.yml credentials; killing them killed the public site). Judge health by public reachability (`https://little-oaks.pyongcity.org/api/health`) or the watchdog log. The watchdog auto-restarts the tunnel when public checks fail; the canonical launch is `cloudflared tunnel --protocol http2 --config ~/.cloudflared/config.yml run a1os-prod`.
+- Host memory is tight (~5.5Gi total, ~1.1Gi free) — avoid parallel heavy builds.

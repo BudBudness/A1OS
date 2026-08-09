@@ -1,0 +1,65 @@
+factory:
+  version: "1.4"
+  name: "A1OS Multi-Domain Product DNA Engine"
+
+profiles:
+
+  education:
+    base: education-os
+    intelligence:
+      - academic
+      - finance
+      - parent_engagement
+      - governance
+      - reporting
+      - analytics
+
+  ngo:
+    base: ngo-os
+    intelligence:
+      - beneficiary_management
+      - donor_intelligence
+      - project_tracking
+      - impact_reporting
+      - compliance
+      - field_operations
+
+  legal:
+    base: legal-os
+    intelligence:
+      - case_management
+      - document_intelligence
+      - compliance
+      - contract_intelligence
+      - legal_research
+      - client_portal
+
+  media:
+    base: media-os
+    intelligence:
+      - content_management
+      - creator_intelligence
+      - audience_analytics
+      - distribution
+      - revenue_tracking
+      - media_command_center
+
+  finance:
+    base: finance-os
+    intelligence:
+      - transactions
+      - accounting
+      - compliance
+      - risk_analysis
+      - reporting
+      - financial_assistant
+
+  business:
+    base: business-os
+    intelligence:
+      - crm
+      - operations
+      - inventory
+      - automation
+      - analytics
+      - executive_dashboard

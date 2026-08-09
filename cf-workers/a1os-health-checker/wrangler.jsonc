@@ -1,0 +1,36 @@
+// wrangler.jsonc — A1OS health checker
+// 1) Create resources:
+//    npx wrangler kv namespace create HEALTH_STATE
+//    npx wrangler analytics-engine create A1OS_HEALTH_EVENTS
+//    (paste the KV id below)
+// 2) Set secrets (never in this file):
+//    npx wrangler secret put NTFY_TOPIC   # e.g. the value of ~/.a1os/ntfy.topic
+//    npx wrangler secret put RUN_TOKEN    # optional; protects /run
+// 3) Deploy: npx wrangler deploy
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "a1os-health-checker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "HEALTH_STATE",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID",
+      "preview_id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+  "analytics_engine_datasets": [
+    {
+      "binding": "HEALTH_EVENTS",
+      "dataset": "A1OS_HEALTH_EVENTS"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

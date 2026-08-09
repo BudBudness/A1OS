@@ -1,0 +1,28 @@
+version: "6.4"
+
+plane:
+  name: revenue_intelligence_growth
+  status: frozen
+
+capabilities:
+
+  sales:
+    - sales_pipeline
+    - lead_scoring
+    - sales_agents
+    - opportunity_intelligence
+
+  finance:
+    - revenue_forecasting
+    - pricing_intelligence
+    - growth_metrics
+
+  customer:
+    - acquisition_intelligence
+    - churn_prediction
+    - expansion_models
+
+  intelligence:
+    - marketing_analytics
+    - partner_revenue
+    - growth_experiments

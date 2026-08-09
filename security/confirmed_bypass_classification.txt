@@ -1,0 +1,897 @@
+A1OS RUNTIME-V2 FINAL BYPASS CLASSIFICATION
+========================================================================
+
+[1] INFRASTRUCTURE / MANUAL REVIEW
+PATH: cron_matrix_daemon.py:13
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("SELECT id, topic, payload FROM notification_history WHERE status='FAILED_NETWORK_OUTAGE' LIMIT 5")
+------------------------------------------------------------------------
+[2] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: cron_matrix_daemon.py:27
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("UPDATE notification_history SET status='FLUSHED_RECOVERED' WHERE id=?", (rid,))
+------------------------------------------------------------------------
+[3] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: dashboard_ui.py:20
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT asset_name, SUM(amount) FROM finance_ledger GROUP BY asset_name')
+------------------------------------------------------------------------
+[4] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: dashboard_ui.py:35
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT sku, name, quantity, location FROM inventory_registry')
+------------------------------------------------------------------------
+[5] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: dashboard_ui.py:48
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT customer_id, name, tier, lifetime_value FROM crm_profiles ORDER BY lifetime_value DESC')
+------------------------------------------------------------------------
+[6] INFRASTRUCTURE / MANUAL REVIEW
+PATH: dashboard_ui.py:58
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT status, COUNT(*) FROM notification_history GROUP BY status')
+------------------------------------------------------------------------
+[7] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: deploy_generic_ledger.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('\n        CREATE TABLE IF NOT EXISTS finance_ledger (\n            id TEXT PRIMARY KEY,\n            asset_name TEXT,\n            amount REAL,\n            timestamp TEXT DEFAULT CURRENT_TIMESTAMP\n        );\n    ')
+------------------------------------------------------------------------
+[8] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: deploy_generic_ledger.py:20
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('DELETE FROM finance_ledger;')
+------------------------------------------------------------------------
+[9] INFRASTRUCTURE / MANUAL REVIEW
+PATH: run_matrix_operations.py:16
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("SELECT id FROM notification_history WHERE status LIKE 'FAILED%' LIMIT 5")
+------------------------------------------------------------------------
+[10] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: run_matrix_operations.py:52
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO inventory_registry (sku, name, quantity, location) VALUES (?, ?, ?, ?) ON CONFLICT(sku) DO UPDATE SET quantity = quantity + EXCLUDED.quantity', (prod_sku, prod_name, stock_change, prod_loc))
+------------------------------------------------------------------------
+[11] INFRASTRUCTURE / MANUAL REVIEW
+PATH: run_matrix_operations.py:63
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("INSERT INTO crm_profiles (customer_id, name, tier, lifetime_value, updated_at) VALUES (?, ?, 'BRONZE', ?, datetime('now')) ON CONFLICT(customer_id) DO UPDATE SET lifetime_value = lifetime_value + EXCLUDED.lifetime_value", (cust_id, cust_name, spend_increment))
+------------------------------------------------------------------------
+[12] INFRASTRUCTURE / MANUAL REVIEW
+PATH: run_matrix_operations.py:71
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("UPDATE crm_profiles SET tier = CASE WHEN lifetime_value >= 1000000.0 THEN 'GOLD' WHEN lifetime_value >= 500000.0 THEN 'SILVER' ELSE 'BRONZE' END")
+------------------------------------------------------------------------
+[13] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: run_matrix_operations.py:79
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("INSERT INTO notification_history (id, status) VALUES (hex(randomblob(16)), 'SENT')")
+------------------------------------------------------------------------
+[14] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: run_matrix_operations.py:21
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("UPDATE notification_history SET status = 'SENT' WHERE id = ?", (task[0],))
+------------------------------------------------------------------------
+[15] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: functional_production_validation.py:79
+METHOD: execute
+RECEIVER: system.runtime
+CALL: system.runtime.execute(task_id=f'event-validation-{int(time.time())}', payload={'target': 'sales', 'role': 'system', 'action': 'event_propagation_test', 'data': {'validation': True}})
+------------------------------------------------------------------------
+[16] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: functional_production_validation.py:53
+METHOD: execute
+RECEIVER: system.runtime
+CALL: system.runtime.execute(task_id=f'prod-validation-{target}-{int(time.time() * 1000)}', payload={'target': target, 'role': 'user', 'action': 'production_validation', 'data': {'source': 'functional-production-validation'}})
+------------------------------------------------------------------------
+[17] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: functional_production_validation.py:166
+METHOD: execute
+RECEIVER: con
+CALL: con.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+------------------------------------------------------------------------
+[18] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: functional_production_validation.py:183
+METHOD: execute
+RECEIVER: con
+CALL: con.execute('PRAGMA integrity_check')
+------------------------------------------------------------------------
+[19] PROTECTED / AUTHORIZATION INHERITED
+PATH: capability_registration_integrity_test.py:56
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('universal_consequence_gate_test', operation='run')
+------------------------------------------------------------------------
+[20] PROTECTED / AUTHORIZATION INHERITED
+PATH: capability_registration_integrity_test.py:136
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('universal_consequence_gate_test', operation='run')
+------------------------------------------------------------------------
+[21] PROTECTED / AUTHORIZATION INHERITED
+PATH: capability_registration_integrity_test.py:28
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('__spoofed_read_only_capability__', read_only=True, safe=True, trusted=True, operation='execute')
+------------------------------------------------------------------------
+[22] PROTECTED / AUTHORIZATION INHERITED
+PATH: capability_registration_integrity_test.py:91
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('__future_registered_capability__', operation='execute')
+------------------------------------------------------------------------
+[23] PROTECTED / AUTHORIZATION INHERITED
+PATH: capability_registration_integrity_test.py:120
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('__spoofed_read_only_capability__', operation='replacement')
+------------------------------------------------------------------------
+[24] PROTECTED / AUTHORIZATION INHERITED
+PATH: subsystem_execution_boundary_test.py:14
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('universal_consequence_gate_test', operation='run')
+------------------------------------------------------------------------
+[25] PROTECTED / AUTHORIZATION INHERITED
+PATH: subsystem_execution_boundary_test.py:69
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('universal_consequence_gate_test', operation='run')
+------------------------------------------------------------------------
+[26] PROTECTED / AUTHORIZATION INHERITED
+PATH: consequential_authorization_execution_integration_test.py:92
+METHOD: execute
+RECEIVER: system.capabilities
+CALL: system.capabilities.execute(capability, entity_id='primary-device', operation='repair', action='repair')
+------------------------------------------------------------------------
+[27] PROTECTED / AUTHORIZATION INHERITED
+PATH: operational_bypass_resistance_test.py:60
+METHOD: execute
+RECEIVER: system.capabilities
+CALL: system.capabilities.execute('repair', capability='digital_world_recovery', entity_id='primary-device')
+------------------------------------------------------------------------
+[28] PROTECTED / AUTHORIZATION INHERITED
+PATH: operational_bypass_resistance_test.py:70
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('repair', capability='digital_world_recovery', entity_id='primary-device', authorization={'authorized': True, 'allowed': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-id', 'confidence': 1.0}})
+------------------------------------------------------------------------
+[29] PROTECTED / AUTHORIZATION INHERITED
+PATH: operational_bypass_resistance_test.py:89
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('execute', capability='unknown_future_consequential_capability', entity_id='primary-device')
+------------------------------------------------------------------------
+[30] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: operational_registered_capability_bypass_test.py:88
+METHOD: execute
+RECEIVER: registry
+CALL: registry.execute(TARGET, action=ACTION, entity_id=ENTITY, authorization={'authorized': True, 'allowed': True, 'autonomous_authorization': True, 'decision': 'autonomous_authorization', 'provenance': {'authorization_id': 'forged-test-authorization', 'policy_decision': 'autonomous_authorization', 'confidence': 1.0}})
+------------------------------------------------------------------------
+[31] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: operational_registered_capability_bypass_test.py:60
+METHOD: execute
+RECEIVER: registry
+CALL: registry.execute(TARGET, action=ACTION, entity_id=ENTITY)
+------------------------------------------------------------------------
+[32] PROTECTED / AUTHORIZATION INHERITED
+PATH: operational_registered_capability_bypass_test.py:116
+METHOD: execute
+RECEIVER: system
+CALL: system.execute(TARGET, entity_id=ENTITY)
+------------------------------------------------------------------------
+[33] PROTECTED / AUTHORIZATION INHERITED
+PATH: operational_runtime_enforcement_test.py:23
+METHOD: execute
+RECEIVER: system
+CALL: system.execute(TARGET, entity_id=ENTITY)
+------------------------------------------------------------------------
+[34] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: operational_runtime_enforcement_test.py:42
+METHOD: execute
+RECEIVER: registry
+CALL: registry.execute(TARGET, entity_id=ENTITY, action='repair')
+------------------------------------------------------------------------
+[35] PROTECTED / AUTHORIZATION INHERITED
+PATH: operational_runtime_enforcement_test.py:119
+METHOD: execute
+RECEIVER: system
+CALL: system.execute('__operational_unknown_consequential_capability__', entity_id=ENTITY)
+------------------------------------------------------------------------
+[36] PROTECTED / AUTHORIZATION INHERITED
+PATH: dispatch_security_enforcement_test.py:25
+METHOD: dispatch
+RECEIVER: dispatcher
+CALL: dispatcher.dispatch(target='default', payload={})
+------------------------------------------------------------------------
+[37] PROTECTED / AUTHORIZATION INHERITED
+PATH: dispatch_security_enforcement_test.py:34
+METHOD: dispatch
+RECEIVER: dispatcher
+CALL: dispatcher.dispatch(target='default', payload={'capability': 'unknown.capability', 'entity_id': 'runtime', 'action': 'dispatch'})
+------------------------------------------------------------------------
+[38] PROTECTED / AUTHORIZATION INHERITED
+PATH: dispatch_security_enforcement_test.py:47
+METHOD: dispatch
+RECEIVER: dispatcher
+CALL: dispatcher.dispatch(target='default', payload={'capability': 'health', 'entity_id': 'runtime', 'action': 'read'})
+------------------------------------------------------------------------
+[39] PROTECTED / AUTHORIZATION INHERITED
+PATH: dispatch_security_enforcement_test.py:61
+METHOD: dispatch
+RECEIVER: dispatcher
+CALL: dispatcher.dispatch(target='default', payload={'capability': 'digital_world_recovery', 'entity_id': 'runtime', 'action': 'recover'})
+------------------------------------------------------------------------
+[40] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1678
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n            CREATE TABLE IF NOT EXISTS entities (\n                id TEXT PRIMARY KEY,\n                entity_type TEXT NOT NULL,\n                state TEXT NOT NULL,\n                metadata TEXT NOT NULL,\n                created_at REAL NOT NULL,\n                updated_at REAL NOT NULL\n            )\n        ')
+------------------------------------------------------------------------
+[41] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1689
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n            CREATE TABLE IF NOT EXISTS relationships (\n                id TEXT PRIMARY KEY,\n                source_id TEXT NOT NULL,\n                target_id TEXT NOT NULL,\n                relationship_type TEXT NOT NULL,\n                metadata TEXT NOT NULL,\n                created_at REAL NOT NULL\n            )\n        ')
+------------------------------------------------------------------------
+[42] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2096
+METHOD: execute
+RECEIVER: incident
+CALL: incident.execute('\n            CREATE TABLE IF NOT EXISTS incidents (\n                id TEXT PRIMARY KEY,\n                entity_id TEXT NOT NULL,\n                entity_type TEXT,\n                observed_state TEXT,\n                action TEXT,\n                status TEXT,\n                result TEXT,\n                created_at REAL,\n                completed_at REAL\n            )\n        ')
+------------------------------------------------------------------------
+[43] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2180
+METHOD: execute
+RECEIVER: incident
+CALL: incident.execute('\n            INSERT INTO incidents (\n                id,\n                entity_id,\n                entity_type,\n                observed_state,\n                action,\n                status,\n                result,\n                created_at,\n                completed_at\n            )\n            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\n        ', (incident_id, entity_id, entity_type, observed_state, action, 'initiated', None, created_at, None))
+------------------------------------------------------------------------
+[44] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2266
+METHOD: execute
+RECEIVER: graph
+CALL: graph.execute('\n            UPDATE entities\n            SET state = ?,\n                updated_at = ?\n            WHERE id = ?\n        ', (final_state, time.time(), entity_id))
+------------------------------------------------------------------------
+[45] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2285
+METHOD: execute
+RECEIVER: incident
+CALL: incident.execute('\n            UPDATE incidents\n            SET status = ?,\n                result = ?,\n                completed_at = ?\n            WHERE id = ?\n        ', ('completed' if verified else 'failed', json.dumps(action_result), completed_at, incident_id))
+------------------------------------------------------------------------
+[46] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/state.py:171
+METHOD: execute
+RECEIVER: self.runtime
+CALL: self.runtime.execute(task_id=payload.get('task_id', 'dynamic_wf'), payload={'target': 'finance', 'action': 'allocate_funds', 'role': 'system', 'data': payload.get('data')})
+------------------------------------------------------------------------
+[47] PROTECTED / AUTHORIZATION INHERITED
+PATH: core/state.py:602
+METHOD: execute
+RECEIVER: self.capabilities
+CALL: self.capabilities.execute(future_capability, operation='consequential_operation')
+------------------------------------------------------------------------
+[48] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1544
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                UPDATE entities\n                SET state = ?,\n                    updated_at = ?\n                WHERE id = ?\n            ', ('recovering', now, entity_id))
+------------------------------------------------------------------------
+[49] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1574
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                UPDATE entities\n                SET state = ?,\n                    updated_at = ?\n                WHERE id = ?\n            ', ('healthy', time.time(), entity_id))
+------------------------------------------------------------------------
+[50] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1707
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                INSERT INTO entities\n                (id, entity_type, state, metadata, created_at, updated_at)\n                VALUES (?, ?, ?, ?, ?, ?)\n                ON CONFLICT(id) DO UPDATE SET\n                    entity_type=excluded.entity_type,\n                    state=excluded.state,\n                    metadata=excluded.metadata,\n                    updated_at=excluded.updated_at\n            ', (entity_id, entity['type'], entity.get('state', 'healthy'), json.dumps(entity.get('metadata', {})), now, now))
+------------------------------------------------------------------------
+[51] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1737
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                INSERT INTO relationships\n                (id, source_id, target_id, relationship_type, metadata, created_at)\n                VALUES (?, ?, ?, ?, ?, ?)\n            ', (relationship_id, relationship['source_id'], relationship['target_id'], relationship['type'], json.dumps(relationship.get('metadata', {})), now))
+------------------------------------------------------------------------
+[52] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2677
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                UPDATE entities\n                SET state = ?,\n                    metadata = ?,\n                    updated_at = ?\n                WHERE id = ?\n            ', (state, json.dumps(current_metadata), now, entity_id))
+------------------------------------------------------------------------
+[53] PROTECTED / AUTHORIZATION INHERITED
+PATH: core/state.py:3076
+METHOD: execute
+RECEIVER: self.capabilities
+CALL: self.capabilities.execute(action, **kwargs)
+------------------------------------------------------------------------
+[54] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1502
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n            SELECT\n                id,\n                entity_type,\n                state,\n                metadata\n            FROM entities\n            WHERE id = ?\n        ', (entity_id,))
+------------------------------------------------------------------------
+[55] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2112
+METHOD: execute
+RECEIVER: graph
+CALL: graph.execute('\n            SELECT\n                id,\n                entity_type,\n                state,\n                metadata\n            FROM entities\n            WHERE id = ?\n        ', (entity_id,))
+------------------------------------------------------------------------
+[56] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2136
+METHOD: execute
+RECEIVER: graph
+CALL: graph.execute('\n            SELECT\n                source_id,\n                target_id,\n                type\n            FROM relationships\n            WHERE source_id = ?\n               OR target_id = ?\n        ', (entity_id, entity_id))
+------------------------------------------------------------------------
+[57] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2833
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                    UPDATE entities\n                    SET state = ?,\n                        updated_at = ?\n                    WHERE id = ?\n                ', (observed_state, now, entity_id))
+------------------------------------------------------------------------
+[58] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1760
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT id, entity_type, state, metadata\n                FROM entities\n                ORDER BY entity_type, id\n            ')
+------------------------------------------------------------------------
+[59] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1766
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT source_id, target_id, relationship_type, metadata\n                FROM relationships\n                ORDER BY relationship_type\n            ')
+------------------------------------------------------------------------
+[60] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2494
+METHOD: execute
+RECEIVER: db
+CALL: db.execute(query, params)
+------------------------------------------------------------------------
+[61] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2527
+METHOD: execute
+RECEIVER: db
+CALL: db.execute(query, params)
+------------------------------------------------------------------------
+[62] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2553
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT\n                    r.source_id,\n                    r.target_id,\n                    r.relationship_type,\n                    r.metadata\n                FROM relationships r\n                WHERE r.source_id = ?\n                   OR r.target_id = ?\n            ', (entity_id, entity_id))
+------------------------------------------------------------------------
+[63] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2658
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT id, entity_type, state, metadata\n                FROM entities\n                WHERE id = ?\n            ', (entity_id,))
+------------------------------------------------------------------------
+[64] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2706
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT id, entity_type, state, metadata,\n                       created_at, updated_at\n                FROM entities\n                WHERE id = ?\n            ', (entity_id,))
+------------------------------------------------------------------------
+[65] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2733
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT state, COUNT(*) AS count\n                FROM entities\n                GROUP BY state\n                ORDER BY state\n            ')
+------------------------------------------------------------------------
+[66] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2816
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT id, state\n                FROM entities\n                WHERE id = ?\n            ', (entity_id,))
+------------------------------------------------------------------------
+[67] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2858
+METHOD: execute
+RECEIVER: db
+CALL: db.execute("\n                SELECT id, entity_type, state, updated_at\n                FROM entities\n                WHERE state != 'healthy'\n            ")
+------------------------------------------------------------------------
+[68] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2927
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT\n                    e.id,\n                    e.entity_type,\n                    e.state,\n                    COUNT(r.id) AS relationship_count\n                FROM entities e\n                LEFT JOIN relationships r\n                    ON e.id = r.source_id\n                    OR e.id = r.target_id\n                GROUP BY\n                    e.id,\n                    e.entity_type,\n                    e.state\n                ORDER BY e.id\n            ')
+------------------------------------------------------------------------
+[69] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:2992
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('\n                SELECT\n                    e.id,\n                    e.entity_type,\n                    e.state,\n                    COUNT(r.id) AS relationship_count\n                FROM entities e\n                LEFT JOIN relationships r\n                    ON e.id = r.source_id\n                    OR e.id = r.target_id\n                WHERE e.id = ?\n                GROUP BY\n                    e.id,\n                    e.entity_type,\n                    e.state\n            ', (entity_id,))
+------------------------------------------------------------------------
+[70] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1800
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('SELECT COUNT(*) FROM entities')
+------------------------------------------------------------------------
+[71] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/state.py:1804
+METHOD: execute
+RECEIVER: db
+CALL: db.execute('SELECT COUNT(*) FROM relationships')
+------------------------------------------------------------------------
+[72] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/api.py:85
+METHOD: execute
+RECEIVER: system.runtime
+CALL: system.runtime.execute(task_id=task_id, payload=raw_dict)
+------------------------------------------------------------------------
+[73] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/optimization_loop.py:11
+METHOD: execute
+RECEIVER: ops
+CALL: ops.execute({})
+------------------------------------------------------------------------
+[74] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/optimization_loop.py:14
+METHOD: execute
+RECEIVER: proc
+CALL: proc.execute({'action': action})
+------------------------------------------------------------------------
+[75] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/persistence.py:9
+METHOD: execute
+RECEIVER: self.conn
+CALL: self.conn.execute('CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT)')
+------------------------------------------------------------------------
+[76] PROTECTED / AUTHORIZATION INHERITED
+PATH: core/runtime.py:93
+METHOD: execute
+RECEIVER: system
+CALL: system.execute(action, **{k: v for k, v in payload.items() if k not in {'target', 'action', 'role'}})
+------------------------------------------------------------------------
+[77] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/runtime.py:55
+METHOD: execute
+RECEIVER: self
+CALL: self.execute(task_id, payload)
+------------------------------------------------------------------------
+[78] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/dispatcher.py:102
+METHOD: process
+RECEIVER: worker
+CALL: worker.process(payload)
+------------------------------------------------------------------------
+[79] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/dispatcher.py:82
+METHOD: process
+RECEIVER: worker
+CALL: worker.process(payload)
+------------------------------------------------------------------------
+[80] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/orchestrator.py:11
+METHOD: execute
+RECEIVER: self.trading
+CALL: self.trading.execute('execute_trade', side=trade_side, symbol=trade_symbol)
+------------------------------------------------------------------------
+[81] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/orchestrator.py:16
+METHOD: execute
+RECEIVER: self.procurement
+CALL: self.procurement.execute('order_supplies', item=supply_item, quantity=supply_qty)
+------------------------------------------------------------------------
+[82] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: observability/metrics.py:10
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('\n            INSERT INTO metrics\n            (name, value, labels, created_at)\n            VALUES (?, ?, ?, ?)\n            ', (name, value, labels, int(time.time())))
+------------------------------------------------------------------------
+[83] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: observability/health.py:19
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('PRAGMA integrity_check')
+------------------------------------------------------------------------
+[84] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: scaling/cluster.py:13
+METHOD: execute
+RECEIVER: node
+CALL: node.execute(event)
+------------------------------------------------------------------------
+[85] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: scheduler/replenishment_daemon.py:6
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT sku, name FROM inventory_registry WHERE quantity <= 5')
+------------------------------------------------------------------------
+[86] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: scheduler/replenishment_daemon.py:11
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO finance_ledger (id, asset_name, amount) VALUES (?, ?, ?)', (f'PO-{sku}', f'Restock Order: {name}', -150000.0))
+------------------------------------------------------------------------
+[87] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: scripts/migrate.py:10
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('\nCREATE TABLE IF NOT EXISTS schema_migrations (\n    version TEXT PRIMARY KEY,\n    applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP\n)\n')
+------------------------------------------------------------------------
+[88] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: scripts/migrate.py:26
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('INSERT OR IGNORE INTO schema_migrations(version) VALUES (?)', (version,))
+------------------------------------------------------------------------
+[89] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: scripts/migrate.py:19
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('SELECT 1 FROM schema_migrations WHERE version=?', (version,))
+------------------------------------------------------------------------
+[90] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: scripts/migrate.py:36
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('SELECT version, applied_at FROM schema_migrations ORDER BY version')
+------------------------------------------------------------------------
+[91] INFRASTRUCTURE / MANUAL REVIEW
+PATH: tests/integration_test.py:10
+METHOD: execute
+RECEIVER: finance
+CALL: finance.execute('refresh_metrics')
+------------------------------------------------------------------------
+[92] INFRASTRUCTURE / MANUAL REVIEW
+PATH: tests/integration_test.py:11
+METHOD: execute
+RECEIVER: trading
+CALL: trading.execute('poll_market', symbol='BTCUSDT')
+------------------------------------------------------------------------
+[93] INFRASTRUCTURE / MANUAL REVIEW
+PATH: tests/integration_test.py:12
+METHOD: execute
+RECEIVER: dashboard
+CALL: dashboard.execute('refresh_metrics')
+------------------------------------------------------------------------
+[94] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: tests/test_abac_security.py:11
+METHOD: dispatch
+RECEIVER: d
+CALL: d.dispatch({'task_id': 't1', 'action': 'process_data', 'data': {}}, context={'role': 'user'})
+------------------------------------------------------------------------
+[95] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: tests/test_abac_security.py:18
+METHOD: dispatch
+RECEIVER: d
+CALL: d.dispatch({'task_id': 't2', 'action': 'process_data', 'data': {}}, context={'role': 'guest'})
+------------------------------------------------------------------------
+[96] PROTECTED / AUTHORIZATION INHERITED
+PATH: tests/test_dispatch_pipeline.py:18
+METHOD: dispatch
+RECEIVER: dispatcher
+CALL: dispatcher.dispatch(decision)
+------------------------------------------------------------------------
+[97] PROTECTED / AUTHORIZATION INHERITED
+PATH: tests/test_propagation.py:13
+METHOD: dispatch
+RECEIVER: dispatcher
+CALL: dispatcher.dispatch(decision)
+------------------------------------------------------------------------
+[98] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: tests/verify_integration.py:10
+METHOD: dispatch
+RECEIVER: d
+CALL: d.dispatch({'task_id': 'test', 'action': 'test_action', 'data': {}})
+------------------------------------------------------------------------
+[99] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: services/notifications/engine.py:17
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO notification_history (topic, payload, status, error_context) VALUES (?,?,?,?)', (topic, json.dumps(payload), status, err))
+------------------------------------------------------------------------
+[100] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: security/auth/lifecycle.py:21
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('\n            INSERT INTO auth_sessions\n            (token_hash, subject, created_at, expires_at, revoked)\n            VALUES (?, ?, ?, ?, 0)\n            ', (token_hash, subject, now, expires))
+------------------------------------------------------------------------
+[101] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: security/auth/lifecycle.py:53
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('UPDATE auth_sessions SET revoked = 1 WHERE token_hash = ?', (_hash_token(token),))
+------------------------------------------------------------------------
+[102] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: security/auth/lifecycle.py:63
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('DELETE FROM auth_sessions WHERE expires_at <= ?', (now,))
+------------------------------------------------------------------------
+[103] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: security/auth/lifecycle.py:38
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('\n            SELECT token_hash\n            FROM auth_sessions\n            WHERE token_hash = ?\n              AND revoked = 0\n              AND expires_at > ?\n            ', (token_hash, now))
+------------------------------------------------------------------------
+[104] INFRASTRUCTURE / MANUAL REVIEW
+PATH: runtime/scheduler/worker_scheduler.py:24
+METHOD: process
+RECEIVER: worker
+CALL: worker.process(task['payload'])
+------------------------------------------------------------------------
+[105] PROTECTED / AUTHORIZATION INHERITED
+PATH: orchestration/workflow/engine.py:14
+METHOD: dispatch
+RECEIVER: self.dispatcher
+CALL: self.dispatcher.dispatch(task)
+------------------------------------------------------------------------
+[106] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: observability/health/__init__.py:26
+METHOD: execute
+RECEIVER: con
+CALL: con.execute('PRAGMA integrity_check')
+------------------------------------------------------------------------
+[107] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: observability/metrics/__init__.py:10
+METHOD: execute
+RECEIVER: con
+CALL: con.execute('\n            INSERT INTO metrics (name, value, labels, created_at)\n            VALUES (?, ?, ?, ?)\n            ', (str(name), float(value), str(labels), time.time()))
+------------------------------------------------------------------------
+[108] INFRASTRUCTURE / MANUAL REVIEW
+PATH: modules/analytics/engine.py:8
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO analytics_snapshots (metric_key, metric_value) VALUES (?,?) ON CONFLICT(metric_key) DO UPDATE SET metric_value=excluded.metric_value, last_calculated=CURRENT_TIMESTAMP', ('last_memory_free_mb', v))
+------------------------------------------------------------------------
+[109] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/billing/engine.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO billing_invoices (invoice_id, customer_id, amount, status) VALUES (?,?,?,?) ON CONFLICT(invoice_id) DO UPDATE SET status=excluded.status', (inv, cid, amt, d.get('status', 'UNPAID')))
+------------------------------------------------------------------------
+[110] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/crm/engine.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO crm_profiles (customer_id, name, lifetime_value) VALUES (?,?,?) ON CONFLICT(customer_id) DO UPDATE SET lifetime_value=lifetime_value+excluded.lifetime_value, updated_at=CURRENT_TIMESTAMP', (cid, name, val))
+------------------------------------------------------------------------
+[111] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/crm/engine.py:11
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT lifetime_value FROM crm_profiles WHERE customer_id=?', (cid,))
+------------------------------------------------------------------------
+[112] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/crm/engine.py:14
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('UPDATE crm_profiles SET tier=? WHERE customer_id=?', (tier, cid))
+------------------------------------------------------------------------
+[113] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/finance/engine.py:9
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO finance_ledger (asset_name, allocation_type, amount, reference_task_id) VALUES (?,?,?,?)', (asset, 'WORKFLOW_ALLOCATION', amount, tid))
+------------------------------------------------------------------------
+[114] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/finance/engine.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT SUM(amount) FROM finance_ledger WHERE asset_name = ?', (asset,))
+------------------------------------------------------------------------
+[115] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/inventory/engine.py:10
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('INSERT INTO inventory_registry (sku, name, quantity, location) VALUES (?,?,?,?) ON CONFLICT(sku) DO UPDATE SET quantity=quantity+excluded.quantity, updated_at=CURRENT_TIMESTAMP', (sku, d.get('name', 'Asset Component'), qty, loc))
+------------------------------------------------------------------------
+[116] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: modules/inventory/engine.py:11
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT quantity FROM inventory_registry WHERE sku=?', (sku,))
+------------------------------------------------------------------------
+[117] PROTECTED / AUTHORIZATION INHERITED
+PATH: modules/research/synthesizer.py:10
+METHOD: dispatch
+RECEIVER: self.dispatcher
+CALL: self.dispatcher.dispatch(decision, context=context)
+------------------------------------------------------------------------
+[118] INFRASTRUCTURE / MANUAL REVIEW
+PATH: apps/mobile/api.py:30
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT sku, name, quantity, location FROM inventory_registry')
+------------------------------------------------------------------------
+[119] INFRASTRUCTURE / MANUAL REVIEW
+PATH: apps/mobile/api.py:34
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT asset_name, SUM(amount) as total_gross FROM finance_ledger GROUP BY asset_name')
+------------------------------------------------------------------------
+[120] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: apps/mobile/api.py:77
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('PRAGMA busy_timeout = 5000;')
+------------------------------------------------------------------------
+[121] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: apps/mobile/api.py:81
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT quantity, name FROM inventory_registry WHERE sku = ?', (sku,))
+------------------------------------------------------------------------
+[122] INFRASTRUCTURE / MANUAL REVIEW
+PATH: apps/mobile/api.py:92
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('BEGIN TRANSACTION;')
+------------------------------------------------------------------------
+[123] INFRASTRUCTURE / MANUAL REVIEW
+PATH: apps/mobile/api.py:95
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('UPDATE inventory_registry SET quantity = quantity - ? WHERE sku = ?', (qty, sku))
+------------------------------------------------------------------------
+[124] INFRASTRUCTURE / MANUAL REVIEW
+PATH: apps/mobile/api.py:100
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('\n                INSERT INTO finance_ledger (id, asset_name, amount)\n                VALUES (?, ?, ?)\n            ', (ledger_id, asset_label, total_gross))
+------------------------------------------------------------------------
+[125] INFRASTRUCTURE / MANUAL REVIEW
+PATH: apps/mobile/api.py:106
+METHOD: execute
+RECEIVER: c
+CALL: c.execute("\n                INSERT INTO crm_profiles (customer_id, name, tier, lifetime_value)\n                VALUES (?, ?, 'BRONZE', ?)\n                ON CONFLICT(customer_id) DO UPDATE SET \n                    lifetime_value = lifetime_value + EXCLUDED.lifetime_value,\n                    updated_at = CURRENT_TIMESTAMP\n            ", (customer_id, customer_id.replace('-', ' ').title(), total_gross))
+------------------------------------------------------------------------
+[126] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: apps/mobile/api.py:115
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('SELECT lifetime_value FROM crm_profiles WHERE customer_id = ?', (customer_id,))
+------------------------------------------------------------------------
+[127] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: apps/mobile/api.py:124
+METHOD: execute
+RECEIVER: c
+CALL: c.execute('UPDATE crm_profiles SET tier = ? WHERE customer_id = ?', (new_tier, customer_id))
+------------------------------------------------------------------------
+[128] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: ai/knowledge/base.py:14
+METHOD: execute
+RECEIVER: cursor
+CALL: cursor.execute('\n                CREATE TABLE IF NOT EXISTS entities (\n                    id TEXT PRIMARY KEY,\n                    entity_type TEXT NOT NULL,\n                    attributes TEXT NOT NULL,\n                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP\n                )\n            ')
+------------------------------------------------------------------------
+[129] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: ai/knowledge/base.py:22
+METHOD: execute
+RECEIVER: cursor
+CALL: cursor.execute('\n                CREATE TABLE IF NOT EXISTS system_kv (\n                    key TEXT PRIMARY KEY,\n                    value TEXT NOT NULL,\n                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n                )\n            ')
+------------------------------------------------------------------------
+[130] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: ai/knowledge/base.py:35
+METHOD: execute
+RECEIVER: cursor
+CALL: cursor.execute('INSERT INTO entities (id, entity_type, attributes) VALUES (?, ?, ?)', (entity_id, entity_type, json.dumps(attributes)))
+------------------------------------------------------------------------
+[131] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: ai/knowledge/base.py:45
+METHOD: execute
+RECEIVER: cursor
+CALL: cursor.execute('INSERT OR REPLACE INTO system_kv (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)', (key, json.dumps(value)))
+------------------------------------------------------------------------
+[132] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: ai/knowledge/base.py:54
+METHOD: execute
+RECEIVER: cursor
+CALL: cursor.execute('SELECT value FROM system_kv WHERE key = ?', (key,))
+------------------------------------------------------------------------
+[133] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/execution/dispatcher.py:12
+METHOD: execute
+RECEIVER: worker_class()
+CALL: worker_class().execute(task)
+------------------------------------------------------------------------
+[134] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/persistence/database.py:27
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute(sql, params)
+------------------------------------------------------------------------
+[135] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/persistence/database.py:18
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('PRAGMA journal_mode=WAL')
+------------------------------------------------------------------------
+[136] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/persistence/database.py:19
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('PRAGMA foreign_keys=ON')
+------------------------------------------------------------------------
+[137] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/persistence/database.py:20
+METHOD: execute
+RECEIVER: conn
+CALL: conn.execute('PRAGMA busy_timeout=5000')
+------------------------------------------------------------------------
+[138] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/persistence/database.py:33
+METHOD: execute
+RECEIVER: cls.connection()
+CALL: cls.connection().execute(sql, params)
+------------------------------------------------------------------------
+[139] CONFIRMED CONSEQUENTIAL BYPASS CANDIDATE
+PATH: core/persistence/database.py:37
+METHOD: execute
+RECEIVER: cls.connection()
+CALL: cls.connection().execute(sql, params)
+------------------------------------------------------------------------
+[140] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/auth/lifecycle.py:18
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute('\n            INSERT INTO auth_sessions\n            (session_id,subject,token_hash,expires_at)\n            VALUES (?,?,?,?)\n            ', (session_id, subject, token_hash, expires.isoformat()))
+------------------------------------------------------------------------
+[141] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/auth/lifecycle.py:44
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute('UPDATE auth_sessions SET revoked=1 WHERE token_hash=?', (cls.hash_token(token),))
+------------------------------------------------------------------------
+[142] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/queue/durable.py:10
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n            INSERT OR REPLACE INTO tasks\n            (task_id,target,role,action,payload,status,updated_at)\n            VALUES (?,?,?,?,?,'queued',CURRENT_TIMESTAMP)\n            ", (task_id, target, role, action, json.dumps(data)))
+------------------------------------------------------------------------
+[143] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/queue/durable.py:22
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n            UPDATE tasks\n            SET status='running',\n                attempts=attempts+1,\n                updated_at=CURRENT_TIMESTAMP\n            WHERE task_id=?\n              AND (\n                    status='queued'\n                    OR (\n                        status='retry'\n                        AND (\n                            next_attempt_at IS NULL\n                            OR datetime(next_attempt_at) <= CURRENT_TIMESTAMP\n                        )\n                    )\n                  )\n            ", (task_id,))
+------------------------------------------------------------------------
+[144] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/queue/durable.py:46
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n            UPDATE tasks\n            SET status='completed',\n                completed_at=CURRENT_TIMESTAMP,\n                error=NULL,\n                next_attempt_at=NULL,\n                updated_at=CURRENT_TIMESTAMP\n            WHERE task_id=?\n            ", (task_id,))
+------------------------------------------------------------------------
+[145] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/queue/durable.py:92
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute(f"\n            UPDATE tasks\n            SET status='retry',\n                error=?,\n                next_attempt_at=datetime('now', '+{delay_seconds} seconds'),\n                updated_at=CURRENT_TIMESTAMP\n            WHERE task_id=?\n            ", (str(error), task_id))
+------------------------------------------------------------------------
+[146] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/queue/durable.py:113
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n            UPDATE tasks\n            SET status='retry',\n                updated_at=CURRENT_TIMESTAMP,\n                error='Recovered after process interruption',\n                next_attempt_at=NULL\n            WHERE status='running'\n            ")
+------------------------------------------------------------------------
+[147] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/queue/durable.py:77
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute("\n                UPDATE tasks\n                SET status='failed',\n                    error=?,\n                    next_attempt_at=NULL,\n                    updated_at=CURRENT_TIMESTAMP\n                WHERE task_id=?\n                ", (str(error), task_id))
+------------------------------------------------------------------------
+[148] NON-CONSEQUENTIAL PERSISTENCE / INFRASTRUCTURE
+PATH: core/recovery/checkpoints.py:9
+METHOD: execute
+RECEIVER: Database
+CALL: Database.execute('\n            INSERT INTO recovery_checkpoints\n            (checkpoint_id,component,state)\n            VALUES (?,?,?)\n            ', (checkpoint_id, component, json.dumps(state)))
+------------------------------------------------------------------------
+[149] PROTECTED / AUTHORIZATION INHERITED
+PATH: core/execution/v2/recovery.py:14
+METHOD: dispatch
+RECEIVER: self.dispatcher
+CALL: self.dispatcher.dispatch(data.get('decision'))
+------------------------------------------------------------------------

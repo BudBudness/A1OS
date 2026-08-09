@@ -1,0 +1,168 @@
+{
+  "contracts": {
+    "adaptive_authorization_test": {
+      "classification": "test_only",
+      "execution": "non_dispatchable",
+      "implementation": "_capability_adaptive_authorization_test",
+      "provenance_required": false
+    },
+    "autonomous_actuation": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_autonomous_actuation",
+      "provenance_required": true
+    },
+    "autonomous_recovery": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_autonomous_recovery",
+      "provenance_required": true
+    },
+    "database_repair": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_database_repair",
+      "provenance_required": true
+    },
+    "diagnostics": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_diagnostics",
+      "provenance_required": false
+    },
+    "digital_world_decision": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_decision",
+      "provenance_required": true
+    },
+    "digital_world_graph": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_graph",
+      "provenance_required": false
+    },
+    "digital_world_intelligence": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_intelligence",
+      "provenance_required": false
+    },
+    "digital_world_model": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_model",
+      "provenance_required": false
+    },
+    "digital_world_operation": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_operation",
+      "provenance_required": true
+    },
+    "digital_world_query": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_query",
+      "provenance_required": false
+    },
+    "digital_world_reconcile": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_reconcile",
+      "provenance_required": true
+    },
+    "digital_world_recovery": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_recovery",
+      "provenance_required": true
+    },
+    "digital_world_state": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_digital_world_state",
+      "provenance_required": false
+    },
+    "filesystem_management": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_filesystem_management",
+      "provenance_required": true
+    },
+    "health_check": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_health_check",
+      "provenance_required": false
+    },
+    "list": {
+      "classification": "not_a_capability",
+      "execution": "non_dispatchable",
+      "implementation": "_capability_list",
+      "provenance_required": false
+    },
+    "network_management": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_network_management",
+      "provenance_required": true
+    },
+    "observability": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_observability",
+      "provenance_required": false
+    },
+    "process_management": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_process_management",
+      "provenance_required": true
+    },
+    "recover": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_recover",
+      "provenance_required": true
+    },
+    "security_audit": {
+      "classification": "read_only",
+      "execution": "dispatchable",
+      "implementation": "_capability_security_audit",
+      "provenance_required": false
+    },
+    "service_management": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_service_management",
+      "provenance_required": true
+    },
+    "sovereign_control": {
+      "classification": "consequential",
+      "execution": "dispatchable",
+      "implementation": "_capability_sovereign_control",
+      "provenance_required": true
+    },
+    "sovereignty_policy": {
+      "classification": "internal",
+      "execution": "non_dispatchable",
+      "implementation": "_capability_sovereignty_policy",
+      "provenance_required": false
+    },
+    "sovereignty_policy_learning": {
+      "classification": "internal",
+      "execution": "non_dispatchable",
+      "implementation": "_capability_sovereignty_policy_learning",
+      "provenance_required": false
+    },
+    "universal_consequence_gate_test": {
+      "classification": "test_only",
+      "execution": "non_dispatchable",
+      "implementation": "_capability_universal_consequence_gate_test",
+      "provenance_required": false
+    }
+  },
+  "schema_version": "1.0",
+  "source": "core/state.py"
+}

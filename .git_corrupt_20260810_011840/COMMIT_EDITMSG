@@ -1,0 +1,13 @@
+ops: roastery ERP public exposure + watchdog/launch coverage
+
+- watchdog: health-check platform-api (:3013 /v1/health) and coffee-web
+  (:3000 /login), auto-restart both; scope edu api pkill to :3012 so it
+  never kills the platform process
+- add ops/coffee-os-launch.sh (synced to ~/) for platform + coffee ERP
+- cloudflared ingress: roastery.pyongcity.org -> :3000,
+  roastery-api.pyongcity.org -> :3013 (a1os-prod tunnel)
+- frontend rebuilt with NEXT_PUBLIC_API_URL=https://roastery-api.pyongcity.org
+- acceptance suite: auto-load rotated admin creds from .env.production;
+  fix residue cleanup FK ordering (delete stock_movements by product_id)
+- run-production.sh: executable bit
+- gitignore .playwright-mcp/ artifacts

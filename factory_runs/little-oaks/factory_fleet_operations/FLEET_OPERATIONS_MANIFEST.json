@@ -1,0 +1,33 @@
+{
+  "runtime": "Factory Fleet Operations Runtime",
+  "version": "12.2",
+  "product": "little-oaks",
+  "status": "operational",
+  "capabilities": [
+    "fleet_inventory_management",
+    "fleet_health_monitoring",
+    "deployment_coordination",
+    "rolling_update_management",
+    "canary_release_management",
+    "rollback_orchestration",
+    "global_telemetry_collection",
+    "cross_product_operations",
+    "lifecycle_synchronization",
+    "executive_fleet_reporting"
+  ],
+  "fleet": {
+    "inventory_tracking": true,
+    "health_monitoring": true,
+    "deployment_control": true,
+    "telemetry": true,
+    "rollback_ready": true,
+    "release_coordination": true,
+    "global_visibility": true,
+    "operations_dashboard": true
+  },
+  "next_stage": [
+    "factory_global_operations_center",
+    "autonomous_command_network",
+    "factory_master_runtime"
+  ]
+}
