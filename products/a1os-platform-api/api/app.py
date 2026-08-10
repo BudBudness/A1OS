@@ -686,6 +686,19 @@ def create_user(payload: dict, request: Request):
     role = str(payload.get("role", "member")).strip()
     password = str(payload.get("password", ""))
 
+    allowed_roles = set(DEFAULT_ROLE_PERMISSIONS.keys())
+    if role not in allowed_roles:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid role",
+        )
+
+    if role == "super_admin" and actor["role"] != "super_admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only super_admin may assign super_admin",
+        )
+
     if not email or not full_name or not password:
         raise HTTPException(
             status_code=422,
@@ -734,6 +747,20 @@ def update_user(user_id: int, payload: dict, request: Request):
     updates = {k: v for k, v in payload.items() if k in allowed}
     if not updates:
         raise HTTPException(status_code=422, detail="No editable fields")
+
+    if "role" in updates:
+        requested_role = str(updates["role"]).strip()
+        if requested_role not in DEFAULT_ROLE_PERMISSIONS:
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid role",
+            )
+        if requested_role == "super_admin" and actor["role"] != "super_admin":
+            raise HTTPException(
+                status_code=403,
+                detail="Only super_admin may assign super_admin",
+            )
+        updates["role"] = requested_role
 
     conn = db()
     try:
@@ -794,6 +821,12 @@ def create_role(payload: dict, request: Request):
     if not isinstance(perms, list):
         raise HTTPException(status_code=422, detail="permissions must be a list")
 
+    if actor["role"] != "super_admin" and "*" in perms:
+        raise HTTPException(
+            status_code=403,
+            detail="Platform wildcard permission is restricted to super_admin",
+        )
+
     conn = db()
     try:
         cur = conn.execute(
@@ -832,6 +865,11 @@ def update_role(role_id: int, payload: dict, request: Request):
                 raise HTTPException(
                     status_code=422,
                     detail="permissions must be a list",
+                )
+            if actor["role"] != "super_admin" and "*" in updates["permissions"]:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Platform wildcard permission is restricted to super_admin",
                 )
             updates["permissions"] = json.dumps(updates["permissions"])
 
