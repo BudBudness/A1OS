@@ -10,6 +10,7 @@ from typing import Optional
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -73,9 +74,16 @@ def _init_db():
     org = conn.execute("SELECT id FROM organizations LIMIT 1").fetchone()
     if org is None:
         admin_email = os.getenv("A1OS_PLATFORM_ADMIN_EMAIL", "admin@a1os.io")
-        admin_password = os.getenv(
-            "A1OS_PLATFORM_ADMIN_PASSWORD", "A1os.Admin@2026"
-        )
+        secret_path = pathlib.Path.home() / ".a1os" / "platform-admin-password"
+        if not secret_path.exists():
+            raise RuntimeError(
+                "Platform admin bootstrap secret is missing: "
+                f"{secret_path}"
+            )
+
+        admin_password = secret_path.read_text().strip()
+        if not admin_password:
+            raise RuntimeError("Platform admin bootstrap secret is empty")
         conn.execute(
             """
             INSERT INTO organizations (code, name, industry)
@@ -164,9 +172,16 @@ def _record_auth_attempt(client: str):
 
 def _current_actor(request: Request):
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
+    token = ""
+
+    if auth.startswith("Bearer "):
+        token = auth[7:].strip()
+
+    if not token:
+        token = request.cookies.get("a1os_session", "").strip()
+
+    if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    token = auth[7:].strip()
 
     conn = db()
     try:
@@ -380,7 +395,7 @@ def auth_login(payload: dict, request: Request):
 
         perms = _permissions(conn, dict(user))
 
-        return {
+        response = JSONResponse({
             "status": "authenticated",
             "token": token,
             "expires_at": expires_at,
@@ -392,7 +407,19 @@ def auth_login(payload: dict, request: Request):
                 "organization_id": user["organization_id"],
                 "permissions": sorted(perms),
             },
-        }
+        })
+
+        response.set_cookie(
+            key="a1os_session",
+            value=token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            path="/",
+            max_age=60 * 60 * 24 * 30,
+        )
+
+        return response
     finally:
         conn.close()
 
@@ -418,14 +445,31 @@ def auth_me(request: Request):
 @app.post("/auth/logout")
 def auth_logout(request: Request):
     auth = request.headers.get("Authorization", "")
+    token = ""
+
     if auth.startswith("Bearer "):
         token = auth[7:].strip()
+
+    if not token:
+        token = request.cookies.get("a1os_session", "").strip()
+
+    if token:
         conn = db()
         try:
-            conn.execute("DELETE FROM auth_sessions WHERE token = ?", (token,))
+            conn.execute(
+                "DELETE FROM auth_sessions WHERE token = ?",
+                (token,),
+            )
+            conn.commit()
         finally:
             conn.close()
-    return {"status": "logged_out"}
+
+    response = JSONResponse({"status": "logged_out"})
+    response.delete_cookie(
+        key="a1os_session",
+        path="/",
+    )
+    return response
 
 
 @app.post("/auth/change-password")
