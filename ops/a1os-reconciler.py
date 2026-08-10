@@ -67,9 +67,13 @@ def run_adapter(service):
             adapter,
             check=True,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            timeout=ADAPTER_TIMEOUT,
+            close_fds=True
         )
         return "adapter-ok"
+    except subprocess.TimeoutExpired:
+        return "adapter-timeout"
     except subprocess.CalledProcessError:
         return "adapter-failed"
 

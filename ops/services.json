@@ -9,41 +9,47 @@
       "health_local": "http://127.0.0.1:3011/v1/health",
       "adapter": [
         "ops/adapters/restart-core.sh"
-      ]
+      ],
+      "boot_order": 10
     },
     {
       "name": "education-os",
       "type": "application",
       "database": "products/education-os/deployments/little-oaks/data/education.db",
-      "health_local": "https://little-oaks.pyongcity.org/api/health",
+      "health_local": "http://127.0.0.1:3012/api/health",
       "adapter": [
         "ops/adapters/restart-education-web.sh"
-      ]
+      ],
+      "boot_order": 20
     },
     {
       "name": "platform-api",
       "type": "application",
       "database": "products/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
-      "health_local": "http://127.0.0.1:3013/health",
+      "health_local": "http://127.0.0.1:3013/v1/health",
       "adapter": [
         "ops/adapters/restart-platform-api.sh"
-      ]
+      ],
+      "boot_order": 30
     },
     {
       "name": "roastery",
       "type": "application",
       "database": null,
-      "health_local": "https://roastery.pyongcity.org",
+      "health_local": "http://127.0.0.1:3000/login",
       "adapter": [
         "ops/adapters/restart-coffee-web.sh"
-      ]
+      ],
+      "boot_order": 40
     },
     {
       "name": "cloudflare-edge-observer",
       "type": "observer",
       "database": null,
       "health_local": "external",
-      "adapter": []
+      "adapter": [],
+      "boot_order": 999
     }
-  ]
+  ],
+  "external_observer": null
 }

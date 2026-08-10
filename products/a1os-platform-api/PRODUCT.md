@@ -6,7 +6,7 @@ Multi-tenant platform backend serving industry-specific frontend applications.
 - **Backend**: FastAPI + SQLite (`deployments/a1os-platform/data/a1os-platform.db`)
 - **Auth**: SSO-style opaque session tokens (PBKDF2-HMAC-SHA256 password hashing), role-based permissions
 - **DB bootstrap**: tables created from `database/schema.sql`; first-run seeds the `ICR` (Image Coffee Roastery) organization and a `super_admin` user
-- **Admin seed** (override via env): `A1OS_PLATFORM_ADMIN_EMAIL` (default `admin@a1os.io`), `A1OS_PLATFORM_ADMIN_PASSWORD` (default `A1os.Admin@2026`); production password rotated and persisted in `.env.production` (0600, untracked)
+- **Admin seed**: administrator identity is provisioned through the protected platform secret authority; production credentials are not stored in source documentation or application environment files.
 
 ## Run
 

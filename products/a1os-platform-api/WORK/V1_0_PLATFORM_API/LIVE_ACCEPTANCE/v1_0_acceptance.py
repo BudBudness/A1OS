@@ -21,7 +21,15 @@ if not os.getenv("A1OS_PLATFORM_ADMIN_EMAIL") or not os.getenv(
 
 BASE = os.getenv("A1OS_PLATFORM_BASE_URL", "http://127.0.0.1:3013")
 EMAIL = os.getenv("A1OS_PLATFORM_ADMIN_EMAIL", "admin@a1os.io")
-PASSWORD = os.getenv("A1OS_PLATFORM_ADMIN_PASSWORD", "A1os.Admin@2026")
+SECRET_PATH = Path.home() / ".a1os" / "platform-admin-password"
+
+if not SECRET_PATH.is_file():
+    raise RuntimeError(f"Missing platform admin secret: {SECRET_PATH}")
+
+PASSWORD = SECRET_PATH.read_text().strip()
+
+if not PASSWORD:
+    raise RuntimeError("Platform admin secret is empty")
 
 print("=" * 60)
 print("A1OS PLATFORM API — V1.0 ACCEPTANCE")
