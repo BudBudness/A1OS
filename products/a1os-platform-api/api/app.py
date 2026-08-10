@@ -544,7 +544,12 @@ def list_organizations(request: Request):
 
 @app.post("/organizations", status_code=201)
 def create_organization(payload: dict, request: Request):
-    actor = _require_permission(request, "organizations.create")
+    actor = _current_actor(request)
+    if actor["role"] != "super_admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only super_admin may create organizations",
+        )
 
     code = str(payload.get("code", "")).strip()
     name = str(payload.get("name", "")).strip()
@@ -595,6 +600,13 @@ def update_organization(organization_id: int, payload: dict, request: Request):
 
     conn = db()
     try:
+        if actor["role"] != "super_admin":
+            if organization_id != actor["organization_id"]:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Organization not found",
+                )
+
         row = conn.execute(
             "SELECT id FROM organizations WHERE id = ?",
             (organization_id,),
