@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A1OS Frontend Vertical Specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "display_name",
+    "description",
+    "domain",
+    "pages",
+    "features",
+    "deployment"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "domain": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "route"],
+        "properties": {
+          "name": {"type": "string"},
+          "route": {"type": "string"}
+        }
+      }
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["static", "managed"]
+        },
+        "target": {
+          "type": "string"
+        }
+      }
+    },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "const": "a1os-platform-api"
+        }
+      }
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "authentication": {"const": "a1os-core"},
+        "tenancy": {"const": "a1os-core"},
+        "authorization": {"const": "a1os-core"},
+        "rbac": {"const": "a1os-core"}
+      }
+    }
+  }
+}

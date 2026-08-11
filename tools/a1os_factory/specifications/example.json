@@ -1,0 +1,33 @@
+{
+  "name": "example-os",
+  "display_name": "Example OS",
+  "description": "Example A1OS frontend vertical.",
+  "domain": "example",
+  "pages": [
+    {
+      "name": "Dashboard",
+      "route": "/"
+    },
+    {
+      "name": "Operations",
+      "route": "/operations"
+    }
+  ],
+  "features": [
+    "dashboard",
+    "operations",
+    "reports"
+  ],
+  "deployment": {
+    "mode": "managed"
+  },
+  "backend": {
+    "provider": "a1os-platform-api"
+  },
+  "ownership": {
+    "authentication": "a1os-core",
+    "tenancy": "a1os-core",
+    "authorization": "a1os-core",
+    "rbac": "a1os-core"
+  }
+}
