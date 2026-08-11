@@ -1,0 +1,19 @@
+{
+  "name": "demo-business",
+  "display_name": "Demo Business OS",
+  "description": "Frontend operations platform for a demonstration business.",
+  "domain": "business",
+  "pages": [
+    "Dashboard",
+    "Customers",
+    "Operations",
+    "Reports"
+  ],
+  "features": [
+    "dashboard",
+    "customers",
+    "operations",
+    "reports"
+  ],
+  "deployment": "managed"
+}
