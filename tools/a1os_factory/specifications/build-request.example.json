@@ -15,5 +15,14 @@
     "operations",
     "reports"
   ],
-  "deployment": "managed"
+  "deployment": "managed",
+  "backend": {
+    "provider": "a1os-platform-api"
+  },
+  "ownership": {
+    "authentication": "a1os-core",
+    "tenancy": "a1os-core",
+    "authorization": "a1os-core",
+    "rbac": "a1os-core"
+  }
 }

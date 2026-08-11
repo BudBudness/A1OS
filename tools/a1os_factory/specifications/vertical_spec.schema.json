@@ -4,13 +4,15 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "name",
-    "display_name",
+    "backend",
+    "deployment",
     "description",
+    "display_name",
     "domain",
-    "pages",
     "features",
-    "deployment"
+    "name",
+    "ownership",
+    "pages"
   ],
   "properties": {
     "name": {
@@ -33,10 +35,17 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "route"],
+        "required": [
+          "name",
+          "route"
+        ],
         "properties": {
-          "name": {"type": "string"},
-          "route": {"type": "string"}
+          "name": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          }
         }
       }
     },
@@ -49,11 +58,16 @@
     "deployment": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mode"],
+      "required": [
+        "mode"
+      ],
       "properties": {
         "mode": {
           "type": "string",
-          "enum": ["static", "managed"]
+          "enum": [
+            "static",
+            "managed"
+          ]
         },
         "target": {
           "type": "string"
@@ -73,10 +87,18 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "authentication": {"const": "a1os-core"},
-        "tenancy": {"const": "a1os-core"},
-        "authorization": {"const": "a1os-core"},
-        "rbac": {"const": "a1os-core"}
+        "authentication": {
+          "const": "a1os-core"
+        },
+        "tenancy": {
+          "const": "a1os-core"
+        },
+        "authorization": {
+          "const": "a1os-core"
+        },
+        "rbac": {
+          "const": "a1os-core"
+        }
       }
     }
   }
