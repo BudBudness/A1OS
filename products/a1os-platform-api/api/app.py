@@ -52,6 +52,8 @@ DEFAULT_ROLE_PERMISSIONS = {
     "member": {"dashboard.view"},
 }
 
+RESERVED_ROLE_NAMES = {"super_admin", "director", "manager", "member"}
+
 
 # ============================================================
 # DATABASE
@@ -710,8 +712,39 @@ def create_user(payload: dict, request: Request):
             detail="password must be at least 8 characters",
         )
 
+    supplied_org = payload.get("organization_id")
+    target_org_id = actor["organization_id"]
+    if supplied_org is not None:
+        try:
+            supplied_org = int(supplied_org)
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=422,
+                detail="organization_id must be an integer",
+            )
+        if (
+            actor["role"] != "super_admin"
+            and supplied_org != actor["organization_id"]
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Only super_admin may create users in another organization",
+            )
+        target_org_id = supplied_org
+
     conn = db()
     try:
+        if target_org_id != actor["organization_id"]:
+            org = conn.execute(
+                "SELECT id FROM organizations WHERE id = ?",
+                (target_org_id,),
+            ).fetchone()
+            if not org:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Organization not found",
+                )
+
         existing = conn.execute(
             "SELECT id FROM users WHERE lower(email) = ?",
             (email,),
@@ -726,7 +759,7 @@ def create_user(payload: dict, request: Request):
             VALUES (?, ?, ?, ?, ?)
             """,
             (
-                actor["organization_id"],
+                target_org_id,
                 email,
                 full_name,
                 _hash_password(password),
@@ -765,11 +798,21 @@ def update_user(user_id: int, payload: dict, request: Request):
     conn = db()
     try:
         row = conn.execute(
-            "SELECT id FROM users WHERE id = ? AND organization_id = ?",
+            "SELECT id, role FROM users WHERE id = ? AND organization_id = ?",
             (user_id, actor["organization_id"]),
         ).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
+
+        if (
+            actor["role"] != "super_admin"
+            and row["role"] == "super_admin"
+            and ("active" in updates or "role" in updates)
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Only super_admin may modify a super_admin account",
+            )
 
         set_sql = ", ".join(f"{k} = ?" for k in updates)
         conn.execute(
@@ -818,6 +861,11 @@ def create_role(payload: dict, request: Request):
 
     if not name:
         raise HTTPException(status_code=422, detail="name is required")
+    if name in RESERVED_ROLE_NAMES and actor["role"] != "super_admin":
+        raise HTTPException(
+            status_code=422,
+            detail="Reserved role name cannot be used by tenants",
+        )
     if not isinstance(perms, list):
         raise HTTPException(status_code=422, detail="permissions must be a list")
 
@@ -850,6 +898,17 @@ def update_role(role_id: int, payload: dict, request: Request):
     updates = {k: v for k, v in payload.items() if k in allowed}
     if not updates:
         raise HTTPException(status_code=422, detail="No editable fields")
+
+    if "name" in updates:
+        updates["name"] = str(updates["name"]).strip()
+        if (
+            updates["name"] in RESERVED_ROLE_NAMES
+            and actor["role"] != "super_admin"
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Reserved role name cannot be used by tenants",
+            )
 
     conn = db()
     try:
