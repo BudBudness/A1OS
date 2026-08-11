@@ -338,7 +338,6 @@ def v1_health():
     return {"status": "ok", "service": "a1os-platform-api", "version": "1.0.0"}
 
 
-@app.get("/v1/health")
 def health():
     return {"status": "ok", "service": "a1os-platform-api", "version": "1.0.0"}
 
