@@ -309,11 +309,66 @@ async def _ws_send_to_org(organization_id, message):
 # APP
 # ============================================================
 
+from api.domains.education import router as education_router
 app = FastAPI(
     title="A1OS Platform API",
     version="1.0.0",
     description="Multi-tenant platform backend serving industry-specific frontends.",
 )
+
+app.include_router(education_router, prefix="/v1/education", tags=["education"])
+
+
+
+@app.middleware("http")
+async def _http_auth_context(request: Request, call_next):
+    request.state.actor = None
+
+    authorization = request.headers.get("Authorization", "")
+    if authorization.startswith("Bearer "):
+        token = authorization[7:].strip()
+
+        if token:
+            conn = db()
+            try:
+                row = conn.execute(
+                    """
+                    SELECT
+                        u.id,
+                        u.organization_id,
+                        u.email,
+                        u.full_name,
+                        u.role,
+                        u.active,
+                        s.expires_at AS session_expiry
+                    FROM auth_sessions s
+                    JOIN users u ON u.id = s.user_id
+                    WHERE s.token = ?
+                    LIMIT 1
+                    """,
+                    (token,),
+                ).fetchone()
+            finally:
+                conn.close()
+
+            if row and row["active"]:
+                try:
+                    expiry = datetime.fromisoformat(row["session_expiry"])
+                    if expiry.tzinfo is None:
+                        expiry = expiry.replace(tzinfo=timezone.utc)
+
+                    if expiry >= datetime.now(timezone.utc):
+                        request.state.actor = {
+                            "id": row["id"],
+                            "organization_id": row["organization_id"],
+                            "email": row["email"],
+                            "full_name": row["full_name"],
+                            "role": row["role"],
+                        }
+                except (TypeError, ValueError):
+                    pass
+
+    return await call_next(request)
 
 app.add_middleware(
     CORSMiddleware,
@@ -330,6 +385,7 @@ def _startup():
 
 
 # ============================================================
+
 # HEALTH
 # ============================================================
 
