@@ -90,25 +90,9 @@ else
     fi
 fi
 
-if check "https://roastery.pyongcity.org/login"; then
-    log "PASS public-roastery"
-else
-    log "FAIL public-roastery"
 
-    if check "http://127.0.0.1:3000/login"; then
-        restart_tunnel
-    fi
-fi
 
-if check "https://roastery-api.pyongcity.org/v1/health"; then
-    log "PASS public-roastery-api"
-else
-    log "FAIL public-roastery-api"
 
-    if check "http://127.0.0.1:3013/v1/health"; then
-        restart_tunnel
-    fi
-fi
 
 EDU_DB="$ROOT/products/education-os/deployments/little-oaks/data/education.db"
 PLATFORM_DB="$ROOT/products/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db"

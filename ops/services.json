@@ -32,16 +32,7 @@
       ],
       "boot_order": 30
     },
-    {
-      "name": "roastery",
-      "type": "application",
-      "database": null,
-      "health_local": "http://127.0.0.1:3000/login",
-      "adapter": [
-        "ops/adapters/restart-coffee-web.sh"
-      ],
-      "boot_order": 40
-    },
+
     {
       "name": "cloudflare-edge-observer",
       "type": "observer",

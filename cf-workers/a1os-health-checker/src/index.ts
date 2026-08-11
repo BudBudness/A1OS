@@ -55,8 +55,6 @@ export const DEFAULT_ENDPOINTS: HealthEndpoint[] = [
   { name: "pos-edge", url: "https://pos.edge.pyongcity.org/v1/health" },
   { name: "edu-api", url: "https://little-oaks.pyongcity.org/api/health" },
   { name: "edu-frontend", url: "https://little-oaks.pyongcity.org/" },
-  { name: "roastery", url: "https://roastery.pyongcity.org/login" },
-  { name: "roastery-api", url: "https://roastery-api.pyongcity.org/v1/health" },
 ];
 
 const JSON_HEADERS = {

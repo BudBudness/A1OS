@@ -21,7 +21,6 @@ PRODUCT IMPLEMENTATION PRIORITY:
 2. Charity / NGO OS
    - StramosWisdomCharityOrg
 3. Business OS
-   - Image Coffee Roastery  ← first Platform-API frontend (coffee ERP)
 4. Music Label OS
    - Pyong Recordz Ltd
 5. Future Domain OS Products

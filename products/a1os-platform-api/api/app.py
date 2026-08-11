@@ -91,7 +91,6 @@ def _init_db():
             INSERT INTO organizations (code, name, industry)
             VALUES (?, ?, ?)
             """,
-            ("ICR", "Image Coffee Roastery", "coffee"),
         )
         org_id = conn.execute(
             "SELECT id FROM organizations WHERE code = 'ICR'"
@@ -339,7 +338,7 @@ def v1_health():
     return {"status": "ok", "service": "a1os-platform-api", "version": "1.0.0"}
 
 
-@app.get("/health")
+@app.get("/v1/health")
 def health():
     return {"status": "ok", "service": "a1os-platform-api", "version": "1.0.0"}
 
@@ -348,7 +347,7 @@ def health():
 # AUTHENTICATION
 # ============================================================
 
-@app.post("/auth/login")
+@app.post("/v1/auth/login")
 def auth_login(payload: dict, request: Request):
     _rate_limit_auth(request)
 
@@ -426,7 +425,7 @@ def auth_login(payload: dict, request: Request):
         conn.close()
 
 
-@app.get("/auth/me")
+@app.get("/v1/auth/me")
 def auth_me(request: Request):
     actor = _current_actor(request)
     conn = db()
@@ -444,7 +443,7 @@ def auth_me(request: Request):
     }
 
 
-@app.post("/auth/logout")
+@app.post("/v1/auth/logout")
 def auth_logout(request: Request):
     auth = request.headers.get("Authorization", "")
     token = ""
@@ -474,7 +473,7 @@ def auth_logout(request: Request):
     return response
 
 
-@app.post("/auth/change-password")
+@app.post("/v1/auth/change-password")
 def auth_change_password(payload: dict, request: Request):
     actor = _current_actor(request)
 
@@ -521,7 +520,7 @@ def auth_change_password(payload: dict, request: Request):
 # ORGANIZATIONS
 # ============================================================
 
-@app.get("/organizations")
+@app.get("/v1/organizations")
 def list_organizations(request: Request):
     actor = _current_actor(request)
     conn = db()
@@ -544,7 +543,7 @@ def list_organizations(request: Request):
         conn.close()
 
 
-@app.post("/organizations", status_code=201)
+@app.post("/v1/organizations", status_code=201)
 def create_organization(payload: dict, request: Request):
     actor = _current_actor(request)
     if actor["role"] != "super_admin":
@@ -591,7 +590,7 @@ def create_organization(payload: dict, request: Request):
         conn.close()
 
 
-@app.patch("/organizations/{organization_id}")
+@app.patch("/v1/organizations/{organization_id}")
 def update_organization(organization_id: int, payload: dict, request: Request):
     actor = _require_permission(request, "organizations.update")
 
@@ -636,7 +635,7 @@ def update_organization(organization_id: int, payload: dict, request: Request):
 # USERS
 # ============================================================
 
-@app.get("/users")
+@app.get("/v1/users")
 def list_users(request: Request):
     actor = _require_permission(request, "users.view")
     limit, offset = _page_params(request)
@@ -679,7 +678,7 @@ def list_users(request: Request):
         conn.close()
 
 
-@app.post("/users", status_code=201)
+@app.post("/v1/users", status_code=201)
 def create_user(payload: dict, request: Request):
     actor = _require_permission(request, "users.create")
 
@@ -772,7 +771,7 @@ def create_user(payload: dict, request: Request):
         conn.close()
 
 
-@app.patch("/users/{user_id}")
+@app.patch("/v1/users/{user_id}")
 def update_user(user_id: int, payload: dict, request: Request):
     actor = _require_permission(request, "users.update")
 
@@ -833,7 +832,7 @@ def update_user(user_id: int, payload: dict, request: Request):
 # ROLES
 # ============================================================
 
-@app.get("/roles")
+@app.get("/v1/roles")
 def list_roles(request: Request):
     actor = _require_permission(request, "users.view")
     conn = db()
@@ -852,7 +851,7 @@ def list_roles(request: Request):
         conn.close()
 
 
-@app.post("/roles", status_code=201)
+@app.post("/v1/roles", status_code=201)
 def create_role(payload: dict, request: Request):
     actor = _require_permission(request, "users.create")
 
@@ -890,7 +889,7 @@ def create_role(payload: dict, request: Request):
         conn.close()
 
 
-@app.patch("/roles/{role_id}")
+@app.patch("/v1/roles/{role_id}")
 def update_role(role_id: int, payload: dict, request: Request):
     actor = _require_permission(request, "users.update")
 
@@ -951,7 +950,7 @@ def update_role(role_id: int, payload: dict, request: Request):
 # PARTIES (customers / suppliers / farmers / buyers)
 # ============================================================
 
-@app.get("/parties")
+@app.get("/v1/parties")
 def list_parties(request: Request):
     actor = _require_permission(request, "parties.view")
     limit, offset = _page_params(request)
@@ -998,7 +997,7 @@ def list_parties(request: Request):
         conn.close()
 
 
-@app.post("/parties", status_code=201)
+@app.post("/v1/parties", status_code=201)
 def create_party(payload: dict, request: Request):
     actor = _require_permission(request, "parties.create")
 
@@ -1038,7 +1037,7 @@ def create_party(payload: dict, request: Request):
         conn.close()
 
 
-@app.patch("/parties/{party_id}")
+@app.patch("/v1/parties/{party_id}")
 def update_party(party_id: int, payload: dict, request: Request):
     actor = _require_permission(request, "parties.update")
 
@@ -1077,7 +1076,7 @@ def update_party(party_id: int, payload: dict, request: Request):
 # PRODUCTS
 # ============================================================
 
-@app.get("/products")
+@app.get("/v1/products")
 def list_products(request: Request):
     actor = _require_permission(request, "products.view")
     limit, offset = _page_params(request)
@@ -1120,7 +1119,7 @@ def list_products(request: Request):
         conn.close()
 
 
-@app.post("/products", status_code=201)
+@app.post("/v1/products", status_code=201)
 def create_product(payload: dict, request: Request):
     actor = _require_permission(request, "products.create")
 
@@ -1162,7 +1161,7 @@ def create_product(payload: dict, request: Request):
         conn.close()
 
 
-@app.patch("/products/{product_id}")
+@app.patch("/v1/products/{product_id}")
 def update_product(product_id: int, payload: dict, request: Request):
     actor = _require_permission(request, "products.update")
 
@@ -1202,7 +1201,7 @@ def update_product(product_id: int, payload: dict, request: Request):
 # ACCOUNTS
 # ============================================================
 
-@app.get("/accounts")
+@app.get("/v1/accounts")
 def list_accounts(request: Request):
     actor = _require_permission(request, "ledger.view")
     account_type = (request.query_params.get("account_type") or "").strip()
@@ -1232,7 +1231,7 @@ def list_accounts(request: Request):
         conn.close()
 
 
-@app.post("/accounts", status_code=201)
+@app.post("/v1/accounts", status_code=201)
 def create_account(payload: dict, request: Request):
     actor = _require_permission(request, "ledger.create")
 
@@ -1279,7 +1278,7 @@ def create_account(payload: dict, request: Request):
 # LEDGER (double-entry)
 # ============================================================
 
-@app.post("/ledger", status_code=201)
+@app.post("/v1/ledger", status_code=201)
 def create_ledger_entry(payload: dict, request: Request):
     actor = _require_permission(request, "ledger.create")
 
@@ -1352,7 +1351,7 @@ def create_ledger_entry(payload: dict, request: Request):
         conn.close()
 
 
-@app.get("/ledger")
+@app.get("/v1/ledger")
 def list_ledger(request: Request):
     actor = _require_permission(request, "ledger.view")
     limit, offset = _page_params(request)
@@ -1395,7 +1394,7 @@ def list_ledger(request: Request):
         conn.close()
 
 
-@app.get("/ledger/balances")
+@app.get("/v1/ledger/balances")
 def ledger_balances(request: Request):
     actor = _require_permission(request, "ledger.view")
     account_id = request.query_params.get("account_id")
@@ -1462,7 +1461,7 @@ def ledger_balances(request: Request):
         conn.close()
 
 
-@app.get("/ledger/trial-balance")
+@app.get("/v1/ledger/trial-balance")
 def ledger_trial_balance(request: Request):
     actor = _require_permission(request, "ledger.view")
 
@@ -1494,7 +1493,7 @@ def ledger_trial_balance(request: Request):
 # INVENTORY / WAREHOUSE
 # ============================================================
 
-@app.get("/inventory/items")
+@app.get("/v1/inventory/items")
 def list_inventory(request: Request):
     actor = _require_permission(request, "inventory.view")
     limit, offset = _page_params(request)
@@ -1550,7 +1549,7 @@ def list_inventory(request: Request):
         conn.close()
 
 
-@app.post("/inventory/movements", status_code=201)
+@app.post("/v1/inventory/movements", status_code=201)
 def create_stock_movement(payload: dict, request: Request):
     actor = _require_permission(request, "inventory.create")
 
@@ -1666,7 +1665,7 @@ def create_stock_movement(payload: dict, request: Request):
         conn.close()
 
 
-@app.get("/inventory/movements")
+@app.get("/v1/inventory/movements")
 def list_stock_movements(request: Request):
     actor = _require_permission(request, "inventory.view")
     limit, offset = _page_params(request)
@@ -1697,7 +1696,7 @@ def list_stock_movements(request: Request):
 # NOTIFICATIONS
 # ============================================================
 
-@app.get("/notifications")
+@app.get("/v1/notifications")
 def list_notifications(request: Request):
     actor = _require_permission(request, "notifications.view")
     limit, offset = _page_params(request)
@@ -1739,7 +1738,7 @@ def list_notifications(request: Request):
         conn.close()
 
 
-@app.post("/notifications", status_code=201)
+@app.post("/v1/notifications", status_code=201)
 def create_notification(payload: dict, request: Request):
     actor = _require_permission(request, "notifications.create")
 
@@ -1777,7 +1776,7 @@ def create_notification(payload: dict, request: Request):
 # AUDIT
 # ============================================================
 
-@app.get("/audit")
+@app.get("/v1/audit")
 def list_audit_logs(request: Request):
     actor = _require_permission(request, "audit.view")
     limit, offset = _page_params(request, default_limit=100)
