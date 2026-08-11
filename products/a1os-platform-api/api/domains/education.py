@@ -138,6 +138,149 @@ def health(request: Request):
         conn.close()
 
 
+@router.post("/students", status_code=201)
+def create_student(payload: dict, request: Request):
+    actor = _actor(request)
+    conn = _conn(request)
+    try:
+        first_name = str(payload.get("first_name", "")).strip()
+        if not first_name:
+            raise HTTPException(status_code=400, detail="first_name is required")
+
+        now = _now()
+        cur = conn.execute(
+            """
+            INSERT INTO education_students
+                (organization_id, admission_no, first_name, last_name,
+                 gender, date_of_birth, class_name, status,
+                 metadata, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                actor["organization_id"],
+                payload.get("admission_no"),
+                first_name,
+                payload.get("last_name"),
+                payload.get("gender"),
+                payload.get("date_of_birth"),
+                payload.get("class_name"),
+                payload.get("status", "active"),
+                json.dumps(payload.get("metadata", {})),
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+
+        row = conn.execute(
+            """
+            SELECT *
+            FROM education_students
+            WHERE id = ? AND organization_id = ?
+            """,
+            (cur.lastrowid, actor["organization_id"]),
+        ).fetchone()
+
+        return dict(row)
+    finally:
+        conn.close()
+
+
+@router.patch("/students/{student_id}")
+def update_student(student_id: int, payload: dict, request: Request):
+    actor = _actor(request)
+    conn = _conn(request)
+    try:
+        allowed = {
+            "admission_no",
+            "first_name",
+            "last_name",
+            "gender",
+            "date_of_birth",
+            "class_name",
+            "status",
+            "metadata",
+        }
+
+        fields = []
+        values = []
+
+        for key, value in payload.items():
+            if key not in allowed:
+                continue
+            if key == "first_name":
+                value = str(value).strip()
+                if not value:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="first_name cannot be empty",
+                    )
+            if key == "metadata":
+                value = json.dumps(value)
+            fields.append(f"{key} = ?")
+            values.append(value)
+
+        if not fields:
+            raise HTTPException(status_code=400, detail="No mutable fields supplied")
+
+        fields.append("updated_at = ?")
+        values.append(_now())
+
+        values.extend([student_id, actor["organization_id"]])
+
+        cur = conn.execute(
+            f"""
+            UPDATE education_students
+            SET {", ".join(fields)}
+            WHERE id = ? AND organization_id = ?
+            """,
+            values,
+        )
+        conn.commit()
+
+        if cur.rowcount != 1:
+            raise HTTPException(status_code=404, detail="Student not found")
+
+        row = conn.execute(
+            """
+            SELECT *
+            FROM education_students
+            WHERE id = ? AND organization_id = ?
+            """,
+            (student_id, actor["organization_id"]),
+        ).fetchone()
+
+        return dict(row)
+    finally:
+        conn.close()
+
+
+@router.delete("/students/{student_id}")
+def archive_student(student_id: int, request: Request):
+    actor = _actor(request)
+    conn = _conn(request)
+    try:
+        cur = conn.execute(
+            """
+            UPDATE education_students
+            SET status = 'archived', updated_at = ?
+            WHERE id = ? AND organization_id = ?
+            """,
+            (_now(), student_id, actor["organization_id"]),
+        )
+        conn.commit()
+
+        if cur.rowcount != 1:
+            raise HTTPException(status_code=404, detail="Student not found")
+
+        return {
+            "status": "archived",
+            "student_id": student_id,
+            "organization_id": actor["organization_id"],
+        }
+    finally:
+        conn.close()
+
 @router.get("/students")
 def students(request: Request):
     actor = _actor(request)
@@ -157,6 +300,178 @@ def students(request: Request):
     finally:
         conn.close()
 
+
+
+@router.post("/parents", status_code=201)
+def create_parent(payload: dict, request: Request):
+    actor = _actor(request)
+    conn = _conn(request)
+    try:
+        _init_schema(conn)
+
+        name = str(payload.get("name", "")).strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="name is required")
+
+        now = _now()
+        cur = conn.execute(
+            """
+            INSERT INTO education_parents
+                (organization_id, name, phone, email, relationship,
+                 metadata, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                actor["organization_id"],
+                name,
+                payload.get("phone"),
+                payload.get("email"),
+                payload.get("relationship"),
+                json.dumps(payload.get("metadata", {})),
+                now,
+                now,
+            ),
+        )
+        conn.commit()
+
+        row = conn.execute(
+            """
+            SELECT *
+            FROM education_parents
+            WHERE id = ? AND organization_id = ?
+            """,
+            (cur.lastrowid, actor["organization_id"]),
+        ).fetchone()
+
+        return dict(row)
+    finally:
+        conn.close()
+
+
+@router.patch("/parents/{parent_id}")
+def update_parent(parent_id: int, payload: dict, request: Request):
+    actor = _actor(request)
+    conn = _conn(request)
+    try:
+        _init_schema(conn)
+
+        row = conn.execute(
+            """
+            SELECT *
+            FROM education_parents
+            WHERE id = ? AND organization_id = ?
+            """,
+            (parent_id, actor["organization_id"]),
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Parent not found")
+
+        allowed = {
+            "name",
+            "phone",
+            "email",
+            "relationship",
+            "metadata",
+        }
+
+        fields = []
+        values = []
+
+        for key in allowed:
+            if key not in payload:
+                continue
+
+            value = payload[key]
+
+            if key == "name":
+                value = str(value).strip()
+                if not value:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="name cannot be empty",
+                    )
+
+            if key == "metadata":
+                value = json.dumps(value)
+
+            fields.append(f"{key} = ?")
+            values.append(value)
+
+        if fields:
+            fields.append("updated_at = ?")
+            values.append(_now())
+            values.extend([parent_id, actor["organization_id"]])
+
+            conn.execute(
+                f"""
+                UPDATE education_parents
+                SET {", ".join(fields)}
+                WHERE id = ? AND organization_id = ?
+                """,
+                values,
+            )
+            conn.commit()
+
+        updated = conn.execute(
+            """
+            SELECT *
+            FROM education_parents
+            WHERE id = ? AND organization_id = ?
+            """,
+            (parent_id, actor["organization_id"]),
+        ).fetchone()
+
+        return dict(updated)
+    finally:
+        conn.close()
+
+
+@router.delete("/parents/{parent_id}")
+def archive_parent(parent_id: int, request: Request):
+    actor = _actor(request)
+    conn = _conn(request)
+    try:
+        _init_schema(conn)
+
+        row = conn.execute(
+            """
+            SELECT *
+            FROM education_parents
+            WHERE id = ? AND organization_id = ?
+            """,
+            (parent_id, actor["organization_id"]),
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Parent not found")
+
+        metadata = json.loads(row["metadata"] or "{}")
+        metadata["archived"] = True
+        metadata["archived_at"] = _now()
+
+        conn.execute(
+            """
+            UPDATE education_parents
+            SET metadata = ?, updated_at = ?
+            WHERE id = ? AND organization_id = ?
+            """,
+            (
+                json.dumps(metadata),
+                _now(),
+                parent_id,
+                actor["organization_id"],
+            ),
+        )
+        conn.commit()
+
+        return {
+            "status": "archived",
+            "id": parent_id,
+            "organization_id": actor["organization_id"],
+        }
+    finally:
+        conn.close()
 
 @router.get("/parents")
 def parents(request: Request):
@@ -234,6 +549,317 @@ def fees(request: Request):
             """,
             (actor["organization_id"],),
         )
+    finally:
+        conn.close()
+
+
+
+@router.post("/admissions", status_code=201)
+def create_admission(payload: dict, request: Request):
+    actor = _actor(request)
+    conn = _conn(request)
+    try:
+        _init_schema(conn)
+        applicant_name = str(payload.get("applicant_name", "")).strip()
+        if not applicant_name:
+            raise HTTPException(status_code=400, detail="applicant_name is required")
+        now = _now()
+        cur = conn.execute(
+            """INSERT INTO education_admissions
+               (organization_id, student_id, applicant_name, status,
+                application_date, metadata, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (actor["organization_id"], payload.get("student_id"),
+             applicant_name, payload.get("status","pending"),
+             payload.get("application_date"),
+             json.dumps(payload.get("metadata",{})), now, now))
+        conn.commit()
+        row=conn.execute(
+            "SELECT * FROM education_admissions WHERE id=? AND organization_id=?",
+            (cur.lastrowid,actor["organization_id"])).fetchone()
+        return dict(row)
+    finally:
+        conn.close()
+
+
+@router.patch("/admissions/{admission_id}")
+def update_admission(admission_id:int,payload:dict,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        _init_schema(conn)
+        row=conn.execute(
+            "SELECT * FROM education_admissions WHERE id=? AND organization_id=?",
+            (admission_id,actor["organization_id"])).fetchone()
+        if not row:
+            raise HTTPException(status_code=404,detail="Admission not found")
+        allowed={"student_id","applicant_name","status","application_date","metadata"}
+        fields=[]; values=[]
+        for k in allowed:
+            if k in payload:
+                v=payload[k]
+                if k=="applicant_name":
+                    v=str(v).strip()
+                    if not v: raise HTTPException(status_code=400,detail="applicant_name cannot be empty")
+                if k=="metadata": v=json.dumps(v)
+                fields.append(f"{k}=?"); values.append(v)
+        if fields:
+            fields.append("updated_at=?"); values.append(_now())
+            values += [admission_id,actor["organization_id"]]
+            conn.execute(
+                f"UPDATE education_admissions SET {','.join(fields)} WHERE id=? AND organization_id=?",
+                values)
+            conn.commit()
+        return dict(conn.execute(
+            "SELECT * FROM education_admissions WHERE id=? AND organization_id=?",
+            (admission_id,actor["organization_id"])).fetchone())
+    finally:
+        conn.close()
+
+
+@router.delete("/admissions/{admission_id}")
+def archive_admission(admission_id:int,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        _init_schema(conn)
+        row=conn.execute(
+            "SELECT * FROM education_admissions WHERE id=? AND organization_id=?",
+            (admission_id,actor["organization_id"])).fetchone()
+        if not row: raise HTTPException(status_code=404,detail="Admission not found")
+        metadata=json.loads(row["metadata"] or "{}")
+        metadata["archived"]=True
+        metadata["archived_at"]=_now()
+        conn.execute(
+            "UPDATE education_admissions SET metadata=?,status='archived',updated_at=? WHERE id=? AND organization_id=?",
+            (json.dumps(metadata),_now(),admission_id,actor["organization_id"]))
+        conn.commit()
+        return {"status":"archived","id":admission_id,"organization_id":actor["organization_id"]}
+    finally:
+        conn.close()
+
+
+@router.post("/attendance", status_code=201)
+def create_attendance(payload:dict,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        _init_schema(conn)
+        if payload.get("student_id") is None:
+            raise HTTPException(status_code=400,detail="student_id is required")
+        if not payload.get("attendance_date"):
+            raise HTTPException(status_code=400,detail="attendance_date is required")
+        if not payload.get("status"):
+            raise HTTPException(status_code=400,detail="status is required")
+        student=conn.execute(
+            "SELECT id FROM education_students WHERE id=? AND organization_id=?",
+            (payload["student_id"],actor["organization_id"])).fetchone()
+        if not student:
+            raise HTTPException(status_code=404,detail="Student not found")
+        cur=conn.execute(
+            """INSERT INTO education_attendance
+               (organization_id,student_id,attendance_date,status,notes,created_at)
+               VALUES (?,?,?,?,?,?)""",
+            (actor["organization_id"],payload["student_id"],
+             payload["attendance_date"],payload["status"],
+             payload.get("notes"),_now()))
+        conn.commit()
+        return dict(conn.execute(
+            "SELECT * FROM education_attendance WHERE id=? AND organization_id=?",
+            (cur.lastrowid,actor["organization_id"])).fetchone())
+    finally:
+        conn.close()
+
+
+@router.patch("/attendance/{attendance_id}")
+def update_attendance(attendance_id:int,payload:dict,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        _init_schema(conn)
+        row=conn.execute(
+            "SELECT * FROM education_attendance WHERE id=? AND organization_id=?",
+            (attendance_id,actor["organization_id"])).fetchone()
+        if not row: raise HTTPException(status_code=404,detail="Attendance not found")
+        allowed={"student_id","attendance_date","status","notes"}
+        fields=[]; values=[]
+        for k in allowed:
+            if k in payload:
+                if k=="student_id":
+                    st=conn.execute(
+                        "SELECT id FROM education_students WHERE id=? AND organization_id=?",
+                        (payload[k],actor["organization_id"])).fetchone()
+                    if not st: raise HTTPException(status_code=404,detail="Student not found")
+                fields.append(f"{k}=?"); values.append(payload[k])
+        if fields:
+            values += [attendance_id,actor["organization_id"]]
+            conn.execute(
+                f"UPDATE education_attendance SET {','.join(fields)} WHERE id=? AND organization_id=?",
+                values)
+            conn.commit()
+        return dict(conn.execute(
+            "SELECT * FROM education_attendance WHERE id=? AND organization_id=?",
+            (attendance_id,actor["organization_id"])).fetchone())
+    finally:
+        conn.close()
+
+
+@router.delete("/attendance/{attendance_id}")
+def delete_attendance(attendance_id:int,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        row=conn.execute(
+            "SELECT id FROM education_attendance WHERE id=? AND organization_id=?",
+            (attendance_id,actor["organization_id"])).fetchone()
+        if not row: raise HTTPException(status_code=404,detail="Attendance not found")
+        conn.execute(
+            "DELETE FROM education_attendance WHERE id=? AND organization_id=?",
+            (attendance_id,actor["organization_id"]))
+        conn.commit()
+        return {"status":"deleted","id":attendance_id,"organization_id":actor["organization_id"]}
+    finally:
+        conn.close()
+
+
+@router.post("/fees", status_code=201)
+def create_fee(payload:dict,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        _init_schema(conn)
+        description=str(payload.get("description","")).strip()
+        if not description: raise HTTPException(status_code=400,detail="description is required")
+        if payload.get("student_id") is not None:
+            st=conn.execute(
+                "SELECT id FROM education_students WHERE id=? AND organization_id=?",
+                (payload["student_id"],actor["organization_id"])).fetchone()
+            if not st: raise HTTPException(status_code=404,detail="Student not found")
+        now=_now()
+        cur=conn.execute(
+            """INSERT INTO education_fees
+               (organization_id,student_id,description,amount,status,due_date,created_at,updated_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (actor["organization_id"],payload.get("student_id"),description,
+             float(payload.get("amount",0)),payload.get("status","pending"),
+             payload.get("due_date"),now,now))
+        conn.commit()
+        return dict(conn.execute(
+            "SELECT * FROM education_fees WHERE id=? AND organization_id=?",
+            (cur.lastrowid,actor["organization_id"])).fetchone())
+    finally:
+        conn.close()
+
+
+@router.patch("/fees/{fee_id}")
+def update_fee(fee_id:int,payload:dict,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        row=conn.execute(
+            "SELECT * FROM education_fees WHERE id=? AND organization_id=?",
+            (fee_id,actor["organization_id"])).fetchone()
+        if not row: raise HTTPException(status_code=404,detail="Fee not found")
+        allowed={"student_id","description","amount","status","due_date"}
+        fields=[]; values=[]
+        for k in allowed:
+            if k in payload:
+                if k=="student_id" and payload[k] is not None:
+                    st=conn.execute(
+                        "SELECT id FROM education_students WHERE id=? AND organization_id=?",
+                        (payload[k],actor["organization_id"])).fetchone()
+                    if not st: raise HTTPException(status_code=404,detail="Student not found")
+                if k=="description":
+                    payload[k]=str(payload[k]).strip()
+                fields.append(f"{k}=?"); values.append(payload[k])
+        if fields:
+            fields.append("updated_at=?"); values.append(_now())
+            values += [fee_id,actor["organization_id"]]
+            conn.execute(
+                f"UPDATE education_fees SET {','.join(fields)} WHERE id=? AND organization_id=?",
+                values)
+            conn.commit()
+        return dict(conn.execute(
+            "SELECT * FROM education_fees WHERE id=? AND organization_id=?",
+            (fee_id,actor["organization_id"])).fetchone())
+    finally:
+        conn.close()
+
+
+@router.delete("/fees/{fee_id}")
+def archive_fee(fee_id:int,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        row=conn.execute(
+            "SELECT * FROM education_fees WHERE id=? AND organization_id=?",
+            (fee_id,actor["organization_id"])).fetchone()
+        if not row: raise HTTPException(status_code=404,detail="Fee not found")
+        conn.execute(
+            "UPDATE education_fees SET status='archived',updated_at=? WHERE id=? AND organization_id=?",
+            (_now(),fee_id,actor["organization_id"]))
+        conn.commit()
+        return {"status":"archived","id":fee_id,"organization_id":actor["organization_id"]}
+    finally:
+        conn.close()
+
+
+@router.post("/site-content", status_code=201)
+def create_site_content(payload:dict,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        _init_schema(conn)
+        key=str(payload.get("content_key","")).strip()
+        if not key: raise HTTPException(status_code=400,detail="content_key is required")
+        now=_now()
+        try:
+            cur=conn.execute(
+                """INSERT INTO education_site_content
+                   (organization_id,content_key,content,updated_at)
+                   VALUES (?,?,?,?)""",
+                (actor["organization_id"],key,str(payload.get("content","")),now))
+            conn.commit()
+        except Exception:
+            raise HTTPException(status_code=409,detail="content_key already exists")
+        return dict(conn.execute(
+            "SELECT * FROM education_site_content WHERE id=? AND organization_id=?",
+            (cur.lastrowid,actor["organization_id"])).fetchone())
+    finally:
+        conn.close()
+
+
+@router.patch("/site-content/{content_id}")
+def update_site_content(content_id:int,payload:dict,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        row=conn.execute(
+            "SELECT * FROM education_site_content WHERE id=? AND organization_id=?",
+            (content_id,actor["organization_id"])).fetchone()
+        if not row: raise HTTPException(status_code=404,detail="Site content not found")
+        fields=[]; values=[]
+        for k in ("content_key","content"):
+            if k in payload:
+                v=str(payload[k]).strip() if k=="content_key" else str(payload[k])
+                fields.append(f"{k}=?"); values.append(v)
+        if fields:
+            fields.append("updated_at=?"); values.append(_now())
+            values += [content_id,actor["organization_id"]]
+            conn.execute(
+                f"UPDATE education_site_content SET {','.join(fields)} WHERE id=? AND organization_id=?",
+                values)
+            conn.commit()
+        return dict(conn.execute(
+            "SELECT * FROM education_site_content WHERE id=? AND organization_id=?",
+            (content_id,actor["organization_id"])).fetchone())
+    finally:
+        conn.close()
+
+
+@router.delete("/site-content/{content_id}")
+def delete_site_content(content_id:int,request:Request):
+    actor=_actor(request); conn=_conn(request)
+    try:
+        row=conn.execute(
+            "SELECT id FROM education_site_content WHERE id=? AND organization_id=?",
+            (content_id,actor["organization_id"])).fetchone()
+        if not row: raise HTTPException(status_code=404,detail="Site content not found")
+        conn.execute(
+            "DELETE FROM education_site_content WHERE id=? AND organization_id=?",
+            (content_id,actor["organization_id"]))
+        conn.commit()
+        return {"status":"deleted","id":content_id,"organization_id":actor["organization_id"]}
     finally:
         conn.close()
 
