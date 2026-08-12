@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "A1OS Workflow",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {"const": "a1os/v1"},
+    "kind": {"const": "Workflow"},
+    "metadata": {"type": "object", "required": ["id", "version"], "properties": {"id": {"type": "string"}, "version": {"type": "string"}}, "additionalProperties": true},
+    "spec": {
+      "type": "object",
+      "required": ["capability", "stages", "verification"],
+      "properties": {
+        "capability": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string"}}, "additionalProperties": true},
+        "inputs": {"type": "object"},
+        "prerequisites": {"type": "array", "items": {"type": "string"}},
+        "stages": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["id", "executor"], "properties": {"id": {"type": "string"}, "executor": {"type": "string"}, "required": {"type": "boolean"}}, "additionalProperties": true}},
+        "verification": {"type": "array", "items": {"type": "string"}},
+        "rollback": {"type": "object"},
+        "outputs": {"type": "object"},
+        "destructive": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
