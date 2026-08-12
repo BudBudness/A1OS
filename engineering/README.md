@@ -25,4 +25,4 @@ All workflows default to `dry_run` unless explicitly executed by a trusted integ
 
 ## Runtime
 
-The lightweight reference runtime in `runtime/` validates manifests, resolves capability/workflow dependencies, plans execution, records state, and runs deterministic verifiers. Provider-specific executors are adapters; A1OS remains the control plane.
+The lightweight reference runtime validates manifests, resolves capability/workflow dependencies, plans execution, records state, and exposes verification hooks. Provider-specific executors and verifiers remain adapters; A1OS remains the control plane.
