@@ -1,7 +1,0 @@
-PRODUCT=Little Oaks Education OS
-VERSION=1.0.0
-RELEASE_TYPE=Production Release Candidate
-RELEASE_TIMESTAMP_UTC=20260726T143858Z
-GIT_COMMIT=1c7cf4ae8ce24e37747bb8cd7c9240753130cb1a
-DATABASE_BACKUP=/data/data/com.termux/files/home/A1OS_RESTORED/products/education-os/deployments/little-oaks/backups/education-20260726T143858Z.db
-API_PORT=3012
