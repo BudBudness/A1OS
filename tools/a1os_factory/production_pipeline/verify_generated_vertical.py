@@ -106,6 +106,8 @@ def main():
     ):
         assert deployment["core"][key] == "a1os-core"
 
+    assert deployment["deployment"]["mode"] == "managed"
+
     print("RUNTIME: PASS")
     print("PLATFORM API CLIENT: PASS")
     print("AUTH CONTEXT: PASS")

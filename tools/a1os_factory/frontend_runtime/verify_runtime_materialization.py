@@ -137,6 +137,9 @@ def main():
     if deployment_manifest.get("core", {}).get("rbac") != "a1os-core":
         fail("deployment RBAC binding missing")
 
+    if deployment_manifest.get("deployment", {}).get("mode") != "managed":
+        fail("managed deployment binding missing")
+
     print("RUNTIME MATERIALIZATION: PASS")
     print("REQUIRED ARTIFACTS: PASS")
     print("PLATFORM API BINDING: PASS")
