@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import subprocess
+
 """
 A1OS Frontend Vertical Generator
 
@@ -92,6 +94,9 @@ def generate(product: str) -> Path:
   "name": "%s",
   "type": "frontend-vertical",
   "backend": "a1os-platform-api",
+  "deployment": {
+    "mode": "managed"
+  },
   "ownership": {
     "pages": "vertical",
     "components": "vertical",
@@ -115,6 +120,24 @@ def generate(product: str) -> Path:
 """ % name,
         encoding="utf-8",
     )
+
+    # A1OS Frontend Runtime Materialization
+    _runtime_materializer = (
+        Path(__file__).resolve().parents[1]
+        / "frontend_runtime"
+        / "runtime_materializer.py"
+    )
+    _spec_path = destination / "A1OS_VERTICAL.json"
+    if _runtime_materializer.exists() and _spec_path.exists():
+        subprocess.run(
+            [
+                sys.executable,
+                str(_runtime_materializer),
+                str(_spec_path),
+                str(destination),
+            ],
+            check=True,
+        )
 
     return destination
 
