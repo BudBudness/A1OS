@@ -25,7 +25,7 @@
     {
       "name": "platform-api",
       "type": "application",
-      "database": "products/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
+      "database": "runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
       "health_local": "http://127.0.0.1:3013/v1/health",
       "adapter": [
         "ops/adapters/restart-platform-api.sh"

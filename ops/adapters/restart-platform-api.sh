@@ -5,7 +5,7 @@ export PATH="/data/data/com.termux/files/usr/bin:$PATH"
 ROOT="$HOME/A1OS_RESTORED"
 pkill -f 'uvicorn api.app:app --host 127.0.0.1 --port 3013' 2>/dev/null || true
 sleep 2
-cd "$ROOT/products/a1os-platform-api" || exit 1
+cd "$ROOT/platform/a1os-platform-api" || exit 1
 nohup ./run-production.sh \
     >> "$ROOT/logs/platform-api-watchdog.log" 2>&1 9>&- &
 echo "platform-api relaunched"

@@ -95,7 +95,7 @@ fi
 
 
 EDU_DB="$ROOT/products/education-os/deployments/little-oaks/data/education.db"
-PLATFORM_DB="$ROOT/products/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db"
+PLATFORM_DB="$ROOT/runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db"
 
 if sqlite3 "$ROOT/data/a1os.db" "PRAGMA integrity_check;" |
     grep -qx "ok" &&

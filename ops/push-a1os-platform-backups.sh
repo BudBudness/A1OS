@@ -5,7 +5,7 @@ export HOME=/data/data/com.termux/files/home
 export PATH=/data/data/com.termux/files/usr/bin:$PATH
 
 BACKUP_REPO="$HOME/a1os-backups"
-PLATFORM_BACKUPS="$HOME/A1OS_RESTORED/products/a1os-platform-api/deployments/a1os-platform/backups"
+PLATFORM_BACKUPS="$HOME/A1OS_RESTORED/runtime/a1os-platform-api/deployments/a1os-platform/backups"
 STAGING="$BACKUP_REPO/a1os-platform"
 REMOTE="https://github.com/BudBudness/a1os-backups.git"
 

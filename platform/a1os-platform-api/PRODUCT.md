@@ -10,7 +10,7 @@ Multi-tenant platform backend serving industry-specific frontend applications.
 ## Run
 
 ```
-cd products/a1os-platform-api && python3 -m uvicorn api.app:app --host 127.0.0.1 --port 3013
+cd platform/a1os-platform-api && python3 -m uvicorn api.app:app --host 127.0.0.1 --port 3013
 ```
 
 or `./run-production.sh` (loads `.env.production` if present).
