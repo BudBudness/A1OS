@@ -117,6 +117,7 @@ def _verify_password(password: str, stored: str) -> bool:
 
 _LOGIN_ATTEMPTS = {}
 _LOGIN_MAX_ATTEMPTS = 5
+_LOGIN_WINDOW_SECONDS = 300
 _AUTH_SESSION_DAYS = 7
 PBKDF2_ITERATIONS = 200_000
 
@@ -170,7 +171,7 @@ def _rate_limit_auth(request: Request):
     now = time.monotonic()
     attempts = [
         ts for ts in _LOGIN_ATTEMPTS.get(client, [])
-        if now - ts < LOGIN_WINDOW_SECONDS
+        if now - ts < _LOGIN_WINDOW_SECONDS
     ]
     if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
         raise HTTPException(
@@ -184,7 +185,7 @@ def _record_auth_attempt(client: str):
     now = time.monotonic()
     attempts = [
         ts for ts in _LOGIN_ATTEMPTS.get(client, [])
-        if now - ts < LOGIN_WINDOW_SECONDS
+        if now - ts < _LOGIN_WINDOW_SECONDS
     ]
     attempts.append(now)
     _LOGIN_ATTEMPTS[client] = attempts
