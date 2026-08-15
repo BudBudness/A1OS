@@ -1,0 +1,87 @@
+=== organizations ===
+cid     name      type    notnull     dflt_value      pk
+---  ----------  -------  -------  -----------------  --
+  0  id          INTEGER        0                      1
+  1  code        TEXT           1                      0
+  2  name        TEXT           1                      0
+  3  industry    TEXT           1  'general'           0
+  4  created_at  TEXT           1  CURRENT_TIMESTAMP   0
+  5  updated_at  TEXT           1  CURRENT_TIMESTAMP   0
+
+=== users ===
+cid       name         type    notnull     dflt_value      pk
+---  ---------------  -------  -------  -----------------  --
+  0  id               INTEGER        0                      1
+  1  organization_id  INTEGER        1                      0
+  2  email            TEXT           1                      0
+  3  full_name        TEXT           1                      0
+  4  password_hash    TEXT           1                      0
+  5  role             TEXT           1  'member'            0
+  6  active           INTEGER        1  1                   0
+  7  created_at       TEXT           1  CURRENT_TIMESTAMP   0
+  8  updated_at       TEXT           1  CURRENT_TIMESTAMP   0
+
+id  seq      table           from        to  on_update  on_delete  match
+--  ---  -------------  ---------------  --  ---------  ---------  -----
+ 0    0  organizations  organization_id  id  NO ACTION  NO ACTION  NONE
+=== roles ===
+cid       name         type    notnull     dflt_value      pk
+---  ---------------  -------  -------  -----------------  --
+  0  id               INTEGER        0                      1
+  1  organization_id  INTEGER        1                      0
+  2  name             TEXT           1                      0
+  3  permissions      TEXT           1  '[]'                0
+  4  created_at       TEXT           1  CURRENT_TIMESTAMP   0
+  5  updated_at       TEXT           1  CURRENT_TIMESTAMP   0
+
+=== parties ===
+cid       name         type    notnull     dflt_value      pk
+---  ---------------  -------  -------  -----------------  --
+  0  id               INTEGER        0                      1
+  1  organization_id  INTEGER        1                      0
+  2  party_type       TEXT           1  'customer'          0
+  3  name             TEXT           1                      0
+  4  phone            TEXT           0                      0
+  5  email            TEXT           0                      0
+  6  location         TEXT           0                      0
+  7  external_ref     TEXT           0                      0
+  8  created_at       TEXT           1  CURRENT_TIMESTAMP   0
+  9  updated_at       TEXT           1  CURRENT_TIMESTAMP   0
+
+id  seq      table           from        to  on_update  on_delete  match
+--  ---  -------------  ---------------  --  ---------  ---------  -----
+ 0    0  organizations  organization_id  id  NO ACTION  NO ACTION  NONE
+=== products ===
+cid       name         type    notnull     dflt_value      pk
+---  ---------------  -------  -------  -----------------  --
+  0  id               INTEGER        0                      1
+  1  organization_id  INTEGER        1                      0
+  2  name             TEXT           1                      0
+  3  sku              TEXT           1                      0
+  4  category         TEXT           0                      0
+  5  unit             TEXT           1  'kg'                0
+  6  cost_price       REAL           0                      0
+  7  selling_price    REAL           0                      0
+  8  active           INTEGER        1  1                   0
+  9  created_at       TEXT           1  CURRENT_TIMESTAMP   0
+ 10  updated_at       TEXT           1  CURRENT_TIMESTAMP   0
+
+id  seq      table           from        to  on_update  on_delete  match
+--  ---  -------------  ---------------  --  ---------  ---------  -----
+ 0    0  organizations  organization_id  id  NO ACTION  NO ACTION  NONE
+=== audit_log ===
+cid       name         type    notnull     dflt_value      pk
+---  ---------------  -------  -------  -----------------  --
+  0  id               INTEGER        0                      1
+  1  organization_id  INTEGER        1                      0
+  2  actor_user_id    INTEGER        0                      0
+  3  entity_type      TEXT           1                      0
+  4  entity_id        INTEGER        0                      0
+  5  action           TEXT           1                      0
+  6  details          TEXT           0                      0
+  7  created_at       TEXT           1  CURRENT_TIMESTAMP   0
+
+id  seq      table           from        to  on_update  on_delete  match
+--  ---  -------------  ---------------  --  ---------  ---------  -----
+ 0    0  users          actor_user_id    id  NO ACTION  NO ACTION  NONE
+ 1    0  organizations  organization_id  id  NO ACTION  NO ACTION  NONE

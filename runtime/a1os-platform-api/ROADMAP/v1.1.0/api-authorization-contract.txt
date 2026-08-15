@@ -1,0 +1,331 @@
+            status_code=403,
+            detail="Only super_admin may create organizations",
+        )
+
+    code = str(payload.get("code", "")).strip()
+    name = str(payload.get("name", "")).strip()
+    industry = str(payload.get("industry", "general")).strip()
+
+    if not code or not name:
+        raise HTTPException(
+            status_code=422,
+            detail="code and name are required",
+        )
+
+    conn = db()
+    try:
+        existing = conn.execute(
+            "SELECT id FROM organizations WHERE code = ?",
+            (code,),
+        ).fetchone()
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail="Organization code already exists",
+            )
+        cur = conn.execute(
+            """
+            INSERT INTO organizations (code, name, industry)
+            VALUES (?, ?, ?)
+            """,
+            (code, name, industry),
+        )
+        _audit(conn, actor, "organization", cur.lastrowid, "created",
+               {"code": code, "name": name})
+        return {
+            "status": "created",
+            "organization_id": cur.lastrowid,
+        }
+    finally:
+        conn.close()
+
+
+@app.patch("/v1/organizations/{organization_id}")
+def update_organization(organization_id: int, payload: dict, request: Request):
+    actor = _require_permission(request, "organizations.update")
+
+    allowed = {"name", "industry"}
+    updates = {k: v for k, v in payload.items() if k in allowed}
+    if not updates:
+        raise HTTPException(status_code=422, detail="No editable fields")
+
+    conn = db()
+    try:
+        if actor["role"] != "super_admin":
+            if organization_id != actor["organization_id"]:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Organization not found",
+                )
+
+        row = conn.execute(
+            "SELECT id FROM organizations WHERE id = ?",
+            (organization_id,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Organization not found")
+
+        set_sql = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"""
+            UPDATE organizations
+            SET {set_sql}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            list(updates.values()) + [organization_id],
+        )
+        _audit(conn, actor, "organization", organization_id, "updated",
+               list(updates.keys()))
+        return {"status": "updated", "organization_id": organization_id}
+    finally:
+        conn.close()
+
+
+# ============================================================
+# USERS
+# ============================================================
+
+@app.get("/v1/users")
+def list_users(request: Request):
+    actor = _require_permission(request, "users.view")
+    limit, offset = _page_params(request)
+    search = (request.query_params.get("search") or "").strip()
+
+    conn = db()
+    try:
+        where = ["organization_id = ?"]
+        params = [actor["organization_id"]]
+        if search:
+            like = f"%{search}%"
+            where.append("(full_name LIKE ? OR email LIKE ?)")
+            params.extend([like, like])
+
+        where_sql = "WHERE " + " AND ".join(where)
+        total = conn.execute(
+            f"SELECT COUNT(*) AS total FROM users {where_sql}",
+            params,
+        ).fetchone()["total"]
+
+        page_sql, page_params = _pagination_sql(limit, offset)
+        rows = conn.execute(
+            f"""
+            SELECT id, full_name, email, role, active, created_at
+            FROM users
+            {where_sql}
+            ORDER BY id DESC
+            {page_sql}
+            """,
+            params + page_params,
+        ).fetchall()
+
+        return {
+            "count": total,
+            "limit": limit,
+            "offset": offset,
+            "users": [dict(r) for r in rows],
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/v1/users", status_code=201)
+def create_user(payload: dict, request: Request):
+    actor = _require_permission(request, "users.create")
+
+    email = str(payload.get("email", "")).strip().lower()
+    full_name = str(payload.get("full_name", "")).strip()
+    role = str(payload.get("role", "member")).strip()
+    password = str(payload.get("password", ""))
+
+    allowed_roles = set(DEFAULT_ROLE_PERMISSIONS.keys())
+    if role not in allowed_roles:
+        raise HTTPException(
+            status_code=422,
+            detail="Invalid role",
+        )
+
+    if role == "super_admin" and actor["role"] != "super_admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only super_admin may assign super_admin",
+        )
+
+    if not email or not full_name or not password:
+        raise HTTPException(
+            status_code=422,
+            detail="email, full_name, and password are required",
+        )
+    if len(password) < 8:
+        raise HTTPException(
+            status_code=422,
+            detail="password must be at least 8 characters",
+        )
+
+    supplied_org = payload.get("organization_id")
+    target_org_id = actor["organization_id"]
+    if supplied_org is not None:
+        try:
+            supplied_org = int(supplied_org)
+        except (TypeError, ValueError):
+            raise HTTPException(
+                status_code=422,
+                detail="organization_id must be an integer",
+            )
+        if (
+            actor["role"] != "super_admin"
+            and supplied_org != actor["organization_id"]
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Only super_admin may create users in another organization",
+            )
+        target_org_id = supplied_org
+
+    conn = db()
+    try:
+        if target_org_id != actor["organization_id"]:
+            org = conn.execute(
+                "SELECT id FROM organizations WHERE id = ?",
+                (target_org_id,),
+            ).fetchone()
+            if not org:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Organization not found",
+                )
+
+        existing = conn.execute(
+            "SELECT id FROM users WHERE lower(email) = ?",
+            (email,),
+        ).fetchone()
+        if existing:
+            raise HTTPException(status_code=409, detail="Email already registered")
+
+        cur = conn.execute(
+            """
+            INSERT INTO users
+            (organization_id, email, full_name, password_hash, role)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                target_org_id,
+                email,
+                full_name,
+                _hash_password(password),
+                role,
+            ),
+        )
+        _audit(conn, actor, "user", cur.lastrowid, "created", {"email": email})
+        return {"status": "created", "user_id": cur.lastrowid}
+    finally:
+        conn.close()
+
+
+@app.patch("/v1/users/{user_id}")
+def update_user(user_id: int, payload: dict, request: Request):
+    actor = _require_permission(request, "users.update")
+
+    allowed = {"full_name", "role", "active"}
+    updates = {k: v for k, v in payload.items() if k in allowed}
+    if not updates:
+        raise HTTPException(status_code=422, detail="No editable fields")
+
+    if "role" in updates:
+        requested_role = str(updates["role"]).strip()
+        if requested_role not in DEFAULT_ROLE_PERMISSIONS:
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid role",
+            )
+        if requested_role == "super_admin" and actor["role"] != "super_admin":
+            raise HTTPException(
+                status_code=403,
+                detail="Only super_admin may assign super_admin",
+            )
+        updates["role"] = requested_role
+
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT id, role FROM users WHERE id = ? AND organization_id = ?",
+            (user_id, actor["organization_id"]),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if (
+            actor["role"] != "super_admin"
+            and row["role"] == "super_admin"
+            and ("active" in updates or "role" in updates)
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Only super_admin may modify a super_admin account",
+            )
+
+        set_sql = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"""
+            UPDATE users
+            SET {set_sql}, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            list(updates.values()) + [user_id],
+        )
+        _audit(conn, actor, "user", user_id, "updated", list(updates.keys()))
+        return {"status": "updated", "user_id": user_id}
+    finally:
+        conn.close()
+
+
+# ============================================================
+# ROLES
+# ============================================================
+
+@app.get("/v1/roles")
+def list_roles(request: Request):
+    actor = _require_permission(request, "users.view")
+    conn = db()
+    try:
+        rows = conn.execute(
+            """
+            SELECT id, name, permissions
+            FROM roles
+            WHERE organization_id = ?
+            ORDER BY name
+            """,
+            (actor["organization_id"],),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+@app.post("/v1/roles", status_code=201)
+def create_role(payload: dict, request: Request):
+    actor = _require_permission(request, "users.create")
+
+    name = str(payload.get("name", "")).strip()
+    perms = payload.get("permissions", [])
+
+    if not name:
+        raise HTTPException(status_code=422, detail="name is required")
+    if name in RESERVED_ROLE_NAMES and actor["role"] != "super_admin":
+        raise HTTPException(
+            status_code=422,
+            detail="Reserved role name cannot be used by tenants",
+        )
+    if not isinstance(perms, list):
+        raise HTTPException(status_code=422, detail="permissions must be a list")
+
+    if actor["role"] != "super_admin" and "*" in perms:
+        raise HTTPException(
+            status_code=403,
+            detail="Platform wildcard permission is restricted to super_admin",
+        )
+
+    conn = db()
+    try:
+        cur = conn.execute(
+            """
+            INSERT INTO roles (organization_id, name, permissions)
