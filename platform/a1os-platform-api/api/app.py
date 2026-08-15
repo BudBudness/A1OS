@@ -16,14 +16,19 @@ from fastapi.middleware.cors import CORSMiddleware
 ROOT = Path(__file__).resolve().parents[3]
 SCHEMA_PATH = ROOT / "platform" / "a1os-platform-api" / "database" / "schema.sql"
 
-DB_PATH = (
-    ROOT
-    / "runtime"
-    / "a1os-platform-api"
-    / "deployments"
-    / "a1os-platform"
-    / "data"
-    / "a1os-platform.db"
+DB_PATH = Path(
+    os.getenv(
+        "A1OS_PLATFORM_DB",
+        str(
+            ROOT
+            / "runtime"
+            / "a1os-platform-api"
+            / "deployments"
+            / "a1os-platform"
+            / "data"
+            / "a1os-platform.db"
+        ),
+    )
 )
 
 
@@ -114,6 +119,15 @@ def _verify_password(password: str, stored: str) -> bool:
 # ============================================================
 # AUTH
 # ============================================================
+
+# ============================================================
+# PLATFORM RUNTIME CONFIGURATION — v1.1
+# ============================================================
+
+A1OS_RUNTIME_ENV = os.getenv("A1OS_RUNTIME_ENV", "development")
+A1OS_SERVICE_NAME = os.getenv("A1OS_SERVICE_NAME", "a1os-platform-api")
+A1OS_READINESS_DB = os.getenv("A1OS_READINESS_DB", '/data/data/com.termux/files/home/A1OS_RESTORED/runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db')
+A1OS_COOKIE_SECURE = os.getenv("A1OS_COOKIE_SECURE", "false").lower() in ("1", "true", "yes", "on")
 
 _LOGIN_ATTEMPTS = {}
 _LOGIN_MAX_ATTEMPTS = 5
@@ -353,6 +367,50 @@ def _startup():
 # HEALTH
 # ============================================================
 
+@app.get("/v1/ready")
+def readiness():
+    """
+    Readiness probe.
+
+    Liveness is handled by /v1/health.
+    Readiness verifies that the application can reach its
+    required persistent database and that SQLite reports
+    an internally consistent database.
+    """
+    import sqlite3
+
+    try:
+        conn = sqlite3.connect(A1OS_READINESS_DB, timeout=2)
+        try:
+            conn.execute("SELECT 1").fetchone()
+            result = conn.execute("PRAGMA integrity_check").fetchone()
+            if not result or result[0] != "ok":
+                raise RuntimeError("database integrity check failed")
+        finally:
+            conn.close()
+
+        return {
+            "status": "ready",
+            "service": A1OS_SERVICE_NAME,
+            "environment": A1OS_RUNTIME_ENV,
+        }
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "status": "not_ready",
+                "service": A1OS_SERVICE_NAME,
+                "reason": str(exc),
+            },
+        )
+
+
+@app.get("/v1/readiness")
+def readiness_alias():
+    return readiness()
+
+
 @app.get("/v1/health")
 def v1_health():
     return {"status": "ok", "service": "a1os-platform-api", "version": "1.0.0"}
@@ -433,7 +491,7 @@ def auth_login(payload: dict, request: Request):
             key="a1os_session",
             value=token,
             httponly=True,
-            secure=False,
+            secure=A1OS_COOKIE_SECURE,
             samesite="lax",
             path="/",
             max_age=60 * 60 * 24 * 30,
@@ -611,7 +669,7 @@ def create_organization(payload: dict, request: Request):
 
 @app.patch("/v1/organizations/{organization_id}")
 def update_organization(organization_id: int, payload: dict, request: Request):
-    actor = _require_permission(request, "organizations.update")
+    actor = _require_permission(request, "organizations:write")
 
     allowed = {"name", "industry"}
     updates = {k: v for k, v in payload.items() if k in allowed}
@@ -656,7 +714,7 @@ def update_organization(organization_id: int, payload: dict, request: Request):
 
 @app.get("/v1/users")
 def list_users(request: Request):
-    actor = _require_permission(request, "users.view")
+    actor = _require_permission(request, "users:read")
     limit, offset = _page_params(request)
     search = (request.query_params.get("search") or "").strip()
 
@@ -699,7 +757,7 @@ def list_users(request: Request):
 
 @app.post("/v1/users", status_code=201)
 def create_user(payload: dict, request: Request):
-    actor = _require_permission(request, "users.create")
+    actor = _require_permission(request, "users:write")
 
     email = str(payload.get("email", "")).strip().lower()
     full_name = str(payload.get("full_name", "")).strip()
@@ -792,7 +850,7 @@ def create_user(payload: dict, request: Request):
 
 @app.patch("/v1/users/{user_id}")
 def update_user(user_id: int, payload: dict, request: Request):
-    actor = _require_permission(request, "users.update")
+    actor = _require_permission(request, "users:write")
 
     allowed = {"full_name", "role", "active"}
     updates = {k: v for k, v in payload.items() if k in allowed}
@@ -853,7 +911,7 @@ def update_user(user_id: int, payload: dict, request: Request):
 
 @app.get("/v1/roles")
 def list_roles(request: Request):
-    actor = _require_permission(request, "users.view")
+    actor = _require_permission(request, "users:read")
     conn = db()
     try:
         rows = conn.execute(
@@ -872,7 +930,7 @@ def list_roles(request: Request):
 
 @app.post("/v1/roles", status_code=201)
 def create_role(payload: dict, request: Request):
-    actor = _require_permission(request, "users.create")
+    actor = _require_permission(request, "users:write")
 
     name = str(payload.get("name", "")).strip()
     perms = payload.get("permissions", [])
@@ -910,7 +968,7 @@ def create_role(payload: dict, request: Request):
 
 @app.patch("/v1/roles/{role_id}")
 def update_role(role_id: int, payload: dict, request: Request):
-    actor = _require_permission(request, "users.update")
+    actor = _require_permission(request, "users:write")
 
     allowed = {"name", "permissions"}
     updates = {k: v for k, v in payload.items() if k in allowed}
@@ -971,7 +1029,7 @@ def update_role(role_id: int, payload: dict, request: Request):
 
 @app.get("/v1/parties")
 def list_parties(request: Request):
-    actor = _require_permission(request, "parties.view")
+    actor = _require_permission(request, "parties:read")
     limit, offset = _page_params(request)
     search = (request.query_params.get("search") or "").strip()
     party_type = (request.query_params.get("party_type") or "").strip()
@@ -1018,7 +1076,7 @@ def list_parties(request: Request):
 
 @app.post("/v1/parties", status_code=201)
 def create_party(payload: dict, request: Request):
-    actor = _require_permission(request, "parties.create")
+    actor = _require_permission(request, "parties:write")
 
     name = str(payload.get("name", "")).strip()
     party_type = str(payload.get("party_type", "customer")).strip()
@@ -1058,7 +1116,7 @@ def create_party(payload: dict, request: Request):
 
 @app.patch("/v1/parties/{party_id}")
 def update_party(party_id: int, payload: dict, request: Request):
-    actor = _require_permission(request, "parties.update")
+    actor = _require_permission(request, "parties:write")
 
     allowed = {
         "party_type", "name", "phone", "email", "location", "external_ref",
@@ -1097,7 +1155,7 @@ def update_party(party_id: int, payload: dict, request: Request):
 
 @app.get("/v1/products")
 def list_products(request: Request):
-    actor = _require_permission(request, "products.view")
+    actor = _require_permission(request, "products:read")
     limit, offset = _page_params(request)
     search = (request.query_params.get("search") or "").strip()
 
@@ -1140,7 +1198,7 @@ def list_products(request: Request):
 
 @app.post("/v1/products", status_code=201)
 def create_product(payload: dict, request: Request):
-    actor = _require_permission(request, "products.create")
+    actor = _require_permission(request, "products:write")
 
     name = str(payload.get("name", "")).strip()
     sku = str(payload.get("sku", "")).strip()
@@ -1182,7 +1240,7 @@ def create_product(payload: dict, request: Request):
 
 @app.patch("/v1/products/{product_id}")
 def update_product(product_id: int, payload: dict, request: Request):
-    actor = _require_permission(request, "products.update")
+    actor = _require_permission(request, "products:write")
 
     allowed = {
         "name", "category", "unit", "cost_price", "selling_price", "active",
@@ -1222,7 +1280,7 @@ def update_product(product_id: int, payload: dict, request: Request):
 
 @app.get("/v1/accounts")
 def list_accounts(request: Request):
-    actor = _require_permission(request, "ledger.view")
+    actor = _require_permission(request, "ledger:read")
     account_type = (request.query_params.get("account_type") or "").strip()
 
     conn = db()
@@ -1252,7 +1310,7 @@ def list_accounts(request: Request):
 
 @app.post("/v1/accounts", status_code=201)
 def create_account(payload: dict, request: Request):
-    actor = _require_permission(request, "ledger.create")
+    actor = _require_permission(request, "ledger:write")
 
     name = str(payload.get("name", "")).strip()
     account_type = str(payload.get("account_type", "")).strip()
@@ -1299,7 +1357,7 @@ def create_account(payload: dict, request: Request):
 
 @app.post("/v1/ledger", status_code=201)
 def create_ledger_entry(payload: dict, request: Request):
-    actor = _require_permission(request, "ledger.create")
+    actor = _require_permission(request, "ledger:write")
 
     entry_date = str(payload.get("entry_date", "")).strip()
     description = str(payload.get("description", "")).strip()
@@ -1372,7 +1430,7 @@ def create_ledger_entry(payload: dict, request: Request):
 
 @app.get("/v1/ledger")
 def list_ledger(request: Request):
-    actor = _require_permission(request, "ledger.view")
+    actor = _require_permission(request, "ledger:read")
     limit, offset = _page_params(request)
 
     conn = db()
@@ -1415,7 +1473,7 @@ def list_ledger(request: Request):
 
 @app.get("/v1/ledger/balances")
 def ledger_balances(request: Request):
-    actor = _require_permission(request, "ledger.view")
+    actor = _require_permission(request, "ledger:read")
     account_id = request.query_params.get("account_id")
 
     conn = db()
@@ -1482,7 +1540,7 @@ def ledger_balances(request: Request):
 
 @app.get("/v1/ledger/trial-balance")
 def ledger_trial_balance(request: Request):
-    actor = _require_permission(request, "ledger.view")
+    actor = _require_permission(request, "ledger:read")
 
     conn = db()
     try:
@@ -1514,7 +1572,7 @@ def ledger_trial_balance(request: Request):
 
 @app.get("/v1/inventory/items")
 def list_inventory(request: Request):
-    actor = _require_permission(request, "inventory.view")
+    actor = _require_permission(request, "inventory:read")
     limit, offset = _page_params(request)
     warehouse = (request.query_params.get("warehouse") or "").strip()
 
@@ -1570,7 +1628,7 @@ def list_inventory(request: Request):
 
 @app.post("/v1/inventory/movements", status_code=201)
 def create_stock_movement(payload: dict, request: Request):
-    actor = _require_permission(request, "inventory.create")
+    actor = _require_permission(request, "inventory:write")
 
     product_id = payload.get("product_id")
     warehouse = str(payload.get("warehouse", "main")).strip()
@@ -1686,7 +1744,7 @@ def create_stock_movement(payload: dict, request: Request):
 
 @app.get("/v1/inventory/movements")
 def list_stock_movements(request: Request):
-    actor = _require_permission(request, "inventory.view")
+    actor = _require_permission(request, "inventory:read")
     limit, offset = _page_params(request)
 
     conn = db()
@@ -1717,7 +1775,7 @@ def list_stock_movements(request: Request):
 
 @app.get("/v1/notifications")
 def list_notifications(request: Request):
-    actor = _require_permission(request, "notifications.view")
+    actor = _require_permission(request, "notifications:read")
     limit, offset = _page_params(request)
     status_filter = (request.query_params.get("status") or "").strip()
 
@@ -1759,7 +1817,7 @@ def list_notifications(request: Request):
 
 @app.post("/v1/notifications", status_code=201)
 def create_notification(payload: dict, request: Request):
-    actor = _require_permission(request, "notifications.create")
+    actor = _require_permission(request, "notifications:write")
 
     subject = str(payload.get("subject", "")).strip()
     body = str(payload.get("body", "")).strip()
@@ -1797,7 +1855,7 @@ def create_notification(payload: dict, request: Request):
 
 @app.get("/v1/audit")
 def list_audit_logs(request: Request):
-    actor = _require_permission(request, "audit.view")
+    actor = _require_permission(request, "audit:read")
     limit, offset = _page_params(request, default_limit=100)
     search = (request.query_params.get("search") or "").strip()
 
