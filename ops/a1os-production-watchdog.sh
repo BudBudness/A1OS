@@ -73,7 +73,6 @@ if check "https://little-oaks.pyongcity.org/api/health"; then
 else
     log "FAIL public-education-api"
 
-    if check "http://127.0.0.1:3012/api/health"; then
         restart_tunnel
     fi
 fi
@@ -94,7 +93,6 @@ fi
 
 
 
-EDU_DB="$ROOT/products/education-os/deployments/little-oaks/data/education.db"
 PLATFORM_DB="$ROOT/runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db"
 
 if sqlite3 "$ROOT/data/a1os.db" "PRAGMA integrity_check;" |
