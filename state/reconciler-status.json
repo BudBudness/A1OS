@@ -1,14 +1,9 @@
 {
-  "generated_at": "2026-08-09T21:50:06Z",
+  "generated_at": "2026-08-16T17:31:08Z",
   "overall": "ok",
   "services": [
     {
       "name": "a1os-core",
-      "status": "ok",
-      "http": 200
-    },
-    {
-      "name": "education-os",
       "status": "ok",
       "http": 200
     },

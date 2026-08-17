@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import HTMLResponse
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -367,6 +368,12 @@ def _startup():
 # HEALTH
 # ============================================================
 
+
+    
+@app.get("/", response_class=HTMLResponse)
+def a1os_platform_root():
+    return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>A1OS Platform</title>\n<style>\nbody{font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:48px 24px}\nh1{margin-bottom:8px}\n.card{border:1px solid #ddd;border-radius:12px;padding:20px;margin-top:24px}\n.status{font-weight:700}\na{display:inline-block;margin:8px 12px 8px 0}\n</style>\n</head>\n<body>\n<h1>A1OS Platform</h1>\n<p>Platform control plane and API.</p>\n<div class="card">\n<div class="status">Platform API: <span id="status">checking...</span></div>\n<p>\n<a href="/docs">API Documentation</a>\n<a href="/openapi.json">OpenAPI</a>\n</p>\n</div>\n<script>\nfetch(\'/v1/health\')\n.then(r=>r.ok?r.json():Promise.reject())\n.then(d=>document.getElementById(\'status\').textContent=\'Operational\')\n.catch(()=>document.getElementById(\'status\').textContent=\'Unavailable\');\n</script>\n</body>\n</html>\n'
+
 @app.get("/v1/ready")
 def readiness():
     """
@@ -711,6 +718,81 @@ def update_organization(organization_id: int, payload: dict, request: Request):
 # ============================================================
 # USERS
 # ============================================================
+
+@app.delete("/v1/organizations/{organization_id}")
+def delete_organization(organization_id: int, request: Request):
+    actor = _current_actor(request)
+
+    if actor["role"] != "super_admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Only super_admin may delete organizations",
+        )
+
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT id, code, name FROM organizations WHERE id = ?",
+            (organization_id,),
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(
+                status_code=404,
+                detail="Organization not found",
+            )
+
+        # Refuse deletion when dependent records exist.
+        dependency_checks = [
+            ("users", "organization_id"),
+            ("products", "organization_id"),
+            ("accounts", "organization_id"),
+            ("ledger_entries", "organization_id"),
+            ("parties", "organization_id"),
+        ]
+
+        for table, column in dependency_checks:
+            try:
+                hit = conn.execute(
+                    f"SELECT 1 FROM {table} WHERE {column} = ? LIMIT 1",
+                    (organization_id,),
+                ).fetchone()
+            except Exception:
+                hit = None
+
+            if hit:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Organization has dependent records in {table}",
+                )
+
+        cur = conn.execute(
+            "DELETE FROM organizations WHERE id = ?",
+            (organization_id,),
+        )
+
+        if cur.rowcount != 1:
+            raise HTTPException(
+                status_code=404,
+                detail="Organization not found",
+            )
+
+        _audit(
+            conn,
+            actor,
+            "organization",
+            organization_id,
+            "deleted",
+            {"organization_id": organization_id},
+        )
+
+        return {
+            "status": "deleted",
+            "organization_id": organization_id,
+        }
+    finally:
+        conn.close()
+
 
 @app.get("/v1/users")
 def list_users(request: Request):
