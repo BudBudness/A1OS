@@ -1,14 +1,21 @@
-import json
-
 class IntentParser:
-    def parse(self, text):
-        # Basic logic: maps keywords to task types
-        if "order" in text.lower():
-            # Example: "Order 100 Artificial Grass"
-            parts = text.split()
-            return {
-                "action": "order_supplies",
-                "item": " ".join(parts[2:]),
-                "quantity": int(parts[1])
-            }
-        raise NotImplementedError("Implementation required")
+    def parse(self, text: str) -> dict:
+        if not isinstance(text, str):
+            raise TypeError("Intent text must be a string")
+
+        text = text.strip()
+        if not text:
+            raise ValueError("Intent text cannot be empty")
+
+        parts = text.split(maxsplit=1)
+        intent = parts[0].lower()
+        payload = parts[1] if len(parts) > 1 else ""
+
+        return {
+            "intent": intent,
+            "payload": payload,
+            "raw": text,
+        }
+
+    def parse_intent(self, text: str) -> dict:
+        return self.parse(text)
