@@ -2,6 +2,33 @@ from typing import Dict, List
 import uuid
 
 class ProcurementEngine:
+    async def execute(self, action, **kwargs):
+        method = getattr(self, action, None)
+
+        if method is None or not callable(method):
+            raise RuntimeError(
+                f"Procurement engine has no compatible action: {action}"
+            )
+
+        data = kwargs.pop("data", {})
+        if data is None:
+            data = {}
+        if not isinstance(data, dict):
+            raise TypeError("Procurement execution data must be a dictionary")
+
+        arguments = {
+            key: value
+            for key, value in kwargs.items()
+            if key not in {"target", "action", "role"}
+        }
+        arguments.update(data)
+
+        result = method(**arguments)
+        if hasattr(result, "__await__"):
+            return await result
+        return result
+
+
     def __init__(self):
         self.orders: List[Dict] = []
         self.vendors: Dict[str, Dict] = {}
