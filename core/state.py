@@ -10,7 +10,7 @@ from core.plugin_loader import PluginLoader
 from orchestration.workflow.engine import WorkflowEngine
 from governance.policies.rules_engine import RulesEngine
 from modules.crm.engine import CRMEngine
-# from modules.finance.engine import FinanceEngine
+from modules.finance.engine import FinanceEngine
 from modules.procurement.engine import ProcurementEngine
 from modules.hr.engine import HREngine
 from modules.analytics.engine import AnalyticsEngine
@@ -128,7 +128,7 @@ class A1OS:
         self.workflow = WorkflowEngine()
         self.rules = RulesEngine()
         self.crm = None
-        self.finance = None
+        self.finance = FinanceEngine(db='data/a1os.db')
         self.procurement = ProcurementEngine()
         self.hr = HREngine()
         self.analytics = AnalyticsEngine(db='data/a1os.db')
