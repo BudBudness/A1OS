@@ -17,6 +17,11 @@ class EventRouter:
     async def process_events(self):
         while True:
             event = await self.event_queue.get()
-            if event["type"] in self.handlers:
-                for handler in self.handlers[event["type"]]:
-                    await handler(event["data"])
+            try:
+                handlers = list(self.handlers.get(event["type"], []))
+                for handler in handlers:
+                    result = handler(event["data"])
+                    if hasattr(result, "__await__"):
+                        await result
+            finally:
+                self.event_queue.task_done()

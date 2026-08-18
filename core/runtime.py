@@ -124,20 +124,35 @@ class Runtime:
 
                 execute_method = getattr(engine, "execute", None)
 
-                if execute_method is None:
-                    raise RuntimeError(
-                        f"Execution engine for target '{target}' "
-                        "has no execute method"
+
+                if execute_method is not None:
+
+                    output = execute_method(
+
+                        action,
+
+                        **{
+
+                            key: value
+
+                            for key, value in payload.items()
+
+                            if key not in {"target", "action", "role"}
+
+                        },
+
                     )
 
-                output = execute_method(
-                    action,
-                    **{
-                        key: value
-                        for key, value in payload.items()
-                        if key not in {"target", "action", "role"}
-                    },
-                )
+                else:
+
+                    raise RuntimeError(
+
+                        f"Execution engine for target '{target}' "
+
+                        f"has no compatible executor for action '{action}'"
+
+                    )
+
 
                 if asyncio.iscoroutine(output):
                     output = await output

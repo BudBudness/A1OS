@@ -5,10 +5,15 @@ class MessageBus:
     def subscribe(self, event, callback, priority="normal"):
         self.subscribers[priority].setdefault(event, []).append(callback)
 
-    def publish(self, event, data, priority="normal"):
-        # Execute high priority first
+    async def publish(self, event, data, priority="normal"):
+        import inspect
+
         for callback in self.subscribers["high"].get(event, []):
-            callback(data)
-        # Then normal priority
+            result = callback(data)
+            if inspect.isawaitable(result):
+                await result
+
         for callback in self.subscribers[priority].get(event, []):
-            callback(data)
+            result = callback(data)
+            if inspect.isawaitable(result):
+                await result

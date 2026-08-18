@@ -5,6 +5,9 @@ EventHandler = Callable[[Dict[str, Any]], Awaitable[None]]
 
 class MessageBus:
     def __init__(self):
+        self.subscribers = {}
+
+    def __init__(self):
         self._subscribers: Dict[str, List[EventHandler]] = {}
 
     def subscribe(self, topic: str, handler: EventHandler):
@@ -12,12 +15,17 @@ class MessageBus:
             self._subscribers[topic] = []
         self._subscribers[topic].append(handler)
 
-    async def publish(self, topic: str, payload: Dict[str, Any]):
-        if topic not in self._subscribers:
-            return
-        tasks = [asyncio.create_task(self._safely_execute(h, topic, payload)) for h in self._subscribers[topic]]
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
+    async def publish(self, event, data, priority="normal"):
+        import inspect
+
+        callbacks = list(self._subscribers.get(event, []))
+
+        for callback in callbacks:
+            result = callback(data)
+            if inspect.isawaitable(result):
+                await result
+
+        return data
 
     async def _safely_execute(self, handler: EventHandler, topic: str, payload: Dict[str, Any]):
         try:
