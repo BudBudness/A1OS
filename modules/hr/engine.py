@@ -2,6 +2,29 @@ from typing import Dict, List
 import uuid
 
 class HREngine:
+    async def execute(self, action, **kwargs):
+        method = getattr(self, action, None)
+
+        if method is None or not callable(method):
+            raise RuntimeError(
+                f"HR engine has no compatible action: {action}"
+            )
+
+        data = kwargs.pop("data", {})
+        if data is None:
+            data = {}
+        if not isinstance(data, dict):
+            raise TypeError("HR execution data must be a dictionary")
+
+        arguments = {
+            key: value
+            for key, value in kwargs.items()
+            if key not in {"target", "action", "role"}
+        }
+        arguments.update(data)
+
+        return method(**arguments)
+
     def __init__(self):
         self.employees: Dict[str, Dict] = {}
         self.departments: Dict[str, Dict] = {}
