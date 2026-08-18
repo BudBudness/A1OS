@@ -14,6 +14,7 @@ from governance.policies.rules_engine import RulesEngine
 from modules.procurement.engine import ProcurementEngine
 from modules.hr.engine import HREngine
 from modules.analytics.engine import AnalyticsEngine
+from modules.billing.engine import BillingEngine
 from modules.sales.engine import SalesEngine
 from services.notifications.engine import NotificationEngine
 from security.auth.engine import AuthEngine
@@ -131,6 +132,7 @@ class A1OS:
         self.procurement = ProcurementEngine()
         self.hr = HREngine()
         self.analytics = AnalyticsEngine(db='data/a1os.db')
+        self.billing = BillingEngine()
         self.sales = SalesEngine()
         self.notifications = NotificationEngine()
         self.auth = AuthEngine()
