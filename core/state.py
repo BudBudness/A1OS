@@ -13,6 +13,7 @@ from governance.policies.rules_engine import RulesEngine
 # from modules.finance.engine import FinanceEngine
 from modules.procurement.engine import ProcurementEngine
 from modules.hr.engine import HREngine
+from modules.analytics.engine import AnalyticsEngine
 from modules.sales.engine import SalesEngine
 from services.notifications.engine import NotificationEngine
 from security.auth.engine import AuthEngine
@@ -129,6 +130,7 @@ class A1OS:
         self.finance = None
         self.procurement = ProcurementEngine()
         self.hr = HREngine()
+        self.analytics = AnalyticsEngine(db='data/a1os.db')
         self.sales = SalesEngine()
         self.notifications = NotificationEngine()
         self.auth = AuthEngine()
