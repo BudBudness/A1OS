@@ -9,10 +9,13 @@ from enum import Enum
 import secrets
 
 from fastapi import APIRouter, HTTPException
+from .execution_broker import ExecutionBroker, ExecutionDenied
 from pydantic import BaseModel
 
 
 router = APIRouter(prefix="/api/jarvis", tags=["jarvis"])
+
+_execution_broker = ExecutionBroker()
 
 
 class RiskLevel(str, Enum):
