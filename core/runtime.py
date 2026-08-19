@@ -50,7 +50,7 @@ class Runtime:
                             payload.update(data)
 
                     except Exception:
-                        pass
+                            continue
 
                     await self.execute(task_id, payload)
 
