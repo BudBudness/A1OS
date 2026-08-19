@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -149,3 +150,8 @@ async def websocket(websocket: WebSocket):
         pass
     finally:
         hub.clients.discard(websocket)
+
+
+_STATIC = Path(__file__).parent / "static"
+if _STATIC.is_dir():
+    app.mount("/ui", StaticFiles(directory=_STATIC, html=True), name="ui")
