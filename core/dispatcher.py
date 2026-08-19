@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 
 from security.authorization_adapter import AuthorizationAdapter
 import asyncio
+import inspect
 
 class Dispatcher:
     """Generic worker dispatcher for A1OS"""
@@ -78,7 +79,7 @@ class Dispatcher:
         if target in self.workers:
             worker = self.workers[target]
             # Check if worker has async process method
-            if hasattr(worker, 'process') and asyncio.iscoroutinefunction(worker.process):
+            if hasattr(worker, 'process') and inspect.iscoroutinefunction(worker.process):
                 return await worker.process(payload)
             elif hasattr(worker, 'process'):
                 # Run sync process in thread pool
@@ -98,7 +99,7 @@ class Dispatcher:
 
     async def _call_worker(self, worker: Any, payload: Dict) -> Dict:
         """Helper to call a worker with proper async handling"""
-        if hasattr(worker, 'process') and asyncio.iscoroutinefunction(worker.process):
+        if hasattr(worker, 'process') and inspect.iscoroutinefunction(worker.process):
             return await worker.process(payload)
         elif hasattr(worker, 'process'):
             return await asyncio.to_thread(worker.process, payload)
