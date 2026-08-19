@@ -17,6 +17,9 @@ SAFE_ROOT = ROOT
 
 app = FastAPI(title="A1OS Control Plane", version="1.0.0")
 
+from core.control_plane.jarvis import router as jarvis_router
+app.include_router(jarvis_router)
+
 
 class CommandRequest(BaseModel):
     command: str = Field(min_length=1, max_length=4000)
