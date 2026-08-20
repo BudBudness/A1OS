@@ -2,12 +2,11 @@
 set -Eeuo pipefail
 
 ROOT="$HOME/A1OS_RESTORED"
-EDU="$ROOT/products/education-os"
-API="$EDU/api/app.py"
+EDU="$ROOT/products/verticals/little-oaks"
+DIST="$EDU/dist"
 LOG="$HOME/little-oaks-release.log"
 RELEASE_DIR="$EDU/RELEASES"
 BACKUP_DIR="$EDU/deployments/little-oaks/backups"
-DB="$EDU/deployments/little-oaks/data/education.db"
 PORT="${A1OS_PORT:-3012}"
 BASE="http://127.0.0.1:$PORT"
 EMAIL="${A1OS_TEST_EMAIL:-leticia@littleoaks.ug}"
@@ -28,7 +27,7 @@ printf '%s\n' '============================================================'
 cd "$ROOT"
 
 # 1. Repository integrity
-test -f "$API" || fail "API source missing"
+test -d "$DIST" || fail "Little Oaks frontend build missing"
 python3 -m py_compile "$API" || fail "API syntax failure"
 git diff --check || fail "Git whitespace/integrity failure"
 pass "repository integrity"
@@ -72,7 +71,7 @@ pkill -f "uvicorn.*$PORT" 2>/dev/null || true
 sleep 2
 
 nohup sh -c \
-  "cd '$EDU/api' && exec python3 -m uvicorn app:app --host 127.0.0.1 --port $PORT" \
+  "cd '$DIST' && exec python3 -m http.server $PORT --bind 127.0.0.1" \
   > "$HOME/a1os-uvicorn.log" 2>&1 < /dev/null &
 
 sleep 4
