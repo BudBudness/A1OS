@@ -37,7 +37,7 @@ class OpsWorker(BaseWorker):
                     # statm fields: size resident shared text lib data dirty
                     resident_pages = int(f.read().split()[1])
                     memory_rss_mb = (resident_pages * os.sysconf("SC_PAGE_SIZE")) / (1024 * 1024)
-            except Exception:
+            except (OSError, ValueError, IndexError):
                 memory_rss_mb = -1.0
 
             # Calculate disk usage using shutil (Python Standard Library)
@@ -45,7 +45,7 @@ class OpsWorker(BaseWorker):
             try:
                 total, used, free = shutil.disk_usage(".")
                 disk_util = (used / total) * 100
-            except Exception:
+            except OSError:
                 disk_util = -1.0
 
             diagnostics = {
