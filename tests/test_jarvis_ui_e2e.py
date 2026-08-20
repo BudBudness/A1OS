@@ -38,3 +38,14 @@ def test_ui_to_plan_approval_execution_audit_flow():
     assert body["a1os"] == "online"
     assert body["human_authority"] is True
     assert body["autonomous_execution"] == "approval_gated"
+
+
+def test_little_oaks_vertical_resolves_through_control_plane():
+    from core.control_plane.jarvis import resolve_vertical
+
+    vertical = resolve_vertical("little-oaks")
+
+    assert vertical["name"] == "little-oaks"
+    assert vertical["runtime"] == "products/verticals/little-oaks"
+    assert vertical["backend"] == "a1os-platform-api"
+    assert vertical["core"] == "a1os-core"
