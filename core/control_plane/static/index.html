@@ -29,10 +29,10 @@ pre{margin:0;background:#06090e;border:1px solid var(--line);border-radius:12px;
 
 <div class="grid">
 <section class="card main">
-<div class="label">Command center</div>
-<textarea id="command" placeholder="Tell A1OS what you want done…"></textarea>
+<div class="label">Command center</div><div id="state" class="badge ok" style="margin-bottom:10px">READY</div>
+<textarea id="command" placeholder="Tell A1OS what you want done…" onkeydown="if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();plan()}"></textarea>
 <div class="actions">
-<button class="primary" onclick="plan()">Plan / Inspect</button>
+<button class="primary" onclick="plan()">Send ↵</button>
 <button id="approve" onclick="approve()" disabled>Approve & Execute</button>
 <button class="danger" onclick="clearAll()">Clear</button>
 </div>
@@ -74,6 +74,7 @@ pre{margin:0;background:#06090e;border:1px solid var(--line);border-radius:12px;
 
 <script>
 let token=null;
+function state(x,cls="ok"){const e=$("state");e.textContent=x;e.className="badge "+cls}
 const $=id=>document.getElementById(id);
 function fill(v){$("command").value=v;$("command").focus()}
 function clearAll(){token=null;$("command").value="";$("decision").textContent="Awaiting command…";$("output").textContent="No execution yet.";$("audit").textContent="No events in this session.";$("approve").disabled=true;$("risk").textContent="—";$("risk").className="badge"}
@@ -81,22 +82,22 @@ function show(id,x){$(id).textContent=typeof x==="string"?x:JSON.stringify(x,nul
 function setRisk(r){$("risk").textContent=r||"—";$("risk").className="badge "+(r==="destructive"?"danger":r==="execute"?"warn":r==="read"?"ok":"")}
 async function plan(){
  const command=$("command").value.trim(); if(!command)return;
- $("decision").textContent="Planning…"; token=null;$("approve").disabled=true;
+ $("decision").textContent="Planning…"; state("PLANNING","warn"); token=null;$("approve").disabled=true;
  try{
   const r=await fetch("/api/jarvis/plan",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({command})});
   const d=await r.json(); if(!r.ok)throw new Error(d.detail||"Planning failed");
-  show("decision",d);setRisk(d.risk);token=d.approval_token||null;$("approve").disabled=!token;
+  show("decision",d);setRisk(d.risk);token=d.approval_token||null;$("approve").disabled=!token;state(token?"AWAITING APPROVAL":"READY",token?"warn":"ok");
   show("audit",{event:d.requires_approval?"approval_required":"planned",command,risk:d.risk});
- }catch(e){show("decision",{error:e.message})}
+ }catch(e){show("decision",{error:e.message});state("FAILED","danger")}
 }
 async function approve(){
  if(!token)return;
- $("approve").disabled=true;$("output").textContent="Executing…";
+ $("approve").disabled=true;$("output").textContent="Executing…";state("EXECUTING","warn");
  try{
   const r=await fetch("/api/jarvis/approve",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({approval_token:token})});
   const d=await r.json();if(!r.ok)throw new Error(d.detail||"Execution failed");
-  show("output",d);show("audit",{event:"execution_result",result:d});token=null;
- }catch(e){show("output",{error:e.message});$("approve").disabled=false}
+  show("output",d);show("audit",{event:"execution_result",result:d});token=null;state(d.status==="completed"?"COMPLETE":"FAILED",d.status==="completed"?"ok":"danger");
+ }catch(e){show("output",{error:e.message});$("approve").disabled=false;state("FAILED","danger")}
 }
 </script>
 </body>
