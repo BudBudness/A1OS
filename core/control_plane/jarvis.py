@@ -67,6 +67,19 @@ class PendingCommand:
 
 _pending: dict[str, PendingCommand] = {}
 
+LITTLE_OAKS_VERTICAL = {
+    "name": "little-oaks",
+    "runtime": "products/verticals/little-oaks",
+    "backend": "a1os-platform-api",
+    "core": "a1os-core",
+}
+
+def resolve_vertical(name: str) -> dict[str, str]:
+    if name == "little-oaks":
+        return LITTLE_OAKS_VERTICAL
+    raise HTTPException(status_code=404, detail="Vertical not found")
+
+
 
 def _plan(command: str) -> dict[str, Any]:
     text = command.strip()
