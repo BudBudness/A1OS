@@ -1,5 +1,32 @@
 import sqlite3
 class BillingEngine:
+    async def execute(self, action, **kwargs):
+        method = getattr(self, action, None)
+
+        if method is None or not callable(method):
+            raise RuntimeError(
+                f"Billing engine has no compatible action: {action}"
+            )
+
+        data = kwargs.pop("data", {})
+        if data is None:
+            data = {}
+        if not isinstance(data, dict):
+            raise TypeError("Billing execution data must be a dictionary")
+
+        arguments = {
+            key: value
+            for key, value in kwargs.items()
+            if key not in {"target", "action", "role"}
+        }
+        arguments.update(data)
+
+        result = method(**arguments)
+        if hasattr(result, "__await__"):
+            return await result
+        return result
+
+
     def __init__(self, db="a1os_state.db"): self.db = db
     async def generate_invoice(self, d: dict) -> dict:
         inv = d.get("invoice_id", "INV-GENERIC")

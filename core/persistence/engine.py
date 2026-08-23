@@ -1,10 +1,21 @@
 import json
 import os
+from pathlib import Path
 
 class StateManager:
-    def __init__(self, storage_path="/data/data/com.termux/files/home/A1OS/data/state.json"):
-        self.storage_path = storage_path
-        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+    def __init__(self, storage_path=None):
+        if storage_path is None:
+            storage_path = (
+                Path(__file__).resolve().parents[2]
+                / "data"
+                / "state.json"
+            )
+
+        self.storage_path = str(storage_path)
+        parent = os.path.dirname(self.storage_path)
+
+        if parent:
+            os.makedirs(parent, exist_ok=True)
 
     def save_state(self, task_id, state_data):
         try:

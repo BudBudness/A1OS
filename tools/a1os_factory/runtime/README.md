@@ -10,7 +10,6 @@ python3 runtime_generator.py product-name
 
 Example:
 
-python3 runtime_generator.py education-os
 
 
 Generated:

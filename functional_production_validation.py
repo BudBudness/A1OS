@@ -76,8 +76,20 @@ async def main():
 
         system.bus.subscribe("task.completed", validation_listener)
 
+        task_id = f"event-validation-{time.time_ns()}-{id(events_seen)}"
+
+        from core.queue.durable import DurableQueue
+
+        DurableQueue.enqueue(
+            target="sales",
+            role="system",
+            action="event_propagation_test",
+            data={"validation": True},
+            task_id=task_id,
+        )
+
         result = await system.runtime.execute(
-            task_id=f"event-validation-{int(time.time())}",
+            task_id=task_id,
             payload={
                 "target": "sales",
                 "role": "system",

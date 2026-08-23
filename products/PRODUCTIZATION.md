@@ -9,13 +9,12 @@ RULE: ONE BACKEND, MANY INDUSTRY FRONTENDS — the A1OS Platform API is the shar
      multi-tenant backend; products are UI-only frontends consuming its APIs.
 
 PLATFORM LAYER:
-- products/a1os-platform-api — multi-tenant FastAPI backend (:3013). Auth
+- platform/a1os-platform-api + runtime/a1os-platform-api — multi-tenant FastAPI platform runtime (:3013). Auth
   (SSO-style opaque tokens, PBKDF2), organizations, users/roles/permissions,
   parties, products, double-entry ledger, inventory, notifications, audit,
   realtime WebSocket. One codebase serves every industry frontend.
 
 PRODUCT IMPLEMENTATION PRIORITY:
-1. Education OS
    - Little Oaks (legacy single-tenant monolith, live :3012/:8080)
    - Taibah
 2. Charity / NGO OS

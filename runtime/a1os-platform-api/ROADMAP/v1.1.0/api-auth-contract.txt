@@ -1,0 +1,471 @@
+import hashlib
+import json
+import os
+import secrets
+import sqlite3
+import time
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+from typing import Optional
+
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+
+ROOT = Path(__file__).resolve().parents[3]
+SCHEMA_PATH = ROOT / "platform" / "a1os-platform-api" / "database" / "schema.sql"
+
+DB_PATH = (
+    ROOT
+    / "runtime"
+    / "a1os-platform-api"
+    / "deployments"
+    / "a1os-platform"
+    / "data"
+    / "a1os-platform.db"
+)
+
+
+# ============================================================
+# DATABASE
+# ============================================================
+
+def db():
+    conn = sqlite3.connect(DB_PATH, timeout=30.0, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+
+def _init_db():
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = db()
+    schema = SCHEMA_PATH.read_text()
+    conn.executescript(schema)
+    conn.commit()
+
+    org = conn.execute("SELECT id FROM organizations LIMIT 1").fetchone()
+    if org is None:
+        admin_email = os.getenv("A1OS_PLATFORM_ADMIN_EMAIL", "admin@a1os.io")
+        secret_path = pathlib.Path.home() / ".a1os" / "platform-admin-password"
+        if not secret_path.exists():
+            raise RuntimeError(
+                "Platform admin bootstrap secret is missing: "
+                f"{secret_path}"
+            )
+
+        admin_password = secret_path.read_text().strip()
+        if not admin_password:
+            raise RuntimeError("Platform admin bootstrap secret is empty")
+        conn.execute(
+            """
+            INSERT INTO organizations (code, name, industry)
+            VALUES (?, ?, ?)
+            """,
+        )
+        org_id = conn.execute(
+            "SELECT id FROM organizations WHERE code = 'ICR'"
+        ).fetchone()["id"]
+        conn.execute(
+            """
+            INSERT INTO users
+            (organization_id, email, full_name, password_hash, role)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                org_id,
+                admin_email,
+                "A1OS Platform Administrator",
+                _hash_password(admin_password),
+                "super_admin",
+            ),
+        )
+        conn.commit()
+    conn.close()
+
+
+# ============================================================
+# PASSWORD HASHING
+# ============================================================
+
+def _hash_password(password: str) -> str:
+    salt = secrets.token_bytes(16).hex()
+    dk = hashlib.pbkdf2_hmac(
+        "sha256", password.encode(), bytes.fromhex(salt), PBKDF2_ITERATIONS
+    )
+    return f"pbkdf2_sha256${PBKDF2_ITERATIONS}${salt}${dk.hex()}"
+
+
+def _verify_password(password: str, stored: str) -> bool:
+    try:
+        _, iters, salt, expected = stored.split("$")
+        dk = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode(),
+            bytes.fromhex(salt),
+            int(iters),
+        )
+        return secrets.compare_digest(dk.hex(), expected)
+    except Exception:
+        return False
+
+
+# ============================================================
+# AUTH
+# ============================================================
+
+_LOGIN_ATTEMPTS = {}
+_LOGIN_MAX_ATTEMPTS = 5
+_LOGIN_WINDOW_SECONDS = 300
+_AUTH_SESSION_DAYS = 7
+PBKDF2_ITERATIONS = 200_000
+
+RESERVED_ROLE_NAMES = {
+    "super_admin",
+    "admin",
+    "platform_admin",
+    "owner",
+}
+
+DEFAULT_ROLE_PERMISSIONS = {
+    "super_admin": {"*"},
+    "admin": {"*"},
+    "platform_admin": {"*"},
+    "owner": {"*"},
+    "manager": {
+        "organizations:read",
+        "organizations:write",
+        "users:read",
+        "users:write",
+        "roles:read",
+        "roles:write",
+        "parties:read",
+        "parties:write",
+        "accounts:read",
+        "products:read",
+        "products:write",
+        "inventory:read",
+        "inventory:write",
+        "ledger:read",
+        "ledger:write",
+        "audit:read",
+        "notifications:read",
+        "notifications:write",
+    },
+    "user": {
+        "organizations:read",
+        "users:read",
+        "parties:read",
+        "accounts:read",
+        "products:read",
+        "inventory:read",
+        "ledger:read",
+        "notifications:read",
+    },
+}
+
+
+def _rate_limit_auth(request: Request):
+    client = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    attempts = [
+        ts for ts in _LOGIN_ATTEMPTS.get(client, [])
+        if now - ts < _LOGIN_WINDOW_SECONDS
+    ]
+    if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many authentication attempts. Try again later.",
+        )
+    _LOGIN_ATTEMPTS[client] = attempts
+
+
+def _record_auth_attempt(client: str):
+    now = time.monotonic()
+    attempts = [
+        ts for ts in _LOGIN_ATTEMPTS.get(client, [])
+        if now - ts < _LOGIN_WINDOW_SECONDS
+    ]
+    attempts.append(now)
+    _LOGIN_ATTEMPTS[client] = attempts
+
+
+def _current_actor(request: Request):
+    auth = request.headers.get("Authorization", "")
+    token = ""
+
+    if auth.startswith("Bearer "):
+        token = auth[7:].strip()
+
+    if not token:
+        token = request.cookies.get("a1os_session", "").strip()
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    conn = db()
+    try:
+        row = conn.execute(
+            """
+            SELECT u.*, s.token AS session_token, s.expires_at AS session_expiry
+            FROM auth_sessions s
+            JOIN users u ON u.id = s.user_id
+            WHERE s.token = ?
+            """,
+            (token,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        raise HTTPException(status_code=401, detail="Invalid session")
+
+    try:
+        expiry = datetime.fromisoformat(row["session_expiry"])
+    except (TypeError, ValueError):
+        expiry = datetime.min.replace(tzinfo=timezone.utc)
+
+    if expiry < datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Session expired")
+# ============================================================
+
+app = FastAPI(
+    title="A1OS Platform API",
+    version="1.0.0",
+    description="Multi-tenant platform backend serving industry-specific frontends.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+def _startup():
+    _init_db()
+
+
+# ============================================================
+# HEALTH
+# ============================================================
+
+@app.get("/v1/health")
+def v1_health():
+    return {"status": "ok", "service": "a1os-platform-api", "version": "1.0.0"}
+
+
+def health():
+    return {"status": "ok", "service": "a1os-platform-api", "version": "1.0.0"}
+
+
+# ============================================================
+# AUTHENTICATION
+# ============================================================
+
+@app.post("/v1/auth/login")
+def auth_login(payload: dict, request: Request):
+    _rate_limit_auth(request)
+
+    email = str(payload.get("email", "")).strip().lower()
+    password = str(payload.get("password", ""))
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="Email and password are required",
+        )
+
+    conn = db()
+    try:
+        user = conn.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE lower(email) = ? AND active = 1
+            LIMIT 1
+            """,
+            (email,),
+        ).fetchone()
+
+        if not user or not _verify_password(password, user["password_hash"]):
+            if request.client:
+                _record_auth_attempt(request.client.host)
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password",
+            )
+
+        token = secrets.token_urlsafe(48)
+        expires_at = (
+            datetime.now(timezone.utc) + timedelta(days=_AUTH_SESSION_DAYS)
+        ).isoformat()
+
+        conn.execute(
+            """
+            INSERT INTO auth_sessions (user_id, token, expires_at)
+            VALUES (?, ?, ?)
+            """,
+            (user["id"], token, expires_at),
+        )
+        _audit(conn, dict(user), "auth", user["id"], "login", {"email": email})
+
+        perms = _permissions(conn, dict(user))
+
+        response = JSONResponse({
+            "status": "authenticated",
+            "token": token,
+            "expires_at": expires_at,
+            "user": {
+                "id": user["id"],
+                "full_name": user["full_name"],
+                "email": user["email"],
+                "role": user["role"],
+                "organization_id": user["organization_id"],
+                "permissions": sorted(perms),
+            },
+        })
+
+        response.set_cookie(
+            key="a1os_session",
+            value=token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            path="/",
+            max_age=60 * 60 * 24 * 30,
+        )
+
+        return response
+    finally:
+        conn.close()
+
+
+@app.get("/v1/auth/me")
+def auth_me(request: Request):
+    actor = _current_actor(request)
+    conn = db()
+    try:
+        perms = _permissions(conn, actor)
+    finally:
+        conn.close()
+    return {
+        "id": actor["id"],
+        "full_name": actor["full_name"],
+        "email": actor["email"],
+        "role": actor["role"],
+        "organization_id": actor["organization_id"],
+        "permissions": sorted(perms),
+    }
+
+
+@app.post("/v1/auth/logout")
+def auth_logout(request: Request):
+    auth = request.headers.get("Authorization", "")
+    token = ""
+
+    if auth.startswith("Bearer "):
+        token = auth[7:].strip()
+
+    if not token:
+        token = request.cookies.get("a1os_session", "").strip()
+
+    if token:
+        conn = db()
+        try:
+            conn.execute(
+                "DELETE FROM auth_sessions WHERE token = ?",
+                (token,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    response = JSONResponse({"status": "logged_out"})
+    response.delete_cookie(
+        key="a1os_session",
+        path="/",
+    )
+    return response
+
+
+@app.post("/v1/auth/change-password")
+def auth_change_password(payload: dict, request: Request):
+    actor = _current_actor(request)
+
+    current = str(payload.get("current_password", ""))
+    new_password = str(payload.get("new_password", ""))
+
+    if not current or not new_password:
+        raise HTTPException(
+            status_code=400,
+            detail="current_password and new_password are required",
+        )
+    if len(new_password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="new_password must be at least 8 characters",
+        )
+
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT password_hash FROM users WHERE id = ?",
+            (actor["id"],),
+        ).fetchone()
+        if not row or not _verify_password(current, row["password_hash"]):
+            raise HTTPException(
+                status_code=400,
+                detail="Current password is incorrect",
+            )
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (_hash_password(new_password), actor["id"]),
+        )
+        conn.execute(
+            "DELETE FROM auth_sessions WHERE user_id = ?",
+            (actor["id"],),
+        )
+        _audit(conn, actor, "user", actor["id"], "change_password", {})
+        return {"status": "password_changed"}
+    finally:
+        conn.close()
+
+
+# ============================================================
+# ORGANIZATIONS
+# ============================================================
+
+@app.get("/v1/organizations")
+def list_organizations(request: Request):
+    actor = _current_actor(request)
+    conn = db()
+    try:
+        if actor["role"] == "super_admin":
+            rows = conn.execute(
+                "SELECT * FROM organizations ORDER BY id"
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT * FROM organizations
+                WHERE id = ?
+                ORDER BY id
+                """,
+                (actor["organization_id"],),
+            ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+@app.post("/v1/organizations", status_code=201)
+def create_organization(payload: dict, request: Request):
+    actor = _current_actor(request)
+    if actor["role"] != "super_admin":
+        raise HTTPException(
+            status_code=403,

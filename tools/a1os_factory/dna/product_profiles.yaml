@@ -4,16 +4,6 @@ factory:
 
 profiles:
 
-  education:
-    base: education-os
-    intelligence:
-      - academic
-      - finance
-      - parent_engagement
-      - governance
-      - reporting
-      - analytics
-
   ngo:
     base: ngo-os
     intelligence:

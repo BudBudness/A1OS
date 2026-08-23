@@ -11,7 +11,6 @@ python3 intelligence_generator.py product-name profile
 
 Examples:
 
-python3 intelligence_generator.py education-os education
 
 python3 intelligence_generator.py charity-os ngo
 

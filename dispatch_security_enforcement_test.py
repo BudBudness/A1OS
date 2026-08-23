@@ -67,22 +67,29 @@ async def main():
         },
     )
 
-    assert recovery.get("status") == "executed", recovery
-    assert worker.calls == 2, worker.calls
+    # APPROVAL_LIFECYCLE_TEST_V2
+    # Consequential capability without an explicit approval must fail closed.
+    # Consequential capabilities require explicit human authorization.
+    # This negative security test must not manufacture or consume approval.
+    assert recovery.get("status") == "blocked", recovery
+    assert recovery.get("authorization", {}).get("requires_authorization") is True
+    assert recovery.get("authorization", {}).get("decision") == "human_required"
+    assert worker.calls == 1, worker.calls
 
-    provenance = recovery["payload"]["_authorization_provenance"]
+    # A blocked consequential request must not produce execution provenance.
+    assert "payload" not in recovery or "_authorization_provenance" not in recovery.get("payload", {})
 
-    assert dispatcher.authorization_adapter.verify_provenance(
-        provenance
-    ), provenance
+    # The authorization decision may contain provenance for the blocked
+    # authorization attempt, but tampering with it must fail verification.
+    authorization_provenance = recovery.get("authorization", {}).get("provenance")
+    assert isinstance(authorization_provenance, dict), recovery
 
-    # 5. Tampered provenance must fail closed.
-    tampered = dict(provenance)
+    tampered = dict(authorization_provenance)
     tampered["record_hash"] = "tampered"
 
     assert not dispatcher.authorization_adapter.verify_provenance(
         tampered
-    )
+    ), tampered
 
     print("=== RUNTIME-V2 DISPATCH SECURITY ENFORCEMENT AUDIT ===")
     print("MISSING CAPABILITY: BLOCKED")

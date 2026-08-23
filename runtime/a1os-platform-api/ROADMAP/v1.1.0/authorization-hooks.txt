@@ -1,0 +1,153 @@
+73:            (organization_id, email, full_name, password_hash, role)
+81:                "super_admin",
+125:    "super_admin",
+132:    "super_admin": {"*"},
+235:def _permissions(conn, actor):
+238:        SELECT permissions
+240:        WHERE organization_id = ? AND name = ?
+242:        (actor["organization_id"], actor["role"]),
+245:        perms = json.loads(override["permissions"] or "[]")
+250:def _require_permission(request: Request, required: str):
+254:        perms = _permissions(conn, actor)
+269:        (organization_id, actor_user_id, entity_type, entity_id, action, details)
+273:            actor["organization_id"],
+320:async def _ws_send_to_org(organization_id, message):
+321:    for ws in list(WS_ROOMS.get(organization_id, [])):
+416:        perms = _permissions(conn, dict(user))
+427:                "organization_id": user["organization_id"],
+428:                "permissions": sorted(perms),
+452:        perms = _permissions(conn, actor)
+460:        "organization_id": actor["organization_id"],
+461:        "permissions": sorted(perms),
+547:        if actor["role"] == "super_admin":
+558:                (actor["organization_id"],),
+568:    if actor["role"] != "super_admin":
+571:            detail="Only super_admin may create organizations",
+606:            "organization_id": cur.lastrowid,
+612:@app.patch("/v1/organizations/{organization_id}")
+613:def update_organization(organization_id: int, payload: dict, request: Request):
+614:    actor = _require_permission(request, "organizations.update")
+623:        if actor["role"] != "super_admin":
+624:            if organization_id != actor["organization_id"]:
+632:            (organization_id,),
+644:            list(updates.values()) + [organization_id],
+646:        _audit(conn, actor, "organization", organization_id, "updated",
+648:        return {"status": "updated", "organization_id": organization_id}
+659:    actor = _require_permission(request, "users.view")
+665:        where = ["organization_id = ?"]
+666:        params = [actor["organization_id"]]
+702:    actor = _require_permission(request, "users.create")
+716:    if role == "super_admin" and actor["role"] != "super_admin":
+719:            detail="Only super_admin may assign super_admin",
+733:    supplied_org = payload.get("organization_id")
+734:    target_org_id = actor["organization_id"]
+741:                detail="organization_id must be an integer",
+744:            actor["role"] != "super_admin"
+745:            and supplied_org != actor["organization_id"]
+749:                detail="Only super_admin may create users in another organization",
+755:        if target_org_id != actor["organization_id"]:
+776:            (organization_id, email, full_name, password_hash, role)
+795:    actor = _require_permission(request, "users.update")
+809:        if requested_role == "super_admin" and actor["role"] != "super_admin":
+812:                detail="Only super_admin may assign super_admin",
+819:            "SELECT id, role FROM users WHERE id = ? AND organization_id = ?",
+820:            (user_id, actor["organization_id"]),
+826:            actor["role"] != "super_admin"
+827:            and row["role"] == "super_admin"
+832:                detail="Only super_admin may modify a super_admin account",
+856:    actor = _require_permission(request, "users.view")
+861:            SELECT id, name, permissions
+863:            WHERE organization_id = ?
+866:            (actor["organization_id"],),
+875:    actor = _require_permission(request, "users.create")
+878:    perms = payload.get("permissions", [])
+882:    if name in RESERVED_ROLE_NAMES and actor["role"] != "super_admin":
+888:        raise HTTPException(status_code=422, detail="permissions must be a list")
+890:    if actor["role"] != "super_admin" and "*" in perms:
+893:            detail="Platform wildcard permission is restricted to super_admin",
+900:            INSERT INTO roles (organization_id, name, permissions)
+903:            (actor["organization_id"], name, json.dumps(perms)),
+913:    actor = _require_permission(request, "users.update")
+915:    allowed = {"name", "permissions"}
+924:            and actor["role"] != "super_admin"
+934:            "SELECT id FROM roles WHERE id = ? AND organization_id = ?",
+935:            (role_id, actor["organization_id"]),
+940:        if "permissions" in updates:
+941:            if not isinstance(updates["permissions"], list):
+944:                    detail="permissions must be a list",
+946:            if actor["role"] != "super_admin" and "*" in updates["permissions"]:
+949:                    detail="Platform wildcard permission is restricted to super_admin",
+951:            updates["permissions"] = json.dumps(updates["permissions"])
+974:    actor = _require_permission(request, "parties.view")
+981:        where = ["organization_id = ?"]
+982:        params = [actor["organization_id"]]
+1021:    actor = _require_permission(request, "parties.create")
+1039:            (organization_id, party_type, name, phone, email, location, external_ref)
+1043:                actor["organization_id"],
+1061:    actor = _require_permission(request, "parties.update")
+1073:            "SELECT id FROM parties WHERE id = ? AND organization_id = ?",
+1074:            (party_id, actor["organization_id"]),
+1100:    actor = _require_permission(request, "products.view")
+1106:        where = ["organization_id = ?"]
+1107:        params = [actor["organization_id"]]
+1143:    actor = _require_permission(request, "products.create")
+1163:            (organization_id, name, sku, category, unit, cost_price, selling_price)
+1167:                actor["organization_id"],
+1185:    actor = _require_permission(request, "products.update")
+1197:            "SELECT id FROM products WHERE id = ? AND organization_id = ?",
+1198:            (product_id, actor["organization_id"]),
+1225:    actor = _require_permission(request, "ledger.view")
+1234:                WHERE organization_id = ? AND account_type = ?
+1237:                (actor["organization_id"], account_type),
+1243:                WHERE organization_id = ?
+1246:                (actor["organization_id"],),
+1255:    actor = _require_permission(request, "ledger.create")
+1279:            INSERT INTO accounts (organization_id, account_type, name, party_id)
+1283:                actor["organization_id"],
+1302:    actor = _require_permission(request, "ledger.create")
+1338:            WHERE organization_id = ? AND id IN (?, ?)
+1340:            (actor["organization_id"], debit_account_id, credit_account_id),
+1351:            (organization_id, entry_date, description,
+1356:                actor["organization_id"],
+1375:    actor = _require_permission(request, "ledger.view")
+1380:        where = ["l.organization_id = ?"]
+1381:        params = [actor["organization_id"]]
+1418:    actor = _require_permission(request, "ledger.view")
+1443:                    ON l.organization_id = a.organization_id
+1445:                WHERE a.id = ? AND a.organization_id = ?
+1448:                (int(account_id), actor["organization_id"]),
+1470:                    ON l.organization_id = a.organization_id
+1472:                WHERE a.organization_id = ?
+1476:                (actor["organization_id"],),
+1485:    actor = _require_permission(request, "ledger.view")
+1496:            WHERE organization_id = ?
+1498:            (actor["organization_id"],),
+1517:    actor = _require_permission(request, "inventory.view")
+1523:        where = ["si.organization_id = ?"]
+1524:        params = [actor["organization_id"]]
+1573:    actor = _require_permission(request, "inventory.create")
+1603:            WHERE id = ? AND organization_id = ?
+1605:            (product_id, actor["organization_id"]),
+1613:            WHERE organization_id = ? AND product_id = ? AND warehouse = ?
+1615:            (actor["organization_id"], product_id, warehouse),
+1622:                (organization_id, product_id, warehouse, quantity, unit_cost)
+1626:                    actor["organization_id"],
+1654:            (organization_id, product_id, warehouse, movement_type,
+1659:                actor["organization_id"],
+1689:    actor = _require_permission(request, "inventory.view")
+1703:            WHERE m.organization_id = ?
+1707:            [actor["organization_id"]] + page_params,
+1720:    actor = _require_permission(request, "notifications.view")
+1726:        where = ["organization_id = ?"]
+1727:        params = [actor["organization_id"]]
+1762:    actor = _require_permission(request, "notifications.create")
+1775:            (organization_id, channel, recipient, subject, body, status)
+1779:                actor["organization_id"],
+1800:    actor = _require_permission(request, "audit.view")
+1806:        where = ["a.organization_id = ?"]
+1807:        params = [actor["organization_id"]]
+1867:    organization_id = row["organization_id"]
+1870:    WS_ROOMS.setdefault(organization_id, []).append(websocket)
+1874:        "organization_id": organization_id,
+1882:                await _ws_send_to_org(organization_id, {
+1890:        room = WS_ROOMS.get(organization_id, [])

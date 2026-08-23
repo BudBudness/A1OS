@@ -3,6 +3,27 @@ import shutil
 from core.worker_base import BaseWorker
 
 class OpsWorker(BaseWorker):
+    async def execute(self, event=None, **kwargs):
+        if event is None:
+            event = {}
+        return {
+            "worker": "ops",
+            "status": "success",
+            "cpu_percent": self._cpu_percent(),
+            "event": event,
+        }
+
+
+    @staticmethod
+    def _cpu_percent():
+        try:
+            import os
+            load = os.getloadavg()[0]
+            cpus = os.cpu_count() or 1
+            return round(min(100.0, (load / cpus) * 100.0), 2)
+        except (AttributeError, OSError):
+            return None
+
     def __init__(self):
         super().__init__("ops")
 
@@ -16,7 +37,7 @@ class OpsWorker(BaseWorker):
                     # statm fields: size resident shared text lib data dirty
                     resident_pages = int(f.read().split()[1])
                     memory_rss_mb = (resident_pages * os.sysconf("SC_PAGE_SIZE")) / (1024 * 1024)
-            except Exception:
+            except (OSError, ValueError, IndexError):
                 memory_rss_mb = -1.0
 
             # Calculate disk usage using shutil (Python Standard Library)
@@ -24,12 +45,12 @@ class OpsWorker(BaseWorker):
             try:
                 total, used, free = shutil.disk_usage(".")
                 disk_util = (used / total) * 100
-            except Exception:
+            except OSError:
                 disk_util = -1.0
 
             diagnostics = {
                 "memory_rss_mb": round(memory_rss_mb, 2),
-                "cpu_percent": 0.0, # Placeholder without low-level C bindings
+                "cpu_percent": self._cpu_percent(),
                 "status": "healthy",
                 "storage_utilization": round(disk_util, 2)
             }

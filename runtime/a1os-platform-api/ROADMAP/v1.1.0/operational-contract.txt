@@ -1,0 +1,185 @@
+===== ops/backup-a1os-platform-db.sh =====
+#!/data/data/com.termux/files/usr/bin/bash
+set -euo pipefail
+export PATH="/data/data/com.termux/files/usr/bin:$PATH"
+DB="$HOME/A1OS_RESTORED/runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db"
+BACKUP_DIR="$HOME/A1OS_RESTORED/runtime/a1os-platform-api/deployments/a1os-platform/backups"
+mkdir -p "$BACKUP_DIR"
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+TMP="$BACKUP_DIR/.a1os-platform-$STAMP.db.tmp"
+OUT="$BACKUP_DIR/a1os-platform-$STAMP.db"
+sqlite3 "$DB" ".backup '$TMP'"
+mv "$TMP" "$OUT"
+sqlite3 "$OUT" "PRAGMA integrity_check;" | grep -qx "ok"
+find "$BACKUP_DIR" -type f -name 'a1os-platform-*.db' -mtime +30 -delete
+===== ops/push-a1os-platform-backups.sh =====
+#!/data/data/com.termux/files/usr/bin/bash
+set -euo pipefail
+
+export HOME=/data/data/com.termux/files/home
+export PATH=/data/data/com.termux/files/usr/bin:$PATH
+
+BACKUP_REPO="$HOME/a1os-backups"
+PLATFORM_BACKUPS="$HOME/A1OS_RESTORED/runtime/a1os-platform-api/deployments/a1os-platform/backups"
+STAGING="$BACKUP_REPO/a1os-platform"
+REMOTE="https://github.com/BudBudness/a1os-backups.git"
+
+latest="$(find "$PLATFORM_BACKUPS" -maxdepth 1 -type f -name 'a1os-platform-*.db' -printf '%T@ %p\n' | sort -rn | head -1 | cut -d' ' -f2-)"
+if [ -z "$latest" ]; then
+    echo "no backup files found in $PLATFORM_BACKUPS"
+    exit 1
+fi
+
+mkdir -p "$STAGING"
+cp "$latest" "$STAGING/a1os-platform-latest.db"
+chmod 600 "$STAGING/a1os-platform-latest.db"
+
+cd "$BACKUP_REPO"
+if [ -z "$(git status --porcelain)" ]; then
+    echo "no changes; already synced"
+    exit 0
+fi
+
+git add -A
+git commit -m "backup $(basename "$latest")"
+git push origin main
+echo "pushed $(basename "$latest") to $REMOTE"
+===== ops/a1os-production-watchdog.sh =====
+#!/data/data/com.termux/files/usr/bin/bash
+
+set -u
+export PATH="/data/data/com.termux/files/usr/bin:$PATH"
+
+ROOT="$HOME/A1OS_RESTORED"
+LOG="$ROOT/logs/production-watchdog.log"
+LOCK="$ROOT/.locks/production-watchdog.lock"
+NTFY_TOPIC_FILE="$HOME/.a1os/ntfy.topic"
+
+mkdir -p "$ROOT/logs" "$ROOT/.locks"
+
+exec 9>"$LOCK"
+flock -n 9 || exit 0
+
+notify() {
+    local topic
+    topic="$(cat "$NTFY_TOPIC_FILE" 2>/dev/null || true)"
+    [ -n "$topic" ] || return 0
+
+    curl -fsS --max-time 8 \
+        -H "Title: A1OS alert" \
+        -d "$*" \
+        "https://ntfy.sh/$topic" >/dev/null 2>&1 || true
+}
+
+log() {
+    printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*" >> "$LOG"
+
+    case "$*" in
+        FAIL*|CRITICAL*)
+            notify "$*"
+            ;;
+    esac
+}
+
+echo "A1OS watchdog: reconcile + edge supervision"
+
+# Single local lifecycle authority:
+# ops/a1os-reconciler.py -> ops/services.json -> ops/adapters/*
+while IFS= read -r line; do
+    log "$line"
+done < <(
+    /data/data/com.termux/files/usr/bin/python3 \
+        "$ROOT/ops/a1os-reconciler.py" 2>&1
+)
+
+# Public-edge supervision remains here because it is not local
+# service lifecycle reconciliation.
+check() {
+    curl -fsS --max-time 8 "$1" >/dev/null 2>&1
+}
+
+restart_tunnel() {
+    log "ACTION restart cloudflare-tunnel"
+
+    pkill -f 'cloudflared.*a1os-prod' 2>/dev/null || true
+    pkill -f 'cloudflared.*7fdd3dce' 2>/dev/null || true
+
+    sleep 3
+
+    nohup cloudflared tunnel \
+        --protocol http2 \
+        --config "$HOME/.cloudflared/config.yml" \
+        run a1os-prod \
+        >> "$ROOT/logs/cloudflared-watchdog.log" 2>&1 9>&- &
+
+    log "RESULT cloudflare-tunnel restart issued"
+}
+
+if check "https://little-oaks.pyongcity.org/api/health"; then
+    log "PASS public-education-api"
+else
+    log "FAIL public-education-api"
+
+    if check "http://127.0.0.1:3012/api/health"; then
+        restart_tunnel
+    fi
+fi
+
+if curl -fsSI --max-time 10 \
+    "https://little-oaks.pyongcity.org/" 2>/dev/null |
+    grep -q "200"; then
+    log "PASS public-education-frontend"
+else
+    log "FAIL public-education-frontend"
+
+    if check "http://127.0.0.1:8080/"; then
+        restart_tunnel
+    fi
+fi
+
+
+
+
+
+PLATFORM_DB="$ROOT/runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db"
+
+if sqlite3 "$ROOT/data/a1os.db" "PRAGMA integrity_check;" |
+    grep -qx "ok" &&
+   sqlite3 "$PLATFORM_DB" "PRAGMA integrity_check;" |
+    grep -qx "ok"; then
+
+    log "PASS database-integrity"
+else
+    log "CRITICAL database-integrity-failed"
+fi
+
+if check "https://little-oaks.pyongcity.org/api/health"; then
+    log "PASS cloudflare-tunnel"
+else
+    log "FAIL cloudflare-tunnel"
+    restart_tunnel
+fi
+===== ops/adapters/restart-platform-api.sh =====
+#!/data/data/com.termux/files/usr/bin/bash
+# Adapter: restart a1os-platform-api (:3013) via its canonical run-production.sh.
+set -u
+export PATH="/data/data/com.termux/files/usr/bin:$PATH"
+ROOT="$HOME/A1OS_RESTORED"
+pkill -f 'uvicorn api.app:app --host 127.0.0.1 --port 3013' 2>/dev/null || true
+sleep 2
+cd "$ROOT/platform/a1os-platform-api" || exit 1
+nohup ./run-production.sh \
+    >> "$ROOT/logs/platform-api-watchdog.log" 2>&1 9>&- &
+echo "platform-api relaunched"
+===== runtime/a1os-platform-api/run-production.sh =====
+#!/data/data/com.termux/files/usr/bin/bash
+
+set -e
+
+cd /data/data/com.termux/files/home/A1OS_RESTORED/platform/a1os-platform-api
+
+exec python3 -m uvicorn api.app:app \
+ --host 127.0.0.1 \
+ --port 3013 \
+ --workers 1 \
+ --proxy-headers

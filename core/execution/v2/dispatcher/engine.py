@@ -3,6 +3,7 @@ from core.execution.v2.transport.rpc import SecureTransport
 class DistributedDispatcher:
     def __init__(self):
         self._handlers = {}
+        self.register("process_data", lambda data: data)
 
     def register(self, name, handler):
         self._handlers[name] = handler

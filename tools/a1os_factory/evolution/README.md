@@ -11,7 +11,6 @@ python3 evolution_engine.py product-name
 
 Example:
 
-python3 evolution_engine.py education-os
 
 
 Generated:

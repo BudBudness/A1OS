@@ -11,14 +11,6 @@ pipeline:
   - create_manifest
 
 profiles:
-  education:
-    base: education-os
-    intelligence:
-      - academic
-      - finance
-      - parent
-      - governance
-
   media:
     base: media-os
     intelligence:

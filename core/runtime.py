@@ -4,7 +4,9 @@ from typing import Any, Dict
 from core.queue.durable import DurableQueue
 
 
+from core.control_plane.human_approval import HumanApprovalController, ApprovalDenied
 class Runtime:
+    """Canonical A1OS task execution runtime."""
     """
     Canonical A1OS task execution runtime.
 
@@ -17,8 +19,13 @@ class Runtime:
     - Run a durable background worker.
     """
 
-    def __init__(self, system=None):
+    def __init__(self, system=None, approval_controller=None):
         self.system = system
+        self.approval_controller = (
+            approval_controller
+            if approval_controller is not None
+            else HumanApprovalController()
+        )
         self.started = False
         self.worker_task = None
         self.worker_running = False
@@ -50,7 +57,7 @@ class Runtime:
                             payload.update(data)
 
                     except Exception:
-                        pass
+                            continue
 
                     await self.execute(task_id, payload)
 
@@ -90,6 +97,30 @@ class Runtime:
         try:
             if system is not None:
                 if target == "system":
+                    # CONSEQUENTAL EXECUTION AUTHORITY:
+                    # Runtime is the execution authority. The controller only verifies and
+                    # consumes an already-issued, exact-bound approval. The controller never
+                    # executes the task itself.
+                    approval_id = payload.get("approval_id")
+                    if not approval_id:
+                        raise ApprovalDenied("Explicit human approval is required")
+
+                    try:
+                        approval = self.approval_controller.consume(
+                            approval_id=approval_id,
+                            task_id=task_id,
+                            capability=payload.get("capability"),
+                            entity_id=payload.get("entity_id", "primary-device"),
+                            action=payload.get("action"),
+                        )
+                    except ApprovalDenied:
+                        raise
+                    except Exception as exc:
+                        raise ApprovalDenied(f"Approval verification failed: {exc}")
+
+                    if not isinstance(approval, dict):
+                        raise ApprovalDenied("Invalid approval record")
+
                     output = system.execute(
                         action,
                         **{
@@ -124,20 +155,35 @@ class Runtime:
 
                 execute_method = getattr(engine, "execute", None)
 
-                if execute_method is None:
-                    raise RuntimeError(
-                        f"Execution engine for target '{target}' "
-                        "has no execute method"
+
+                if execute_method is not None:
+
+                    output = execute_method(
+
+                        action,
+
+                        **{
+
+                            key: value
+
+                            for key, value in payload.items()
+
+                            if key not in {"target", "action", "role"}
+
+                        },
+
                     )
 
-                output = execute_method(
-                    action,
-                    **{
-                        key: value
-                        for key, value in payload.items()
-                        if key not in {"target", "action", "role"}
-                    },
-                )
+                else:
+
+                    raise RuntimeError(
+
+                        f"Execution engine for target '{target}' "
+
+                        f"has no compatible executor for action '{action}'"
+
+                    )
+
 
                 if asyncio.iscoroutine(output):
                     output = await output

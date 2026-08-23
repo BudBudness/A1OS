@@ -13,26 +13,15 @@
       "boot_order": 10
     },
     {
-      "name": "education-os",
-      "type": "application",
-      "database": "products/education-os/deployments/little-oaks/data/education.db",
-      "health_local": "http://127.0.0.1:3012/api/health",
-      "adapter": [
-        "ops/adapters/restart-education-web.sh"
-      ],
-      "boot_order": 20
-    },
-    {
       "name": "platform-api",
       "type": "application",
-      "database": "products/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
+      "database": "runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
       "health_local": "http://127.0.0.1:3013/v1/health",
       "adapter": [
         "ops/adapters/restart-platform-api.sh"
       ],
       "boot_order": 30
     },
-
     {
       "name": "cloudflare-edge-observer",
       "type": "observer",

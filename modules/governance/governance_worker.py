@@ -21,8 +21,10 @@ class GovernanceWorker(BaseWorker):
 
     def load_policy(self):
         try:
-            with open("cfg/policies.json", 'r') as f: return json.load(f)
-        except: return {"min_length": 15, "restricted": ["restricted"]}
+            with open("cfg/policies.json", 'r') as f:
+                return json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return {"min_length": 15, "restricted": ["restricted"]}
 
     def validate(self, output):
         policy = self.load_policy()

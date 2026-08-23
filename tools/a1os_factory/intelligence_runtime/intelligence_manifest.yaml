@@ -12,20 +12,6 @@ pipeline:
 
 intelligence:
 
-  education:
-    agents:
-      - academic_copilot
-      - parent_assistant
-      - teacher_assistant
-      - finance_advisor
-    workflows:
-      - student_progress_analysis
-      - attendance_monitoring
-      - fee_tracking
-    analytics:
-      - learning_insights
-      - performance_reports
-
   ngo:
     agents:
       - impact_assistant

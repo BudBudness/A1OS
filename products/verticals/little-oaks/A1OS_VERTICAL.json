@@ -1,0 +1,27 @@
+{
+  "name": "little-oaks",
+  "type": "frontend-vertical",
+  "backend": "a1os-platform-api",
+  "deployment": {
+    "mode": "managed"
+  },
+  "ownership": {
+    "pages": "vertical",
+    "components": "vertical",
+    "layouts": "vertical",
+    "dashboards": "vertical",
+    "workflows": "vertical",
+    "forms": "vertical",
+    "state": "vertical",
+    "integrations": "a1os-platform",
+    "styles": "vertical",
+    "assets": "vertical",
+    "tests": "vertical",
+    "authentication": "a1os-core",
+    "tenancy": "a1os-core",
+    "authorization": "a1os-core",
+    "rbac": "a1os-core",
+    "persistence": "a1os-platform",
+    "infrastructure": "a1os-platform"
+  }
+}

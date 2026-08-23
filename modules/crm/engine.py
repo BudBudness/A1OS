@@ -1,5 +1,32 @@
 import sqlite3
 class CRMEngine:
+    async def execute(self, action, **kwargs):
+        method = getattr(self, action, None)
+
+        if method is None or not callable(method):
+            raise RuntimeError(
+                f"CRM engine has no compatible action: {action}"
+            )
+
+        data = kwargs.pop("data", {})
+        if data is None:
+            data = {}
+        if not isinstance(data, dict):
+            raise TypeError("CRM execution data must be a dictionary")
+
+        arguments = {
+            key: value
+            for key, value in kwargs.items()
+            if key not in {"target", "action", "role"}
+        }
+        arguments.update(data)
+
+        result = method(**arguments)
+        if hasattr(result, "__await__"):
+            return await result
+        return result
+
+
     def __init__(self, db="a1os_state.db"): self.db = db
     async def update_profile(self, d: dict) -> dict:
         cid = d.get("customer_id", "CUST-UNKNOWN")
