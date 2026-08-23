@@ -100,3 +100,6 @@ ui-repair-*/
 a1os-served_*.html
 a1os-served-ui.html
 a1os_status_runtime.json
+
+# A1OS generated delivery backups
+.a1os-delivery-backups/
