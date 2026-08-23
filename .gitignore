@@ -103,3 +103,6 @@ a1os_status_runtime.json
 
 # A1OS generated delivery backups
 .a1os-delivery-backups/
+
+# A1OS generated release verification reports
+delivery-final-release-*/
