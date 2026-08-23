@@ -81,3 +81,22 @@ node_modules/
 
 # Playwright MCP artifacts
 .playwright-mcp/
+# A1OS generated/runtime artifacts
+runtime/tmp/
+runtime/state/
+runtime/events/events.jsonl
+runtime/approvals/
+runtime/a1os-worker/
+runtime/a1os-orchestrator/
+runtime/supervisor/
+delivery-*/
+forensics/
+canonical-control-forensics-*/
+ui-functional-repair-*/
+ui-repair-*/
+*.bak
+*.backup
+*.pre-*
+a1os-served_*.html
+a1os-served-ui.html
+a1os_status_runtime.json
