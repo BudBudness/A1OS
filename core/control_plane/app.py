@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -16,7 +18,21 @@ ROOT = Path(os.environ.get("A1OS_ROOT", Path.cwd())).resolve()
 STATIC = Path(__file__).with_name("static")
 SAFE_ROOT = ROOT
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(), payment=()"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
+
 app = FastAPI(title="A1OS Control Plane", version="1.0.0")
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 from core.control_plane.jarvis import router as jarvis_router
 app.include_router(jarvis_router)
@@ -107,6 +123,19 @@ async def status():
         "cwd": str(ROOT),
     }
 
+
+
+@app.get("/api/jarvis/status")
+async def jarvis_status():
+    return {
+        "status": "online",
+        "phase": "ready",
+        "message": "JARVIS online",
+        "a1os": "online",
+        "termux_linux": "connected",
+        "human_authority": True,
+        "autonomous_execution": "approval_gated",
+    }
 
 @app.post("/api/command", response_model=CommandResponse)
 async def command(request: CommandRequest):

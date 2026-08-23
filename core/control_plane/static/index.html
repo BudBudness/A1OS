@@ -3,170 +3,1920 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b12">
 <title>A1OS // JARVIS</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
-:root{color-scheme:dark;--bg:#07090d;--panel:#0d1118;--panel2:#111722;--line:#202938;--text:#edf2f7;--muted:#7f8b9d;--accent:#64d8ff;--ok:#4ade80;--warn:#fbbf24;--danger:#fb7185}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#162536 0,#07090d 42%);color:var(--text);font:14px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
-.app{max-width:1100px;margin:auto;padding:18px 16px 40px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.brand{font-weight:800;letter-spacing:.14em;font-size:16px}.brand span{color:var(--accent)}.online{display:flex;align-items:center;gap:7px;color:var(--ok);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 12px var(--ok)}
-.grid{display:grid;grid-template-columns:1.35fr .65fr;gap:14px}.card{background:linear-gradient(180deg,#0f141d,#0b0f16);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px #0005}.main{padding:18px}.label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:9px}
-textarea{width:100%;min-height:115px;resize:vertical;background:#080c12;border:1px solid #273244;border-radius:12px;color:var(--text);padding:15px;font:15px ui-monospace,SFMono-Regular,Menlo,monospace;outline:none}textarea:focus{border-color:#3d7c96;box-shadow:0 0 0 3px #64d8ff12}
-.actions{display:flex;gap:9px;margin-top:10px;flex-wrap:wrap}button{border:1px solid var(--line);background:#151c27;color:var(--text);padding:10px 14px;border-radius:10px;font-weight:650;cursor:pointer}button:hover{border-color:#3c5069;background:#1a2330}.primary{background:#dceeff;color:#071018;border-color:#dceeff}.primary:hover{background:white}.danger{border-color:#6b2736;color:#ff9cad}
-.quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.quick button{font-size:12px;padding:7px 10px;color:#aeb9c8}
-.side{padding:16px}.stat{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line)}.stat:last-child{border:0}.k{color:var(--muted)}.v{font-family:ui-monospace,monospace;font-size:12px}.good{color:var(--ok)}
-.section{margin-top:14px;padding:16px}.section h3{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 12px}
-pre{margin:0;background:#06090e;border:1px solid var(--line);border-radius:12px;padding:13px;min-height:120px;max-height:310px;overflow:auto;color:#b9c5d4;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}
-.badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;border:1px solid var(--line);color:var(--muted)}.badge.ok{color:var(--ok);border-color:#225d39}.badge.warn{color:var(--warn);border-color:#68531c}.badge.danger{color:var(--danger);border-color:#672b38}
-.empty{color:#586577}.footer{margin-top:14px;color:#536072;font-size:11px;text-align:center}
-@media(max-width:760px){.grid{grid-template-columns:1fr}.app{padding:14px 12px 30px}.main{padding:14px}.side{padding:14px}.top{margin-bottom:12px}textarea{min-height:135px}}
-</style>
-
-<style id="a1os-production-ui">
 :root{
-  --bg:#07090d;--panel:#0d1118;--panel2:#111722;--line:#202936;
-  --text:#edf2f7;--muted:#8491a3;--accent:#7dd3fc;--accent2:#38bdf8;
-  --ok:#34d399;--warn:#fbbf24;--danger:#fb7185;
-  --shadow:0 20px 60px rgba(0,0,0,.35)
+ --bg:#080b12;
+ --surface:#0d121b;
+ --surface2:#121925;
+ --surface3:#182131;
+ --border:#242e3d;
+ --text:#f3f6fa;
+ --muted:#8d98a8;
+ --cyan:#00d9ff;
+ --violet:#7c5cff;
+ --green:#35e6a2;
+ --amber:#ffb84d;
+ --red:#ff5c7a;
+ --radius:16px;
 }
+
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:
-radial-gradient(circle at 15% 0%,rgba(56,189,248,.08),transparent 32%),
-radial-gradient(circle at 85% 15%,rgba(52,211,153,.045),transparent 28%),var(--bg);
-color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{font-size:14px}
-.app{max-width:1280px;margin:auto;padding:28px 22px 48px}
-.top{padding:4px 0 22px;border-bottom:1px solid var(--line);margin-bottom:22px}
-.brand{font-size:18px;font-weight:850;letter-spacing:.16em}
-.brand span{color:var(--accent)}
-.online{font-size:11px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}
-.dot{width:7px;height:7px}
-.command,.panel,.card,.section,.output,.audit{
-  background:linear-gradient(180deg,rgba(17,23,34,.96),rgba(10,14,21,.96));
-  border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)
+
+html,body{
+ margin:0;
+ width:100%;
+ height:100%;
+ min-height:100%;
+ background:var(--bg);
+ color:var(--text);
+ font-family:Inter,system-ui,sans-serif;
+ overflow:hidden;
 }
-.command{padding:18px;margin-bottom:16px}
-textarea,#command{
-  width:100%;min-height:58px;resize:vertical;padding:16px 17px;
-  border:1px solid #293444;border-radius:10px;background:#080c12;
-  color:var(--text);font:500 14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
-  outline:none;transition:.18s border-color,.18s box-shadow
-}
-textarea:focus,#command:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(56,189,248,.11)}
+
+button,input,textarea{font:inherit}
+
 button{
-  border:1px solid #2b3747;border-radius:9px;padding:10px 15px;
-  background:#111824;color:#dce7f2;font-weight:750;cursor:pointer;
-  transition:.16s transform,.16s background,.16s border-color,.16s opacity
+ border:0;
+ color:inherit;
+ cursor:pointer;
 }
-button:hover:not(:disabled){transform:translateY(-1px);border-color:#52657d;background:#182231}
-button:active:not(:disabled){transform:translateY(0)}
-button:disabled{opacity:.42;cursor:not-allowed}
-button.primary{background:linear-gradient(135deg,#38bdf8,#0ea5e9);border-color:#38bdf8;color:#041018}
-button.primary:hover:not(:disabled){background:linear-gradient(135deg,#67d3fb,#22b4ef)}
-#approve{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.35);color:#6ee7b7}
-#approve:hover:not(:disabled){background:rgba(52,211,153,.18)}
-.grid,.columns{gap:16px}
-.panel,.card,.section{padding:18px}
-h1,h2,h3{margin:0}
-h2{font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:#aeb9c7}
-.label{color:var(--muted);font-size:11px;font-weight:750;letter-spacing:.12em;text-transform:uppercase}
-.badge{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border-radius:999px;
-font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;border:1px solid}
-.badge.ok{color:#6ee7b7;background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.25)}
-.badge.warn{color:#fcd34d;background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25)}
-.badge.danger{color:#fda4af;background:rgba(251,113,133,.08);border-color:rgba(251,113,133,.25)}
-pre{
-  margin:10px 0 0;padding:15px;overflow:auto;min-height:74px;
-  border:1px solid #1d2633;border-radius:10px;background:#070a0f;
-  color:#b9c7d7;font:500 12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace
+
+.app{
+ width:100%;
+ height:100dvh;
+ display:flex;
+ position:relative;
+ overflow:hidden;
+ background:
+   radial-gradient(circle at 70% 15%,rgba(0,217,255,.07),transparent 28%),
+   radial-gradient(circle at 35% 70%,rgba(124,92,255,.07),transparent 32%),
+   var(--bg);
 }
-.status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.status-grid>div{padding:12px;border:1px solid var(--line);border-radius:10px;background:#0a0f16}
+
+.app:before{
+ content:"";
+ position:absolute;
+ inset:0;
+ pointer-events:none;
+ opacity:.18;
+ background-image:
+   linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+   linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+ background-size:32px 32px;
+ mask-image:linear-gradient(to bottom,black,transparent 85%);
+}
+
+.sidebar{
+ width:280px;
+ flex:0 0 280px;
+ height:100%;
+ position:relative;
+ z-index:20;
+ display:flex;
+ flex-direction:column;
+ background:rgba(10,14,22,.94);
+ border-right:1px solid var(--border);
+ backdrop-filter:blur(18px);
+}
+
+.brand{
+ padding:18px 18px 14px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+}
+
+.brand-title{
+ font-weight:800;
+ letter-spacing:.08em;
+ font-size:15px;
+}
+
+.brand-sub{
+ color:var(--green);
+ font-family:"JetBrains Mono",monospace;
+ font-size:10px;
+ margin-top:4px;
+}
+
+.icon-btn{
+ width:40px;
+ height:40px;
+ border-radius:12px;
+ background:transparent;
+ color:var(--muted);
+ display:grid;
+ place-items:center;
+ font-size:20px;
+}
+
+.icon-btn:hover{background:var(--surface2);color:var(--text)}
+
+.new-chat{
+ margin:4px 12px 12px;
+ min-height:44px;
+ border:1px solid var(--border);
+ border-radius:12px;
+ background:linear-gradient(135deg,rgba(124,92,255,.15),rgba(0,217,255,.07));
+ display:flex;
+ align-items:center;
+ gap:9px;
+ padding:0 14px;
+ font-weight:600;
+}
+
+.new-chat:hover{border-color:rgba(0,217,255,.5)}
+
+.search{
+ margin:0 12px 14px;
+ height:40px;
+ border:1px solid var(--border);
+ border-radius:11px;
+ background:var(--surface);
+ display:flex;
+ align-items:center;
+ padding:0 12px;
+ gap:8px;
+ color:var(--muted);
+}
+
+.search input{
+ border:0;
+ outline:0;
+ background:transparent;
+ color:var(--text);
+ width:100%;
+ min-width:0;
+}
+
+.history{
+ flex:1;
+ overflow:auto;
+ padding:4px 10px;
+}
+
+.section-label{
+ padding:10px 8px 6px;
+ color:var(--muted);
+ font-size:10px;
+ text-transform:uppercase;
+ letter-spacing:.12em;
+}
+
+.chat-item{
+ padding:11px 10px;
+ border-radius:10px;
+ color:#c9d1dc;
+ font-size:13px;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+ cursor:pointer;
+}
+
+.chat-item:hover,.chat-item.active{
+ background:var(--surface2);
+ color:var(--text);
+}
+
+.sidebar-bottom{
+ padding:10px;
+ border-top:1px solid var(--border);
+}
+
+.sidebar-action{
+ width:100%;
+ display:flex;
+ align-items:center;
+ gap:10px;
+ padding:11px 10px;
+ border-radius:10px;
+ background:transparent;
+ color:var(--muted);
+ text-align:left;
+}
+
+.sidebar-action:hover{
+ background:var(--surface2);
+ color:var(--text);
+}
+
+.main{
+ min-width:0;
+ flex:1;
+ height:100%;
+ display:flex;
+ flex-direction:column;
+ position:relative;
+ z-index:2;
+}
+
+.topbar{
+ height:64px;
+ flex:0 0 64px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:0 18px;
+ border-bottom:1px solid var(--border);
+ background:rgba(8,11,18,.72);
+ backdrop-filter:blur(18px);
+}
+
+.top-left{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ min-width:0;
+}
+
+.mobile-menu{display:none}
+
+.status{
+ display:flex;
+ align-items:center;
+ gap:8px;
+ color:var(--muted);
+ font-size:12px;
+ white-space:nowrap;
+}
+
+.status-dot{
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ background:var(--green);
+ box-shadow:0 0 12px rgba(53,230,162,.7);
+}
+
+.chat{
+ flex:1;
+ min-height:0;
+ overflow:auto;
+ padding:28px 18px 160px;
+}
+
+.chat-inner{
+ width:min(900px,100%);
+ margin:0 auto;
+}
+
+.hero{
+ text-align:center;
+ padding:70px 12px 34px;
+}
+
+.hero-mark{
+ width:58px;
+ height:58px;
+ margin:0 auto 18px;
+ border-radius:18px;
+ display:grid;
+ place-items:center;
+ font-weight:800;
+ font-size:20px;
+ background:
+  linear-gradient(135deg,rgba(124,92,255,.25),rgba(0,217,255,.14));
+ border:1px solid rgba(0,217,255,.25);
+ box-shadow:0 0 40px rgba(124,92,255,.12);
+}
+
+.hero h1{
+ margin:0;
+ font-size:28px;
+ letter-spacing:-.03em;
+}
+
+.hero p{
+ color:var(--muted);
+ max-width:560px;
+ margin:10px auto 0;
+ line-height:1.6;
+ font-size:14px;
+}
+
+.message{
+ display:flex;
+ margin:16px 0;
+}
+
+.message.user{justify-content:flex-end}
+
+.bubble{
+ max-width:min(760px,90%);
+ padding:12px 15px;
+ border-radius:16px;
+ line-height:1.55;
+ font-size:14px;
+ overflow-wrap:anywhere;
+}
+
+.message.user .bubble{
+ background:linear-gradient(135deg,#20293a,#172131);
+ border:1px solid var(--border);
+}
+
+.message.jarvis .bubble{
+ background:rgba(13,18,27,.75);
+ border:1px solid var(--border);
+}
+
+.bubble pre{
+ overflow:auto;
+ padding:12px;
+ background:#070a10;
+ border-radius:10px;
+ font-family:"JetBrains Mono",monospace;
+ font-size:12px;
+}
+
+.composer-wrap{
+ position:absolute;
+ left:0;
+ right:0;
+ bottom:0;
+ padding:16px 18px max(16px,env(safe-area-inset-bottom));
+ background:linear-gradient(to top,var(--bg) 60%,transparent);
+}
+
+.composer{
+ width:min(900px,100%);
+ margin:auto;
+ border:1px solid var(--border);
+ border-radius:18px;
+ background:rgba(13,18,27,.94);
+ box-shadow:0 18px 50px rgba(0,0,0,.35);
+ backdrop-filter:blur(20px);
+ overflow:hidden;
+}
+
+.attachments{
+ display:none;
+ padding:8px 12px;
+ border-bottom:1px solid var(--border);
+ gap:7px;
+ flex-wrap:wrap;
+}
+
+.attachments.show{display:flex}
+
+.chip{
+ display:flex;
+ align-items:center;
+ gap:7px;
+ padding:7px 9px;
+ border-radius:9px;
+ background:var(--surface2);
+ color:#cbd3df;
+ font-size:11px;
+}
+
+.chip button{
+ background:transparent;
+ color:var(--muted);
+ padding:0 2px;
+}
+
+.composer-row{
+ display:flex;
+ align-items:flex-end;
+ gap:6px;
+ padding:8px;
+}
+
+.composer-icon{
+ width:42px;
+ height:42px;
+ flex:0 0 42px;
+ border-radius:12px;
+ background:transparent;
+ color:var(--muted);
+ display:grid;
+ place-items:center;
+ font-size:19px;
+}
+
+.composer-icon:hover{
+ background:var(--surface2);
+ color:var(--text);
+}
+
+#message{
+ flex:1;
+ min-width:0;
+ max-height:150px;
+ resize:none;
+ outline:none;
+ border:0;
+ background:transparent;
+ color:var(--text);
+ padding:11px 8px;
+ line-height:1.45;
+ font-size:15px;
+}
+
+#message::placeholder{color:#697586}
+
+.send{
+ width:42px;
+ height:42px;
+ flex:0 0 42px;
+ border-radius:12px;
+ background:linear-gradient(135deg,var(--violet),#5e7cff);
+ display:grid;
+ place-items:center;
+ font-weight:800;
+}
+
+.send:disabled{
+ opacity:.35;
+ cursor:not-allowed;
+}
+
+.menu{
+ display:none;
+ position:absolute;
+ bottom:76px;
+ left:0;
+ background:var(--surface);
+ border:1px solid var(--border);
+ border-radius:14px;
+ padding:7px;
+ width:190px;
+ box-shadow:0 20px 50px rgba(0,0,0,.5);
+ z-index:30;
+}
+
+.menu.show{display:block}
+
+.menu button{
+ width:100%;
+ padding:11px;
+ border-radius:9px;
+ background:transparent;
+ text-align:left;
+ color:#d9e0e8;
+}
+
+.menu button:hover{background:var(--surface2)}
+
+.approval{
+ display:none;
+ margin:16px 0;
+ padding:16px;
+ border:1px solid rgba(255,184,77,.3);
+ border-radius:16px;
+ background:linear-gradient(135deg,rgba(255,184,77,.07),rgba(124,92,255,.05));
+}
+
+.approval.show{display:block}
+
+.approval-title{
+ font-weight:700;
+ margin-bottom:7px;
+}
+
+.approval-meta{
+ font-family:"JetBrains Mono",monospace;
+ font-size:11px;
+ color:var(--muted);
+ line-height:1.7;
+ margin-bottom:12px;
+}
+
+.approve{
+ min-height:44px;
+ padding:0 15px;
+ border-radius:11px;
+ background:linear-gradient(135deg,var(--green),#20b980);
+ color:#06110c;
+ font-weight:800;
+}
+
+.approve:disabled{opacity:.45;cursor:not-allowed}
+
+.execution{
+ display:none;
+ margin:12px 0;
+ padding:14px;
+ border-radius:13px;
+ background:#070a10;
+ border:1px solid var(--border);
+ font-family:"JetBrains Mono",monospace;
+ font-size:11px;
+ white-space:pre-wrap;
+ overflow:auto;
+}
+
+.execution.show{display:block}
+
+.toast{
+ position:fixed;
+ right:18px;
+ bottom:100px;
+ z-index:100;
+ padding:11px 14px;
+ border-radius:11px;
+ background:var(--surface3);
+ border:1px solid var(--border);
+ box-shadow:0 15px 40px rgba(0,0,0,.35);
+ display:none;
+ font-size:12px;
+}
+
+.toast.show{display:block}
+
 @media(max-width:760px){
- .app{padding:18px 13px 32px}.status-grid{grid-template-columns:repeat(2,1fr)}
- .grid,.columns{grid-template-columns:1fr!important}
- button{min-height:44px}
+ .sidebar{
+   position:fixed;
+   inset:0 auto 0 0;
+   width:min(84vw,310px);
+   transform:translateX(-105%);
+   transition:transform .22s ease;
+   box-shadow:20px 0 60px rgba(0,0,0,.5);
+ }
+ .sidebar.open{transform:translateX(0)}
+ .mobile-menu{display:grid}
+ .topbar{padding:0 10px}
+ .chat{padding:14px 10px 145px}
+ .hero{padding:52px 8px 24px}
+ .hero h1{font-size:24px}
+ .hero p{font-size:13px}
+ .bubble{max-width:92%;font-size:14px}
+ .composer-wrap{padding:10px 8px max(10px,env(safe-area-inset-bottom))}
+ .composer{border-radius:16px}
+ #message{font-size:16px}
+ .status span{display:none}
 }
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+@media(min-width:761px){
+ .sidebar-toggle{display:none}
+}
 </style>
-<link rel="icon" href="data:,"></head>
-<body>
-<div class="app">
-<header class="top">
-<div class="brand">A1OS <span>// JARVIS</span></div>
-<div class="online"><i class="dot"></i> ONLINE</div>
-</header>
 
-<div class="grid">
-<section class="card main">
-<div class="label">Command center</div><div id="state" class="badge ok" style="margin-bottom:10px">READY</div>
-<textarea id="command" placeholder="Tell A1OS what you want done…" onkeydown="if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();plan()}"></textarea>
-<div class="actions">
-<button class="primary" onclick="plan()">Send ↵</button>
-<button id="approve" onclick="approve()" disabled>Approve & Execute</button>
-<button class="danger" onclick="clearAll()">Clear</button>
-</div>
-<div class="quick">
-<button onclick="fill('status')">Status</button>
-<button onclick="fill('run pwd')">Working directory</button>
-<button onclick="fill('run uptime')">Uptime</button>
-<button onclick="fill('run ps')">Processes</button>
-</div>
-</section>
+<style id="jarvis-live-interaction-css">
+button,[role="button"],input[type="button"],input[type="submit"]{
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+button:disabled{cursor:not-allowed;opacity:.45}
+.jarvis-toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+  z-index:99999;padding:10px 14px;border-radius:12px;
+  background:rgba(15,18,25,.94);color:#fff;font:14px/1.3 Inter,system-ui,sans-serif;
+  box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:90vw;text-align:center;
+}
+.jarvis-approval{
+  margin:12px 0;padding:14px;border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;background:rgba(255,255,255,.045);
+}
+.jarvis-approval button{
+  margin-top:10px;width:100%;min-height:44px;border:0;border-radius:10px;
+}
+</style>
 
-<aside class="card side">
-<div class="label">System</div>
-<div class="stat"><span class="k">A1OS</span><span class="v good" id="a1os">ONLINE</span></div>
-<div class="stat"><span class="k">Termux / Linux</span><span class="v good" id="termux">CONNECTED</span></div>
-<div class="stat"><span class="k">Authority</span><span class="v good">HUMAN</span></div>
-<div class="stat"><span class="k">Autonomy</span><span class="v">APPROVAL GATED</span></div>
-<div class="stat"><span class="k">Risk</span><span id="risk" class="badge">—</span></div>
-</aside>
-</div>
 
-<section class="card section">
-<h3>Intent / decision</h3>
-<pre id="decision"><span class="empty">Awaiting command…</span></pre>
-</section>
-
-<section class="card section">
-<h3>Execution output</h3>
-<pre id="output"><span class="empty">No execution yet.</span></pre>
-</section>
-
-<section class="card section">
-<h3>Audit</h3>
-<pre id="audit"><span class="empty">No events in this session.</span></pre>
-</section>
-
-<div class="footer">HUMAN AUTHORITY • APPROVAL REQUIRED FOR EXECUTION • A1OS CONTROL PLANE</div>
-</div>
+<style id="a1os-theme-engine">
+:root{color-scheme:dark}
+html[data-theme="light"]{color-scheme:light}
+html[data-theme="dark"]{color-scheme:dark}
+@media (prefers-color-scheme:light){
+html[data-theme="system"]{color-scheme:light}
+}
+@media (prefers-color-scheme:dark){
+html[data-theme="system"]{color-scheme:dark}
+}
+</style>
+<script id="a1os-theme-engine">
+(function(){
+function applyTheme(t){
+ t=t||localStorage.getItem("a1os-theme")||"system";
+ if(!["system","light","dark"].includes(t)) t="system";
+ document.documentElement.setAttribute("data-theme",t);
+ document.documentElement.style.colorScheme=t==="system"?"light dark":t;
+ localStorage.setItem("a1os-theme",t);
+}
+window.setTheme=function(t){
+ applyTheme(t);
+ window.dispatchEvent(new CustomEvent("a1os:theme",{detail:t}));
+};
+window.getTheme=function(){return localStorage.getItem("a1os-theme")||"system"};
+applyTheme();
+})();
 
 <script>
-let token=null;
-function state(x,cls="ok"){const e=$("state");e.textContent=x;e.className="badge "+cls}
-const $=id=>document.getElementById(id);
-function fill(v){$("command").value=v;$("command").focus()}
-function clearAll(){token=null;$("command").value="";$("decision").textContent="Awaiting command…";$("output").textContent="No execution yet.";$("audit").textContent="No events in this session.";$("approve").disabled=true;$("risk").textContent="—";$("risk").className="badge"}
-function show(id,x){$(id).textContent=typeof x==="string"?x:JSON.stringify(x,null,2)}
-function setRisk(r){$("risk").textContent=r||"—";$("risk").className="badge "+(r==="destructive"?"danger":r==="execute"?"warn":r==="read"?"ok":"")}
-async function plan(){
- const command=$("command").value.trim(); if(!command)return;
- $("decision").textContent="Planning…"; state("PLANNING","warn"); token=null;$("approve").disabled=true;
- try{
-  const r=await fetch("/api/jarvis/plan",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({command})});
-  const d=await r.json(); if(!r.ok)throw new Error(d.detail||"Planning failed");
-  show("decision",d);setRisk(d.risk);token=d.approval_token||null;$("approve").disabled=!token;state(token?"AWAITING APPROVAL":"READY",token?"warn":"ok");
-  show("audit",{event:d.requires_approval?"approval_required":"planned",command,risk:d.risk});
- }catch(e){show("decision",{error:e.message});state("FAILED","danger")}
-}
-async function approve(){
- if(!token)return;
- $("approve").disabled=true;$("output").textContent="Executing…";state("EXECUTING","warn");
- try{
-  const r=await fetch("/api/jarvis/approve",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({approval_token:token})});
-  const d=await r.json();if(!r.ok)throw new Error(d.detail||"Execution failed");
-  show("output",d);show("audit",{event:"execution_result",result:d});token=null;state(d.status==="completed"?"COMPLETE":"FAILED",d.status==="completed"?"ok":"danger");
- }catch(e){show("output",{error:e.message});$("approve").disabled=false;state("FAILED","danger")}
-}
+window.a1osRenderResponse = window.a1osRenderResponse || function(data) {
+  const target =
+    document.querySelector("#messages") ||
+    document.querySelector("[data-messages]") ||
+    document.querySelector(".messages");
+
+  if (!target) return;
+
+  let text = "JARVIS response received.";
+
+  if (data && data.type === "status") {
+    const d = data.status || data;
+
+    if (d && d.a1os !== undefined) {
+      text =
+        "A1OS is " + String(d.a1os) +
+        ". Termux Linux is " + String(d.termux_linux || "unknown") +
+        ". Human authority is " +
+        (d.human_authority ? "enabled" : "disabled") +
+        ". Execution is " +
+        String(d.autonomous_execution || "unknown") + ".";
+    } else if (data.message) {
+      text = String(data.message);
+    }
+  } else if (data && typeof data.message === "string") {
+    text = data.message;
+  } else if (typeof data === "string") {
+    text = data;
+  }
+
+  const row = document.createElement("div");
+  row.className = "message-row jarvis";
+
+  const bubble = document.createElement("div");
+  bubble.className = "message-bubble";
+  bubble.textContent = text;
+
+  row.appendChild(bubble);
+  target.appendChild(row);
+  target.scrollTop = target.scrollHeight;
+};
+
+<script>
+window.a1osSubmitVoiceCommand = window.a1osSubmitVoiceCommand || async function(text) {
+  const command = String(text || "").trim();
+  if (!command) return;
+
+  try {
+    const r = await fetch("/api/command", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({command})
+    });
+
+    const data = await r.json().catch(() => ({}));
+
+    if (typeof window.a1osRenderResponse === "function") {
+      window.a1osRenderResponse(data);
+    }
+
+    document.dispatchEvent(new CustomEvent("a1os:response", {
+      detail: data
+    }));
+
+    return data;
+  } catch (err) {
+    if (typeof window.a1osRenderResponse === "function") {
+      window.a1osRenderResponse({
+        response: "A1OS command submission failed: " + err.message
+      });
+    }
+    throw err;
+  }
+};
 </script>
+
+</script>
+
+</script>
+</head>
+
+<body>
+<div class="app">
+
+<aside class="sidebar" id="sidebar">
+ <div class="brand">
+   <div>
+     <div class="brand-title">A1OS // JARVIS</div>
+     <div class="brand-sub">● ONLINE · APPROVAL GATED</div>
+   </div>
+   <button class="icon-btn" id="closeSidebar">×</button>
+ </div>
+
+ <button class="new-chat" id="newChat">＋ <span>New chat</span></button>
+
+ <label class="search">
+   <span>⌕</span>
+   <input id="search" placeholder="Search conversations">
+ </label>
+
+ <div class="history" id="history">
+   <div class="section-label">Today</div>
+   <div class="chat-item active">JARVIS command center</div>
+   <div class="section-label">Recent</div>
+ </div>
+
+ <div class="sidebar-bottom">
+   <button class="sidebar-action" id="notifications">◉ <span>Notifications</span></button>
+   <button class="sidebar-action" id="settings">⚙ <span>Settings</span></button>
+ </div>
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+ <div class="top-left">
+   <button class="icon-btn mobile-menu" id="openSidebar">☰</button>
+   <div>
+     <div class="brand-title">JARVIS</div>
+     <div class="status"><i class="status-dot"></i><span>ONLINE · HUMAN APPROVAL GATED</span></div>
+   </div>
+ </div>
+
+ <div>
+   <button class="icon-btn" id="clearChat" title="Clear conversation">⌫</button>
+ </div>
+</header>
+
+<section class="chat" id="chat">
+ <div class="chat-inner" id="messages">
+
+   <div class="hero" id="hero">
+     <div class="hero-mark">J</div>
+     <h1>How can I help?</h1>
+     <p>Chat naturally with A1OS. Attach files, images or video, use your microphone, or request an operation.</p>
+   </div>
+
+ </div>
+</section>
+
+<div class="composer-wrap">
+ <div class="composer">
+
+   <div class="attachments" id="attachments"></div>
+
+   <div class="composer-row">
+     <div style="position:relative">
+       <button class="composer-icon" id="attachBtn" title="Add attachment">＋</button>
+
+       <div class="menu" id="attachMenu">
+         <button data-type="file">📎 File</button>
+         <button data-type="image">▧ Image</button>
+         <button data-type="video">▣ Video</button>
+         <button data-type="audio">◉ Audio</button>
+       </div>
+     </div>
+
+     <textarea id="message" rows="1" placeholder="Message A1OS…"></textarea>
+
+     <button class="composer-icon" id="micBtn" title="Voice input">🎙</button>
+     <button class="send" id="sendBtn" title="Send">➤</button>
+   </div>
+ </div>
+</div>
+
+</main>
+</div>
+
+<input hidden type="file" id="fileInput">
+<div class="toast" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+
+const sidebar=$("sidebar");
+const message=$("message");
+const messages=$("messages");
+const hero=$("hero");
+const attachMenu=$("attachMenu");
+const attachments=$("attachments");
+const fileInput=$("fileInput");
+const sendBtn=$("sendBtn");
+const toast=$("toast");
+
+let pendingToken=null;
+let mediaRecorder=null;
+let audioChunks=[];
+
+function notify(text){
+ toast.textContent=text;
+ toast.classList.add("show");
+ setTimeout(()=>toast.classList.remove("show"),2600);
+}
+
+function addMessage(text,type="jarvis"){
+ hero.style.display="none";
+
+ const row=document.createElement("div");
+ row.className="message "+type;
+
+ const bubble=document.createElement("div");
+ bubble.className="bubble";
+ bubble.textContent=text;
+
+ row.appendChild(bubble);
+ messages.appendChild(row);
+
+ $("chat").scrollTop=$("chat").scrollHeight;
+ return bubble;
+}
+
+function showApproval(plan){
+ if(!plan?.requires_approval || !plan?.approval_token){
+   pendingToken=null;
+   return;
+ }
+
+ pendingToken=plan.approval_token;
+
+ const card=document.createElement("div");
+ card.className="approval show";
+ card.innerHTML=`
+   <div class="approval-title">Human approval required</div>
+   <div class="approval-meta">
+     INTENT: ${plan.intent||"implementation"}<br>
+     RISK: ${plan.risk||"execute"}<br>
+     TOKEN: PRESENT
+   </div>
+   <button class="approve" id="approveExecute">Approve &amp; Execute</button>
+ `;
+
+ messages.appendChild(card);
+
+ const button=card.querySelector("#approveExecute");
+
+ button.onclick=async()=>{
+   if(!pendingToken)return;
+
+   button.disabled=true;
+   button.textContent="Executing…";
+
+   try{
+     const r=await fetch("/api/jarvis/approve",{
+       method:"POST",
+       headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({token:pendingToken})
+     });
+
+     const d=await r.json().catch(()=>({}));
+
+     if(!r.ok)throw new Error(d.detail||("HTTP "+r.status));
+
+     const output=document.createElement("div");
+     output.className="execution show";
+     output.textContent=
+       typeof d.output==="string" ? d.output : JSON.stringify(d,null,2);
+
+     card.appendChild(output);
+
+     button.textContent="✓ Executed";
+     pendingToken=null;
+     notify("Approved execution completed");
+   }catch(e){
+     button.disabled=false;
+     button.textContent="Approve & Execute";
+     notify("Execution failed: "+e.message);
+   }
+ };
+}
+
+async function send(){
+ const text=message.value.trim();
+ if(!text)return;
+
+ addMessage(text,"user");
+ message.value="";
+ message.style.height="auto";
+ sendBtn.disabled=true;
+
+ try{
+   const r=await fetch("/api/jarvis/plan",{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({command:text})
+   });
+
+   const d=await r.json().catch(()=>({}));
+
+   if(!r.ok)throw new Error(d.detail||("HTTP "+r.status));
+
+   if(d.requires_approval){
+     addMessage(d.message||"Implementation plan prepared. Human approval required.","jarvis");
+     showApproval(d);
+   }else if(d.message){
+     addMessage(d.message,"jarvis");
+   }else{
+     addMessage(JSON.stringify(d,null,2),"jarvis");
+   }
+ }catch(e){
+   addMessage("JARVIS error: "+e.message,"jarvis");
+ }finally{
+   sendBtn.disabled=false;
+ }
+}
+
+sendBtn.onclick=send;
+
+message.addEventListener("keydown",e=>{
+ if(e.key==="Enter"&&!e.shiftKey){
+   e.preventDefault();
+   send();
+ }
+});
+
+message.addEventListener("input",()=>{
+ message.style.height="auto";
+ message.style.height=Math.min(message.scrollHeight,150)+"px";
+});
+
+$("openSidebar").onclick=()=>sidebar.classList.add("open");
+$("closeSidebar").onclick=()=>sidebar.classList.remove("open");
+
+$("newChat").onclick=()=>{
+ messages.innerHTML="";
+ hero=document.createElement("div");
+ location.reload();
+};
+
+$("clearChat").onclick=()=>{
+ messages.innerHTML="";
+ notify("Conversation cleared");
+};
+
+$("attachBtn").onclick=()=>{
+ attachMenu.classList.toggle("show");
+};
+
+document.querySelectorAll("#attachMenu button").forEach(b=>{
+ b.onclick=()=>{
+   attachMenu.classList.remove("show");
+
+   const type=b.dataset.type;
+
+   if(type==="image")fileInput.accept="image/*";
+   else if(type==="video")fileInput.accept="video/*";
+   else if(type==="audio")fileInput.accept="audio/*";
+   else fileInput.accept="*/*";
+
+   fileInput.click();
+ };
+});
+
+fileInput.onchange=()=>{
+ const file=fileInput.files?.[0];
+ if(!file)return;
+
+ attachments.classList.add("show");
+
+ const chip=document.createElement("div");
+ chip.className="chip";
+
+ const label=document.createElement("span");
+ label.textContent=file.name;
+
+ const remove=document.createElement("button");
+ remove.textContent="×";
+ remove.onclick=()=>chip.remove();
+
+ chip.append(label,remove);
+ attachments.appendChild(chip);
+
+ notify("Attachment added");
+};
+
+$("micBtn").onclick=async()=>{
+ if(mediaRecorder?.state==="recording"){
+   mediaRecorder.stop();
+   $("micBtn").textContent="🎙";
+   return;
+ }
+
+ if(!navigator.mediaDevices?.getUserMedia){
+   notify("Microphone unavailable in this browser");
+   return;
+ }
+
+ try{
+   const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+   audioChunks=[];
+   mediaRecorder=new MediaRecorder(stream);
+
+   mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+
+   mediaRecorder.onstop=()=>{
+     stream.getTracks().forEach(t=>t.stop());
+     notify("Voice recording captured");
+   };
+
+   mediaRecorder.start();
+   $("micBtn").textContent="⏹";
+   notify("Recording… tap again to stop");
+ }catch(e){
+   notify("Microphone permission denied");
+ }
+};
+
+$("notifications").onclick=()=>notify("Notifications panel ready");
+$("settings").onclick=()=>notify("Settings panel ready");
+
+document.addEventListener("click",e=>{
+ if(!e.target.closest("#attachBtn")&&!e.target.closest("#attachMenu")){
+   attachMenu.classList.remove("show");
+ }
+});
+</script>
+
+<script id="a1os-direct-interaction-v1">
+(() => {
+  "use strict";
+
+  const $ = (q, r=document) => r.querySelector(q);
+  const $$ = (q, r=document) => [...r.querySelectorAll(q)];
+
+  const text = el => (el?.innerText || el?.textContent || "").trim().toLowerCase();
+
+  function findComposer() {
+    return $("textarea") ||
+           $("input[placeholder*='message' i]") ||
+           $("[contenteditable='true']");
+  }
+
+  function findSidebar() {
+    return $("aside") ||
+           $(".sidebar") ||
+           $("[class*='sidebar' i]");
+  }
+
+  function setComposer(value) {
+    const el = findComposer();
+    if (!el) return false;
+
+    if ("value" in el) {
+      const setter = Object.getOwnPropertyDescriptor(
+        Object.getPrototypeOf(el), "value"
+      )?.set;
+      if (setter) setter.call(el, value);
+      else el.value = value;
+      el.dispatchEvent(new Event("input", {bubbles:true}));
+      el.dispatchEvent(new Event("change", {bubbles:true}));
+    } else {
+      el.textContent = value;
+      el.dispatchEvent(new InputEvent("input", {bubbles:true, inputType:"insertText"}));
+    }
+    return true;
+  }
+
+  async function postJSON(url, body) {
+    const r = await fetch(url, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(body)
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.detail || `HTTP ${r.status}`);
+    return data;
+  }
+
+  async function sendMessage() {
+    const el = findComposer();
+    if (!el) return;
+
+    const value = ("value" in el ? el.value : el.textContent || "").trim();
+    if (!value) return;
+
+    try {
+      const result = await postJSON("/api/jarvis/plan", {command:value});
+      window.__a1osLastPlan = result;
+
+      const token = result.approval_token;
+      if (result.requires_approval && token) {
+        window.__a1osApprovalToken = token;
+        window.__a1osRequiresApproval = true;
+        ensureApprovalButton();
+      }
+
+      el.value = "";
+      el.textContent = "";
+      el.dispatchEvent(new Event("input", {bubbles:true}));
+
+      window.dispatchEvent(new CustomEvent("a1os:plan", {detail:result}));
+    } catch (e) {
+      console.error("A1OS plan failed:", e);
+      window.dispatchEvent(new CustomEvent("a1os:error", {detail:String(e)}));
+    }
+  }
+
+  async function approveExecute() {
+    const token = window.__a1osApprovalToken;
+    if (!token) return;
+
+    const button = document.querySelector("[data-a1os-approve]");
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Executing…";
+    }
+
+    try {
+      const result = await postJSON("/api/jarvis/approve", {token});
+      window.__a1osLastExecution = result;
+      window.__a1osApprovalToken = null;
+
+      if (button) {
+        button.textContent = "Executed";
+        button.disabled = true;
+      }
+
+      window.dispatchEvent(new CustomEvent("a1os:execution", {detail:result}));
+    } catch (e) {
+      console.error("A1OS approval failed:", e);
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Approve & Execute";
+      }
+      window.dispatchEvent(new CustomEvent("a1os:error", {detail:String(e)}));
+    }
+  }
+
+  function ensureApprovalButton() {
+    if (document.querySelector("[data-a1os-approve]")) return;
+
+    const composer = findComposer();
+    const parent = composer?.parentElement || document.body;
+
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.a1osApprove = "true";
+    b.textContent = "Approve & Execute";
+    b.disabled = !window.__a1osRequiresApproval || !window.__a1osApprovalToken;
+    b.style.cssText =
+      "margin:6px;padding:10px 14px;border-radius:10px;" +
+      "border:1px solid rgba(255,255,255,.18);cursor:pointer;" +
+      "background:#1f2937;color:#fff;font-weight:600;";
+
+    b.addEventListener("click", approveExecute);
+    parent.appendChild(b);
+  }
+
+  function wireFileInput() {
+    let input = document.querySelector("[data-a1os-file-input]");
+    if (!input) {
+      input = document.createElement("input");
+      input.type = "file";
+      input.multiple = true;
+      input.accept = "image/*,video/*,audio/*,.pdf,.txt,.doc,.docx,.xls,.xlsx";
+      input.dataset.a1osFileInput = "true";
+      input.style.display = "none";
+      document.body.appendChild(input);
+
+      input.addEventListener("change", () => {
+        window.__a1osFiles = [...input.files];
+        window.dispatchEvent(new CustomEvent("a1os:files", {
+          detail: window.__a1osFiles
+        }));
+      });
+    }
+    return input;
+  }
+
+  function startMicrophone() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      console.warn("Microphone API unavailable");
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({audio:true})
+      .then(stream => {
+        window.__a1osMicStream = stream;
+        window.dispatchEvent(new CustomEvent("a1os:microphone", {detail:stream}));
+      })
+      .catch(err => console.error("Microphone denied:", err));
+  }
+
+  document.addEventListener("click", e => {
+    const button = e.target.closest("button,[role='button'],a");
+    if (!button) return;
+
+    const t = text(button);
+
+    if (
+      t === "send" ||
+      t.includes("send ↵") ||
+      t.includes("send")
+    ) {
+      e.preventDefault();
+      sendMessage();
+      return;
+    }
+
+    if (t.includes("approve") && t.includes("execute")) {
+      e.preventDefault();
+      approveExecute();
+      return;
+    }
+
+    if (t.includes("new chat")) {
+      e.preventDefault();
+      setComposer("");
+      window.dispatchEvent(new CustomEvent("a1os:new-chat"));
+      return;
+    }
+
+    if (t.includes("search conversations") || t === "search") {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent("a1os:search"));
+      return;
+    }
+
+    if (t.includes("notification")) {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent("a1os:notifications"));
+      return;
+    }
+
+    if (t.includes("settings")) {
+      e.preventDefault();
+      window.dispatchEvent(new CustomEvent("a1os:settings"));
+      return;
+    }
+
+    if (t === "＋" || t === "+" || t.includes("attach")) {
+      e.preventDefault();
+      wireFileInput().click();
+      return;
+    }
+
+    if (t.includes("image") || t.includes("video") || t.includes("file")) {
+      e.preventDefault();
+      wireFileInput().click();
+      return;
+    }
+
+    if (t.includes("microphone") || t.includes("🎙")) {
+      e.preventDefault();
+      startMicrophone();
+      return;
+    }
+
+    if (t === "☰" || t.includes("menu")) {
+      e.preventDefault();
+      const sidebar = findSidebar();
+      if (sidebar) sidebar.classList.toggle("a1os-sidebar-open");
+      document.body.classList.toggle("a1os-sidebar-open");
+    }
+  }, true);
+
+  document.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "enter") {
+      e.preventDefault();
+      sendMessage();
+    }
+    if (e.key === "Enter" && !e.shiftKey && document.activeElement === findComposer()) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }, true);
+
+  window.addEventListener("a1os:plan", ensureApprovalButton);
+
+  wireFileInput();
+
+  window.__A1OS_INTERACTION_LAYER__ = {
+    version:"1.0",
+    chat:true,
+    sidebar:true,
+    search:true,
+    attachments:true,
+    microphone:true,
+    plan:true,
+    approval:true
+  };
+
+
+})();
+</script>
+
+
+<!-- A1OS OPERATIONAL UI REPAIR V1 -->
+<style>
+#a1osRepairOverlay{
+ position:fixed;inset:0;z-index:9998;display:none;
+ background:rgba(0,0,0,.42);backdrop-filter:blur(3px)
+}
+#a1osRepairPanel{
+ position:fixed;top:0;right:0;width:min(380px,92vw);height:100vh;
+ z-index:9999;display:none;overflow:auto;padding:22px;
+ background:rgba(10,14,22,.98);color:var(--text,#fff);
+ border-left:1px solid var(--border,#273044);
+ box-shadow:-12px 0 40px rgba(0,0,0,.4)
+}
+#a1osRepairPanel h2{margin:0 0 16px}
+#a1osRepairPanel button{
+ border:1px solid var(--border,#273044);border-radius:10px;
+ padding:10px 14px;background:var(--surface2,#151b28);
+ color:inherit;margin:5px;cursor:pointer
+}
+.a1osRepairRow{
+ padding:14px 0;border-bottom:1px solid var(--border,#273044)
+}
+.a1osRepairStatus{font-family:monospace;font-size:12px;opacity:.8}
+</style>
+
+<div id="a1osRepairOverlay"></div>
+<aside id="a1osRepairPanel">
+  <h2 id="a1osRepairTitle">A1OS</h2>
+  <div id="a1osRepairBody"></div>
+</aside>
+
+<script>
+(function(){
+"use strict";
+
+const $=id=>document.getElementById(id);
+const panel=$("a1osRepairPanel");
+const overlay=$("a1osRepairOverlay");
+const body=$("a1osRepairBody");
+const title=$("a1osRepairTitle");
+
+function closePanel(){
+  if(panel) panel.style.display="none";
+  if(overlay) overlay.style.display="none";
+}
+function openPanel(name,content){
+  if(!panel||!body) return;
+  title.textContent=name;
+  body.innerHTML=content;
+  panel.style.display="block";
+  overlay.style.display="block";
+}
+if(overlay) overlay.onclick=closePanel;
+
+const settingsKey="a1os.ui.settings.v1";
+let settings={theme:"system",sound:true,notifications:true};
+try{
+  settings=Object.assign(settings,JSON.parse(localStorage.getItem(settingsKey)||"{}"));
+}catch(e){}
+
+function saveSettings(){
+  localStorage.setItem(settingsKey,JSON.stringify(settings));
+}
+
+const notificationBtn=$("notifications");
+if(notificationBtn){
+  notificationBtn.addEventListener("click",async function(e){
+    e.preventDefault();
+    let permission="unsupported";
+    if("Notification" in window){
+      permission=Notification.permission;
+      if(permission==="default"){
+        try{permission=await Notification.requestPermission()}catch(_){}
+      }
+    }
+
+    openPanel("Notifications",`
+      <div class="a1osRepairRow">
+        <strong>Notification Service</strong>
+        <div class="a1osRepairStatus">
+          Browser permission: ${permission}
+        </div>
+      </div>
+      <div class="a1osRepairRow">
+        <strong>Application notifications</strong><br>
+        <button id="a1osNotifyToggle">
+          ${settings.notifications?"Disable":"Enable"}
+        </button>
+        <button id="a1osTestNotify">Test notification</button>
+      </div>
+      <div class="a1osRepairRow">
+        <button id="a1osCloseNotifications">Close</button>
+      </div>
+    `);
+
+    $("a1osNotifyToggle").onclick=function(){
+      settings.notifications=!settings.notifications;
+      saveSettings();
+      this.textContent=settings.notifications?"Disable":"Enable";
+    };
+
+    $("a1osTestNotify").onclick=function(){
+      if(!settings.notifications) return;
+      if("Notification" in window && Notification.permission==="granted"){
+        new Notification("A1OS",{
+          body:"Notification subsystem is operational."
+        });
+      }else{
+        alert("Browser notifications are not permitted. The A1OS notification panel itself is operational.");
+      }
+    };
+
+    $("a1osCloseNotifications").onclick=closePanel;
+  });
+}
+
+const settingsBtn=$("settings");
+if(settingsBtn){
+  settingsBtn.addEventListener("click",function(e){
+    e.preventDefault();
+
+    openPanel("Settings",`
+      <div class="a1osRepairRow">
+        <strong>Interface</strong><br>
+        <button id="a1osThemeSystem">System</button>
+        <button id="a1osThemeLight">Light</button>
+        <button id="a1osThemeDark">Dark</button>
+      </div>
+
+      <div class="a1osRepairRow">
+        <strong>Sound</strong><br>
+        <button id="a1osSoundToggle">
+          ${settings.sound?"Disable sound":"Enable sound"}
+        </button>
+      </div>
+
+      <div class="a1osRepairRow">
+        <strong>Notifications</strong><br>
+        <button id="a1osSettingsNotify">
+          ${settings.notifications?"Enabled":"Disabled"}
+        </button>
+      </div>
+
+      <div class="a1osRepairRow">
+        <button id="a1osResetSettings">Reset settings</button>
+        <button id="a1osCloseSettings">Close</button>
+      </div>
+    `);
+
+    function setTheme(v){
+      settings.theme=v;
+      saveSettings();
+      document.documentElement.dataset.a1osTheme=v;
+    }
+
+    $("a1osThemeSystem").onclick=()=>setTheme("system");
+    $("a1osThemeLight").onclick=()=>setTheme("light");
+    $("a1osThemeDark").onclick=()=>setTheme("dark");
+
+    $("a1osSoundToggle").onclick=function(){
+      settings.sound=!settings.sound;
+      saveSettings();
+      this.textContent=settings.sound?"Disable sound":"Enable sound";
+    };
+
+    $("a1osSettingsNotify").onclick=function(){
+      settings.notifications=!settings.notifications;
+      saveSettings();
+      this.textContent=settings.notifications?"Enabled":"Disabled";
+    };
+
+    $("a1osResetSettings").onclick=function(){
+      settings={theme:"system",sound:true,notifications:true};
+      saveSettings();
+      alert("A1OS settings reset.");
+      closePanel();
+    };
+
+    $("a1osCloseSettings").onclick=closePanel;
+  });
+}
+
+const mic=$("micBtn");
+const composer=$("command") || $("message") || $("chat");
+
+let recognition=null;
+let listening=false;
+
+const SpeechRecognition=
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if(mic){
+  if(SpeechRecognition){
+    recognition=new SpeechRecognition();
+    recognition.lang=document.documentElement.lang || "en-US";
+    recognition.continuous=false;
+    recognition.interimResults=true;
+
+    recognition.onstart=function(){
+      listening=true;
+      mic.dataset.listening="true";
+      mic.setAttribute("aria-label","Stop voice input");
+      mic.title="Stop voice input";
+      mic.style.outline="2px solid var(--green,#00d9a6)";
+    };
+
+    recognition.onresult=function(event){
+      let text="";
+      for(let i=event.resultIndex;i<event.results.length;i++){
+        text+=event.results[i][0].transcript;
+      }
+
+      if(composer && text.trim()){
+        if("value" in composer){
+          composer.value=(composer.value?composer.value+" ":"")+text.trim();
+          composer.dispatchEvent(new Event("input",{bubbles:true}));
+        }else{
+          composer.textContent=text.trim();
+        }
+      }
+    };
+
+    recognition.onerror=function(event){
+      console.warn("A1OS microphone:",event.error);
+      listening=false;
+      mic.removeAttribute("data-listening");
+      mic.style.outline="";
+    };
+
+    recognition.onend=function(){
+      listening=false;
+      mic.removeAttribute("data-listening");
+      mic.setAttribute("aria-label","Voice input");
+      mic.title="Voice input";
+      mic.style.outline="";
+    };
+
+    mic.addEventListener("click",function(e){
+      e.preventDefault();
+      try{
+        if(listening) recognition.stop();
+        else recognition.start();
+      }catch(err){
+        console.warn("A1OS microphone start:",err);
+      }
+    });
+  }else{
+    mic.addEventListener("click",function(){
+      alert("Voice input is not supported by this browser.");
+    });
+  }
+}
+
+window.A1OSOperationalUI={
+  notifications:true,
+  settings:true,
+  microphone:!!SpeechRecognition,
+  version:"1.0.0"
+};
+
+
+
+})();
+</script>
+
+
+<script>
+/* A1OS_OBSERVE_STATUS_LAYER_V1 */
+(function () {
+  "use strict";
+
+
+/* A1OS_STATUS_EVENT_OWNER_V2 */
+(function(){
+  function a1osStatusCapture(event){
+    const input =
+      document.querySelector("#command") ||
+      document.querySelector("#message") ||
+      document.querySelector("#chat");
+    const value = input ? String(input.value || "").trim() : "";
+
+    if (!window.a1osStatusIntent || !window.a1osStatusIntent(value)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === "function") {
+      event.stopImmediatePropagation();
+    }
+
+    Promise.resolve(window.a1osObserveStatus && window.a1osObserveStatus())
+      .catch(err => console.error("A1OS status observation failed:", err));
+  }
+
+  document.addEventListener("click", function(event){
+    const target = event.target && event.target.closest
+      ? event.target.closest("#sendBtn,[type='submit']")
+      : null;
+    if (!target) return;
+    a1osStatusCapture(event);
+  }, true);
+
+  document.addEventListener("keydown", function(event){
+    if (event.key !== "Enter" || event.shiftKey) return;
+
+    const target = event.target;
+    if (!target || !("value" in target)) return;
+
+    const value = String(target.value || "").trim();
+    if (!window.a1osStatusIntent || !window.a1osStatusIntent(value)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === "function") {
+      event.stopImmediatePropagation();
+    }
+
+    Promise.resolve(window.a1osObserveStatus && window.a1osObserveStatus())
+      .catch(err => console.error("A1OS status observation failed:", err));
+  }, true);
+})();
+
+window.a1osStatusIntent = function (text) {
+    const q = String(text || "").trim().toLowerCase();
+
+    if (!q) return false;
+
+    const patterns = [
+      /\bwhat\s+(is|s|about)\s+(a1os|jarvis)\b/,
+      /\b(a1os|jarvis)\s+(status|health|state)\b/,
+      /\bstatus\s+(of|for)\s+(a1os|jarvis)\b/,
+      /\bis\s+(a1os|jarvis)\s+(online|running|up|alive)\b/,
+      /\bhow\s+is\s+(a1os|jarvis)\b/,
+      /^status$/,
+      /^health$/,
+      /^state$/
+    ];
+
+    return patterns.some(function (r) { return r.test(q); });
+  };
+
+  window.a1osObserveStatus = async function () {
+    try {
+      const r = await fetch("/api/status", {
+        method: "GET",
+        cache: "no-store",
+        headers: { "Accept": "application/json" }
+      });
+
+      if (!r.ok) throw new Error("STATUS_HTTP_" + r.status);
+
+      const data = await r.json();
+
+      const payload = {
+        type: "status",
+        source: "a1os-supervisor",
+        timestamp: new Date().toISOString(),
+        status: data
+      };
+
+      const naturalStatus =
+        data && data.a1os !== undefined
+          ? "A1OS is " + String(data.a1os) +
+            ". Termux Linux is " + String(data.termux_linux || "unknown") +
+            ". Human authority is " +
+            (data.human_authority ? "enabled" : "disabled") +
+            ". Execution is " +
+            String(data.autonomous_execution || "unknown") + "."
+          : "JARVIS status is online.";
+
+      if (typeof window.a1osRenderResponse === "function") {
+        window.a1osRenderResponse({
+          type: "status",
+          message: naturalStatus
+        });
+        return payload;
+      }
+
+      if (typeof window.notify === "function") {
+        window.notify("A1OS status received");
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("a1os:status", { detail: payload })
+      );
+
+      return payload;
+    } catch (err) {
+      const payload = {
+        type: "status_error",
+        error: String(err && err.message || err),
+        timestamp: new Date().toISOString()
+      };
+
+      if (typeof window.a1osRenderResponse === "function") {
+        window.a1osRenderResponse(payload);
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("a1os:status:error", { detail: payload })
+      );
+
+      return payload;
+    }
+  };
+
+  /*
+   * Capture the send action before the normal command/plan handler.
+   * Status questions are observational and therefore must not enter
+   * the planning/approval pipeline.
+   */
+  document.addEventListener("click", async function (e) {
+    const el = e.target && e.target.closest
+      ? e.target.closest("#sendBtn,[type='submit'],button")
+      : null;
+
+    if (!el) return;
+
+    const fields = Array.from(
+      document.querySelectorAll(
+        "textarea,input[type='text'],input:not([type])"
+      )
+    );
+
+    const field = fields.find(function (x) {
+      return x && String(x.value || "").trim();
+    });
+
+    if (!field) return;
+
+    const text = String(field.value || "").trim();
+
+    if (!window.a1osStatusIntent(text)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === "function") {
+      e.stopImmediatePropagation();
+    }
+
+    await window.a1osObserveStatus();
+  }, true);
+
+  window.addEventListener("a1os:status", function (e) {
+    const envelope = e && e.detail ? e.detail : {};
+    const d = envelope && envelope.status && typeof envelope.status === "object"
+      ? envelope.status
+      : envelope;
+    const statusText =
+      d.message ||
+      d.response ||
+      (
+        d.a1os !== undefined
+          ? "A1OS: " + d.a1os +
+            " | Termux Linux: " + (d.termux_linux || "unknown") +
+            " | Human authority: " + (d.human_authority ? "enabled" : "disabled") +
+            " | Execution: " + (d.autonomous_execution || "unknown")
+          : "JARVIS status is online."
+      );
+    if (typeof addMessage === "function") {
+      addMessage(statusText, "jarvis");
+    }
+  });
+
+})();
+</script>
+
+
+<script>
+/* A1OS_STATUS_TERMINAL_GATE_V1 */
+(function () {
+  if (window.__A1OS_STATUS_TERMINAL_GATE__) return;
+  window.__A1OS_STATUS_TERMINAL_GATE__ = true;
+
+  const isStatusRequest = function (value) {
+    try {
+      return !!window.a1osStatusIntent &&
+             window.a1osStatusIntent(String(value || "").trim());
+    } catch (_) {
+      const t = String(value || "").trim().toLowerCase();
+      return /^(status|health|state)$/.test(t) ||
+             /\b(a1os|jarvis)\s+(status|health|state)\b/.test(t) ||
+             /\bstatus\s+(of|for)\s+(a1os|jarvis)\b/.test(t);
+    }
+  };
+
+  const getComposer = function () {
+    return document.querySelector("#command,#message,#chat");
+  };
+
+  const terminalStatus = async function () {
+    if (typeof window.a1osObserveStatus !== "function") return false;
+
+    try {
+      await window.a1osObserveStatus();
+    } catch (err) {
+      if (typeof window.a1osRenderResponse === "function") {
+        window.a1osRenderResponse({
+          type: "status_error",
+          response: "A1OS status request failed: " + err.message
+        });
+      }
+    }
+    return true;
+  };
+
+  /* Capture BEFORE normal click handlers can enter send()/plan(). */
+  document.addEventListener("click", function (event) {
+    const target = event.target && event.target.closest
+      ? event.target.closest("button,[role='button']")
+      : null;
+
+    if (!target) return;
+
+    const composer = getComposer();
+    const value = composer ? composer.value : "";
+
+    if (!isStatusRequest(value)) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    terminalStatus();
+  }, true);
+
+  /* Capture Enter BEFORE normal keydown/send handlers. */
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Enter" || event.shiftKey) return;
+
+    const composer = getComposer();
+    if (!composer) return;
+
+    const value = composer.value || "";
+
+    if (!isStatusRequest(value)) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    terminalStatus();
+  }, true);
+
+  window.a1osStatusTerminalGate = terminalStatus;
+})();
+</script>
+
 </body>
 </html>
+
+
+<script>
+window.a1osLiveJarvisStatus = async function(){
+  try{
+    const r = await fetch("/api/status",{cache:"no-store"});
+    const d = await r.json();
+
+    window.dispatchEvent(new CustomEvent("a1os:jarvis-status",{
+      detail:d
+    }));
+
+    const nodes = document.querySelectorAll(
+      "[data-jarvis-status]"
+    );
+
+    nodes.forEach(n=>{
+      n.textContent =
+        d.message ||
+        d.phase ||
+        d.status ||
+        "JARVIS online";
+    });
+
+    return d;
+  }catch(e){
+    window.dispatchEvent(new CustomEvent(
+      "a1os:jarvis-status",
+      {
+        detail:{
+          status:"degraded",
+          phase:"connection",
+          message:"JARVIS status unavailable"
+        }
+      }
+    ));
+  }
+};
+
+window.a1osLiveJarvisStatus();
+
+setInterval(
+  window.a1osLiveJarvisStatus,
+  2000
+);
+</script>
+
+
+<script>
+/* A1OS_SINGLE_COMMAND_DISPATCHER_V1 */
+(function () {
+  if (window.__A1OS_SINGLE_COMMAND_DISPATCHER__) return;
+  window.__A1OS_SINGLE_COMMAND_DISPATCHER__ = true;
+
+  window.a1osDispatchCommand = async function (value, event) {
+    const text = String(value || "").trim();
+    if (!text) return false;
+
+    if (window.a1osStatusIntent &&
+        window.a1osStatusIntent(text)) {
+      if (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+      if (window.a1osObserveStatus) {
+        await window.a1osObserveStatus();
+      }
+      return true;
+    }
+
+    return false;
+  };
+})();
+</script>

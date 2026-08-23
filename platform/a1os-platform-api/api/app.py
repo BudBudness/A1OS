@@ -148,6 +148,10 @@ DEFAULT_ROLE_PERMISSIONS = {
     "admin": {"*"},
     "platform_admin": {"*"},
     "owner": {"*"},
+    "director": {
+        "education:read",
+        "education:write",
+    },
     "manager": {
         "organizations:read",
         "organizations:write",
@@ -926,6 +930,50 @@ def create_user(payload: dict, request: Request):
         )
         _audit(conn, actor, "user", cur.lastrowid, "created", {"email": email})
         return {"status": "created", "user_id": cur.lastrowid}
+    finally:
+        conn.close()
+
+
+
+@app.post("/v1/admin/users/{user_id}/password-reset")
+def admin_password_reset(user_id: int, payload: dict, request: Request):
+    actor = _require_permission(request, "users:write")
+
+    if actor["role"] != "super_admin":
+        raise HTTPException(status_code=403, detail="Only super_admin may reset passwords")
+
+    new_password = str(payload.get("new_password", ""))
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="new_password must be at least 8 characters")
+
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT id, organization_id, email FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        password_hash = _hash_password(new_password)
+        conn.execute(
+            "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (password_hash, user_id),
+        )
+        _audit(
+            conn,
+            actor,
+            "user",
+            user_id,
+            "admin_password_reset",
+            {"email": row["email"], "organization_id": row["organization_id"]},
+        )
+        conn.commit()
+        return {
+            "status": "password_reset",
+            "user_id": user_id,
+            "force_change_on_login": True,
+        }
     finally:
         conn.close()
 
@@ -1854,6 +1902,657 @@ def list_stock_movements(request: Request):
 # ============================================================
 # NOTIFICATIONS
 # ============================================================
+
+
+# ============================================================
+# EDUCATION OS API
+# Organization-scoped CRUD for industry frontends.
+# ============================================================
+
+EDUCATION_READ = "education:read"
+EDUCATION_WRITE = "education:write"
+
+
+def _education_actor(request: Request, permission: str):
+    actor = _require_permission(request, permission)
+    if not actor.get("organization_id"):
+        raise HTTPException(
+            status_code=403,
+            detail="Education access requires an organization",
+        )
+    return actor
+
+
+def _education_rows(conn, table, organization_id):
+    allowed = {
+        "education_students",
+        "education_parents",
+        "education_admissions",
+        "education_attendance",
+        "education_fees",
+        "education_site_content",
+    }
+    if table not in allowed:
+        raise ValueError("invalid education table")
+
+    rows = conn.execute(
+        f"SELECT * FROM {table} WHERE organization_id = ? ORDER BY id",
+        (organization_id,),
+    ).fetchall()
+
+    return [dict(row) for row in rows]
+
+
+@app.get("/v1/education/students")
+def education_students(request: Request):
+    actor = _education_actor(request, EDUCATION_READ)
+    conn = db()
+    try:
+        return {
+            "organization_id": actor["organization_id"],
+            "items": _education_rows(
+                conn,
+                "education_students",
+                actor["organization_id"],
+            ),
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/v1/education/students", status_code=201)
+def education_student_create(payload: dict, request: Request):
+    actor = _education_actor(request, EDUCATION_WRITE)
+
+    required = ("first_name", "last_name")
+    for field in required:
+        if not str(payload.get(field, "")).strip():
+            raise HTTPException(
+                status_code=400,
+                detail=f"{field} is required",
+            )
+
+    conn = db()
+    try:
+        cur = conn.execute(
+            """
+            INSERT INTO education_students (
+                organization_id,
+                admission_no,
+                first_name,
+                last_name,
+                gender,
+                date_of_birth,
+                class_name,
+                status,
+                metadata,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            """,
+            (
+                actor["organization_id"],
+                payload.get("admission_no"),
+                payload["first_name"],
+                payload["last_name"],
+                payload.get("gender"),
+                payload.get("date_of_birth"),
+                payload.get("class_name"),
+                payload.get("status", "active"),
+                json.dumps(payload.get("metadata", {})),
+            ),
+        )
+        conn.commit()
+
+        student_id = cur.lastrowid
+        _audit(
+            conn,
+            actor,
+            "education_student",
+            student_id,
+            "created",
+            payload,
+        )
+        conn.commit()
+
+        return {
+            "status": "created",
+            "student_id": student_id,
+        }
+    finally:
+        conn.close()
+
+
+@app.patch("/v1/education/students/{student_id}")
+def education_student_update(
+    student_id: int,
+    payload: dict,
+    request: Request,
+):
+    actor = _education_actor(request, EDUCATION_WRITE)
+
+    allowed = {
+        "admission_no",
+        "first_name",
+        "last_name",
+        "gender",
+        "date_of_birth",
+        "class_name",
+        "status",
+        "metadata",
+    }
+
+    updates = {
+        key: value
+        for key, value in payload.items()
+        if key in allowed
+    }
+
+    if "metadata" in updates:
+        updates["metadata"] = json.dumps(updates["metadata"])
+
+    if not updates:
+        raise HTTPException(
+            status_code=400,
+            detail="No permitted fields supplied",
+        )
+
+    updates["updated_at"] = "CURRENT_TIMESTAMP"
+
+    conn = db()
+    try:
+        exists = conn.execute(
+            """
+            SELECT id
+            FROM education_students
+            WHERE id = ? AND organization_id = ?
+            """,
+            (student_id, actor["organization_id"]),
+        ).fetchone()
+
+        if not exists:
+            raise HTTPException(
+                status_code=404,
+                detail="Student not found",
+            )
+
+        assignments = []
+        values = []
+
+        for key, value in updates.items():
+            if key == "updated_at":
+                assignments.append("updated_at = CURRENT_TIMESTAMP")
+            else:
+                assignments.append(f"{key} = ?")
+                values.append(value)
+
+        values.extend([
+            student_id,
+            actor["organization_id"],
+        ])
+
+        conn.execute(
+            f"""
+            UPDATE education_students
+            SET {", ".join(assignments)}
+            WHERE id = ? AND organization_id = ?
+            """,
+            values,
+        )
+
+        _audit(
+            conn,
+            actor,
+            "education_student",
+            student_id,
+            "updated",
+            list(updates.keys()),
+        )
+        conn.commit()
+
+        return {
+            "status": "updated",
+            "student_id": student_id,
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/v1/education/parents")
+def education_parents(request: Request):
+    actor = _education_actor(request, EDUCATION_READ)
+    conn = db()
+    try:
+        return {
+            "organization_id": actor["organization_id"],
+            "items": _education_rows(
+                conn,
+                "education_parents",
+                actor["organization_id"],
+            ),
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/v1/education/admissions")
+def education_admissions(request: Request):
+    actor = _education_actor(request, EDUCATION_READ)
+    conn = db()
+    try:
+        return {
+            "organization_id": actor["organization_id"],
+            "items": _education_rows(
+                conn,
+                "education_admissions",
+                actor["organization_id"],
+            ),
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/v1/education/attendance")
+def education_attendance(request: Request):
+    actor = _education_actor(request, EDUCATION_READ)
+    conn = db()
+    try:
+        return {
+            "organization_id": actor["organization_id"],
+            "items": _education_rows(
+                conn,
+                "education_attendance",
+                actor["organization_id"],
+            ),
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/v1/education/fees")
+def education_fees(request: Request):
+    actor = _education_actor(request, EDUCATION_READ)
+    conn = db()
+    try:
+        return {
+            "organization_id": actor["organization_id"],
+            "items": _education_rows(
+                conn,
+                "education_fees",
+                actor["organization_id"],
+            ),
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/v1/education/site-content")
+def education_site_content(request: Request):
+    actor = _education_actor(request, EDUCATION_READ)
+    conn = db()
+    try:
+        return {
+            "organization_id": actor["organization_id"],
+            "items": _education_rows(
+                conn,
+                "education_site_content",
+                actor["organization_id"],
+            ),
+        }
+    finally:
+        conn.close()
+
+
+
+
+# DIRECTOR_EDUCATION_WRITE_V1
+
+@app.post("/v1/education/parents", status_code=201)
+def education_create_parent(payload: dict, request: Request):
+    actor = _require_permission(request, EDUCATION_WRITE)
+    conn = db()
+    try:
+        required = ("name",)
+        if not all(str(payload.get(k, "")).strip() for k in required):
+            raise HTTPException(status_code=400, detail="name is required")
+
+        cur = conn.execute("""
+            INSERT INTO education_parents
+            (organization_id, name, phone, email, relationship, metadata)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            actor["organization_id"],
+            str(payload["name"]).strip(),
+            payload.get("phone"),
+            payload.get("email"),
+            payload.get("relationship"),
+            json.dumps(payload.get("metadata", {})),
+        ))
+        conn.commit()
+        _audit(conn, actor, "education_parent", cur.lastrowid, "created", payload)
+        return {"status": "created", "parent_id": cur.lastrowid}
+    finally:
+        conn.close()
+
+
+@app.patch("/v1/education/parents/{parent_id}")
+def education_update_parent(parent_id: int, payload: dict, request: Request):
+    actor = _require_permission(request, EDUCATION_WRITE)
+    allowed = {"name", "phone", "email", "relationship", "metadata"}
+    updates = {k: v for k, v in payload.items() if k in allowed}
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No editable fields supplied")
+
+    if "metadata" in updates:
+        updates["metadata"] = json.dumps(updates["metadata"])
+
+    conn = db()
+    try:
+        row = conn.execute("""
+            SELECT id FROM education_parents
+            WHERE id = ? AND organization_id = ?
+        """, (parent_id, actor["organization_id"])).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Parent not found")
+
+        sql = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"UPDATE education_parents SET {sql}, updated_at = CURRENT_TIMESTAMP "
+            "WHERE id = ? AND organization_id = ?",
+            list(updates.values()) + [parent_id, actor["organization_id"]],
+        )
+        conn.commit()
+        _audit(conn, actor, "education_parent", parent_id, "updated", list(updates))
+        return {"status": "updated", "parent_id": parent_id}
+    finally:
+        conn.close()
+
+
+@app.post("/v1/education/admissions", status_code=201)
+def education_create_admission(payload: dict, request: Request):
+    actor = _require_permission(request, EDUCATION_WRITE)
+
+    if not str(payload.get("applicant_name", "")).strip():
+        raise HTTPException(status_code=400, detail="applicant_name is required")
+
+    conn = db()
+    try:
+        cur = conn.execute("""
+            INSERT INTO education_admissions
+            (organization_id, student_id, applicant_name, status,
+             application_date, metadata)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            actor["organization_id"],
+            payload.get("student_id"),
+            str(payload["applicant_name"]).strip(),
+            payload.get("status", "pending"),
+            payload.get("application_date"),
+            json.dumps(payload.get("metadata", {})),
+        ))
+        conn.commit()
+        _audit(conn, actor, "education_admission", cur.lastrowid, "created", payload)
+        return {"status": "created", "admission_id": cur.lastrowid}
+    finally:
+        conn.close()
+
+
+@app.patch("/v1/education/admissions/{admission_id}")
+def education_update_admission(
+    admission_id: int, payload: dict, request: Request
+):
+    actor = _require_permission(request, EDUCATION_WRITE)
+    allowed = {"student_id", "applicant_name", "status", "application_date", "metadata"}
+    updates = {k: v for k, v in payload.items() if k in allowed}
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No editable fields supplied")
+
+    if "metadata" in updates:
+        updates["metadata"] = json.dumps(updates["metadata"])
+
+    conn = db()
+    try:
+        row = conn.execute("""
+            SELECT id FROM education_admissions
+            WHERE id = ? AND organization_id = ?
+        """, (admission_id, actor["organization_id"])).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Admission not found")
+
+        sql = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"UPDATE education_admissions SET {sql}, updated_at = CURRENT_TIMESTAMP "
+            "WHERE id = ? AND organization_id = ?",
+            list(updates.values()) + [admission_id, actor["organization_id"]],
+        )
+        conn.commit()
+        _audit(conn, actor, "education_admission", admission_id, "updated", list(updates))
+        return {"status": "updated", "admission_id": admission_id}
+    finally:
+        conn.close()
+
+
+@app.post("/v1/education/attendance", status_code=201)
+def education_create_attendance(payload: dict, request: Request):
+    actor = _require_permission(request, EDUCATION_WRITE)
+
+    required = ("student_id", "attendance_date", "status")
+    if not all(payload.get(k) not in (None, "") for k in required):
+        raise HTTPException(
+            status_code=400,
+            detail="student_id, attendance_date and status are required",
+        )
+
+    conn = db()
+    try:
+        student = conn.execute("""
+            SELECT id FROM education_students
+            WHERE id = ? AND organization_id = ?
+        """, (payload["student_id"], actor["organization_id"])).fetchone()
+
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+
+        cur = conn.execute("""
+            INSERT INTO education_attendance
+            (organization_id, student_id, attendance_date, status, notes)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            actor["organization_id"],
+            payload["student_id"],
+            payload["attendance_date"],
+            payload["status"],
+            payload.get("notes"),
+        ))
+        conn.commit()
+        _audit(conn, actor, "education_attendance", cur.lastrowid, "created", payload)
+        return {"status": "created", "attendance_id": cur.lastrowid}
+    finally:
+        conn.close()
+
+
+@app.patch("/v1/education/attendance/{attendance_id}")
+def education_update_attendance(
+    attendance_id: int, payload: dict, request: Request
+):
+    actor = _require_permission(request, EDUCATION_WRITE)
+    allowed = {"student_id", "attendance_date", "status", "notes"}
+    updates = {k: v for k, v in payload.items() if k in allowed}
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No editable fields supplied")
+
+    conn = db()
+    try:
+        row = conn.execute("""
+            SELECT id FROM education_attendance
+            WHERE id = ? AND organization_id = ?
+        """, (attendance_id, actor["organization_id"])).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Attendance record not found")
+
+        if "student_id" in updates:
+            student = conn.execute("""
+                SELECT id FROM education_students
+                WHERE id = ? AND organization_id = ?
+            """, (updates["student_id"], actor["organization_id"])).fetchone()
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
+
+        sql = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"UPDATE education_attendance SET {sql} "
+            "WHERE id = ? AND organization_id = ?",
+            list(updates.values()) + [attendance_id, actor["organization_id"]],
+        )
+        conn.commit()
+        _audit(conn, actor, "education_attendance", attendance_id, "updated", list(updates))
+        return {"status": "updated", "attendance_id": attendance_id}
+    finally:
+        conn.close()
+
+
+@app.post("/v1/education/fees", status_code=201)
+def education_create_fee(payload: dict, request: Request):
+    actor = _require_permission(request, EDUCATION_WRITE)
+
+    if not str(payload.get("description", "")).strip():
+        raise HTTPException(status_code=400, detail="description is required")
+
+    conn = db()
+    try:
+        if payload.get("student_id") is not None:
+            student = conn.execute("""
+                SELECT id FROM education_students
+                WHERE id = ? AND organization_id = ?
+            """, (payload["student_id"], actor["organization_id"])).fetchone()
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
+
+        cur = conn.execute("""
+            INSERT INTO education_fees
+            (organization_id, student_id, description, amount, status, due_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            actor["organization_id"],
+            payload.get("student_id"),
+            str(payload["description"]).strip(),
+            payload.get("amount", 0),
+            payload.get("status", "pending"),
+            payload.get("due_date"),
+        ))
+        conn.commit()
+        _audit(conn, actor, "education_fee", cur.lastrowid, "created", payload)
+        return {"status": "created", "fee_id": cur.lastrowid}
+    finally:
+        conn.close()
+
+
+@app.patch("/v1/education/fees/{fee_id}")
+def education_update_fee(fee_id: int, payload: dict, request: Request):
+    actor = _require_permission(request, EDUCATION_WRITE)
+    allowed = {"student_id", "description", "amount", "status", "due_date"}
+    updates = {k: v for k, v in payload.items() if k in allowed}
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No editable fields supplied")
+
+    conn = db()
+    try:
+        row = conn.execute("""
+            SELECT id FROM education_fees
+            WHERE id = ? AND organization_id = ?
+        """, (fee_id, actor["organization_id"])).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Fee record not found")
+
+        if "student_id" in updates and updates["student_id"] is not None:
+            student = conn.execute("""
+                SELECT id FROM education_students
+                WHERE id = ? AND organization_id = ?
+            """, (updates["student_id"], actor["organization_id"])).fetchone()
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
+
+        sql = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"UPDATE education_fees SET {sql}, updated_at = CURRENT_TIMESTAMP "
+            "WHERE id = ? AND organization_id = ?",
+            list(updates.values()) + [fee_id, actor["organization_id"]],
+        )
+        conn.commit()
+        _audit(conn, actor, "education_fee", fee_id, "updated", list(updates))
+        return {"status": "updated", "fee_id": fee_id}
+    finally:
+        conn.close()
+
+
+@app.post("/v1/education/site-content", status_code=201)
+def education_create_site_content(payload: dict, request: Request):
+    actor = _require_permission(request, EDUCATION_WRITE)
+
+    key = str(payload.get("content_key", "")).strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="content_key is required")
+
+    conn = db()
+    try:
+        cur = conn.execute("""
+            INSERT INTO education_site_content
+            (organization_id, content_key, content)
+            VALUES (?, ?, ?)
+        """, (
+            actor["organization_id"],
+            key,
+            str(payload.get("content", "")),
+        ))
+        conn.commit()
+        _audit(conn, actor, "education_site_content", cur.lastrowid, "created", {"content_key": key})
+        return {"status": "created", "content_id": cur.lastrowid}
+    finally:
+        conn.close()
+
+
+@app.patch("/v1/education/site-content/{content_id}")
+def education_update_site_content(
+    content_id: int, payload: dict, request: Request
+):
+    actor = _require_permission(request, EDUCATION_WRITE)
+    allowed = {"content_key", "content"}
+    updates = {k: v for k, v in payload.items() if k in allowed}
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No editable fields supplied")
+
+    conn = db()
+    try:
+        row = conn.execute("""
+            SELECT id FROM education_site_content
+            WHERE id = ? AND organization_id = ?
+        """, (content_id, actor["organization_id"])).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="Site content not found")
+
+        sql = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"UPDATE education_site_content SET {sql}, updated_at = CURRENT_TIMESTAMP "
+            "WHERE id = ? AND organization_id = ?",
+            list(updates.values()) + [content_id, actor["organization_id"]],
+        )
+        conn.commit()
+        _audit(conn, actor, "education_site_content", content_id, "updated", list(updates))
+        return {"status": "updated", "content_id": content_id}
+    finally:
+        conn.close()
+
 
 @app.get("/v1/notifications")
 def list_notifications(request: Request):

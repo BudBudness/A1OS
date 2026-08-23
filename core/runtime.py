@@ -4,7 +4,9 @@ from typing import Any, Dict
 from core.queue.durable import DurableQueue
 
 
+from core.control_plane.human_approval import HumanApprovalController, ApprovalDenied
 class Runtime:
+    __approval_controller = HumanApprovalController()
     """
     Canonical A1OS task execution runtime.
 
@@ -90,6 +92,30 @@ class Runtime:
         try:
             if system is not None:
                 if target == "system":
+                    # CONSEQUENTAL EXECUTION AUTHORITY:
+                    # Runtime is the execution authority. The controller only verifies and
+                    # consumes an already-issued, exact-bound approval. The controller never
+                    # executes the task itself.
+                    approval_id = payload.get("approval_id")
+                    if not approval_id:
+                        raise ApprovalDenied("Explicit human approval is required")
+
+                    try:
+                        approval = __approval_controller.consume(
+                            approval_id=approval_id,
+                            task_id=task_id,
+                            capability=payload.get("capability"),
+                            entity_id=payload.get("entity_id", "primary-device"),
+                            action=payload.get("action"),
+                        )
+                    except ApprovalDenied:
+                        raise
+                    except Exception as exc:
+                        raise ApprovalDenied(f"Approval verification failed: {exc}")
+
+                    if not isinstance(approval, dict):
+                        raise ApprovalDenied("Invalid approval record")
+
                     output = system.execute(
                         action,
                         **{

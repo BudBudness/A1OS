@@ -58,6 +58,22 @@ class DurableQueue:
 
     @staticmethod
     def fail(task_id, error):
+        # Human-approval denials are terminal: retrying cannot manufacture
+        # the missing authorization and must never create an execution loop.
+        if error.__class__.__name__ == "ApprovalDenied":
+            from core.persistence.database import Database
+            Database.execute(
+                """
+                UPDATE tasks
+                SET status='failed',
+                    error=?,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE task_id=?
+                """,
+                (str(error), task_id),
+            )
+            return
+
         row = Database.fetchone(
             """
             SELECT attempts, max_attempts

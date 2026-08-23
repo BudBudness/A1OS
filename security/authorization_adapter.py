@@ -4,6 +4,11 @@ import time
 import uuid
 
 
+class HumanApprovalRequired(PermissionError):
+    """Raised when consequential execution requires explicit human approval."""
+    pass
+
+
 class AuthorizationAdapter:
     CONSEQUENTIAL_CAPABILITIES = {
         "digital_world_decision",
@@ -69,41 +74,34 @@ class AuthorizationAdapter:
                 "reason": "Unknown capability - fail closed",
             }
 
-        authorization = {
-            "authorized": True,
-            "allowed": True,
-            "autonomous_authorization": True,
-            "decision": "autonomous_authorization",
-            "reason": "Consequential authorization granted.",
-            "confidence": 1.0,
-            "provenance": {
-                "authorization_id": f"auth-{uuid.uuid4()}",
-                "entity_id": entity_id,
-                "capability": capability,
-                "action": target_action,
-                "timestamp": time.time(),
-                "policy_decision": "autonomous_authorization",
-                "confidence": 1.0,
-            },
-        }
-
+        # Consequential capabilities MUST NOT receive autonomous authorization.
+        # Public execution remains fail-closed until an explicit human approval
+        # mechanism is completed and its approval provenance is verified.
         provenance = self.create_provenance_record(
             capability=capability,
             entity_id=entity_id,
             action=target_action,
-            decision=authorization["decision"],
-            requires_human=False,
-            confidence=authorization["confidence"],
-            verified=True,
+            decision="human_required",
+            requires_human=True,
+            confidence=1.0,
+            verified=False,
         )
 
         return {
-            "allowed": True,
+            "allowed": False,
             "requires_authorization": True,
             "classification": "consequential",
             "capability": capability,
-            "decision": authorization["decision"],
-            "authorization": authorization,
+            "decision": "human_required",
+            "reason": "Consequential capability requires explicit human authorization.",
+            "authorization": {
+                "authorized": False,
+                "allowed": False,
+                "autonomous_authorization": False,
+                "decision": "human_required",
+                "reason": "Consequential capability requires explicit human authorization.",
+                "confidence": 1.0,
+            },
             "provenance": provenance,
         }
 

@@ -131,6 +131,30 @@ def _plan(command: str) -> dict[str, Any]:
         _record("approval_required", requested_command=text, **result)
         return result
 
+    implementation_terms = (
+        "implement", "build", "upgrade", "modify", "change", "create",
+        "add", "update", "install", "configure", "refactor", "replace"
+    )
+
+    if any(term in text.lower() for term in implementation_terms):
+        pending_command = text
+
+        token = secrets.token_urlsafe(32)
+        _pending[token] = PendingCommand(pending_command)
+
+        result = {
+            "intent": "implementation",
+            "command": pending_command,
+            "risk": RiskLevel.EXECUTE,
+            "requires_approval": True,
+            "approval_token": token,
+            "message": "Implementation plan prepared. Human approval required before execution.",
+        }
+        _record("planned", requested_command=text, **{
+            k:v for k,v in result.items() if k != "approval_token"
+        })
+        return result
+
     result = {
         "intent": "unknown",
         "command": None,
@@ -157,14 +181,24 @@ async def approve(request: ApprovalRequest):
 
     _record("approved", command=command.command)
 
-    proc = await asyncio.create_subprocess_exec(
-        "sh",
-        "-lc",
-        command.command,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-        cwd=os.path.expanduser("~/A1OS_RESTORED"),
-    )
+    if command.command.lower().startswith(("implement ", "build ", "upgrade ", "modify ", "change ", "create ", "add ", "update ", "install ", "configure ", "refactor ", "replace ")):
+        proc = await asyncio.create_subprocess_exec(
+            "python3",
+            "runtime/a1os-orchestrator/implementation_executor.py",
+            command.command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            cwd=os.path.expanduser("~/A1OS_RESTORED"),
+        )
+    else:
+        proc = await asyncio.create_subprocess_exec(
+            "sh",
+            "-lc",
+            command.command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            cwd=os.path.expanduser("~/A1OS_RESTORED"),
+        )
 
     stdout, _ = await proc.communicate()
 
