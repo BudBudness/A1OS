@@ -42,7 +42,8 @@ async def main():
     assert result.get("status") == "blocked"
     assert worker.calls == 0
 
-    # Authorized consequential capability must execute.
+    # Consequential capability without explicit human authorization
+    # must be blocked before worker execution.
     result = await scheduler.dispatcher.dispatch(
         target="default",
         payload={
@@ -51,14 +52,16 @@ async def main():
         },
     )
 
-    assert result.get("status") == "executed"
-    assert worker.calls == 1
+    assert result.get("status") == "blocked"
+    assert result.get("authorization", {}).get("requires_authorization") is True
+    assert result.get("authorization", {}).get("decision") == "human_required"
+    assert worker.calls == 0
 
     print("=== SCHEDULER AUTHORIZATION REGRESSION ===")
     print("MISSING CAPABILITY: BLOCKED")
     print("UNKNOWN CAPABILITY: BLOCKED")
     print("BLOCKED WORKER EXECUTION: ZERO CALLS")
-    print("AUTHORIZED EXECUTION: PASSED")
+    print("CONSEQUENTIAL WITHOUT APPROVAL: BLOCKED")
     print("SCHEDULER BYPASS: CLOSED")
     print("STATUS: PASS")
 
