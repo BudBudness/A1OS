@@ -6,7 +6,7 @@ from core.queue.durable import DurableQueue
 
 from core.control_plane.human_approval import HumanApprovalController, ApprovalDenied
 class Runtime:
-    __approval_controller = HumanApprovalController()
+    """Canonical A1OS task execution runtime."""
     """
     Canonical A1OS task execution runtime.
 
@@ -19,8 +19,13 @@ class Runtime:
     - Run a durable background worker.
     """
 
-    def __init__(self, system=None):
+    def __init__(self, system=None, approval_controller=None):
         self.system = system
+        self.approval_controller = (
+            approval_controller
+            if approval_controller is not None
+            else HumanApprovalController()
+        )
         self.started = False
         self.worker_task = None
         self.worker_running = False
@@ -101,7 +106,7 @@ class Runtime:
                         raise ApprovalDenied("Explicit human approval is required")
 
                     try:
-                        approval = __approval_controller.consume(
+                        approval = self.approval_controller.consume(
                             approval_id=approval_id,
                             task_id=task_id,
                             capability=payload.get("capability"),
