@@ -24,7 +24,6 @@ Provides
 
 Supported Portfolio
 
-- Education OS
 - NGO OS
 - Legal OS
 - Media OS

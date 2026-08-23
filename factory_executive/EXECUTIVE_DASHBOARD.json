@@ -5,12 +5,6 @@
   "portfolio_size": 8,
   "products": [
     {
-      "product": "education-os",
-      "health_score": 50,
-      "status": "building",
-      "layers": 14
-    },
-    {
       "product": "business-os",
       "health_score": 50,
       "status": "building",

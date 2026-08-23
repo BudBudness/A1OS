@@ -5,14 +5,6 @@
   "products_monitored": 8,
   "products": [
     {
-      "product": "education-os",
-      "intelligence_layer": true,
-      "operations_layer": false,
-      "agents": "available",
-      "workflows": "available",
-      "status": "monitored"
-    },
-    {
       "product": "business-os",
       "intelligence_layer": true,
       "operations_layer": false,

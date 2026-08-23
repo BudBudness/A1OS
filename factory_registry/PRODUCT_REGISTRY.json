@@ -4,28 +4,6 @@
   "products_registered": 8,
   "products": [
     {
-      "product": "education-os",
-      "profile": "unknown",
-      "version": "unknown",
-      "status": "registered",
-      "layers": [
-        "core",
-        "modules",
-        "deployments",
-        "database",
-        "api",
-        "web",
-        "__pycache__",
-        "WORK",
-        "ops",
-        "RELEASES",
-        "OPERATIONS",
-        "ROADMAP",
-        "intelligence",
-        "docs"
-      ]
-    },
-    {
       "product": "business-os",
       "profile": "unknown",
       "version": "unknown",

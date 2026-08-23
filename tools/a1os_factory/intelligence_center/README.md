@@ -27,7 +27,6 @@ Provides:
 
 Monitored OS families:
 
-- Education OS
 - NGO OS
 - Legal OS
 - Media OS

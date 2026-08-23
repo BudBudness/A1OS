@@ -15,7 +15,6 @@ PLATFORM LAYER:
   realtime WebSocket. One codebase serves every industry frontend.
 
 PRODUCT IMPLEMENTATION PRIORITY:
-1. Education OS
    - Little Oaks (legacy single-tenant monolith, live :3012/:8080)
    - Taibah
 2. Charity / NGO OS

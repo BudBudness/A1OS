@@ -11,7 +11,6 @@ python3 validation_engine.py product-name
 
 Example:
 
-python3 validation_engine.py education-os
 
 
 Generated:

@@ -27,7 +27,6 @@ Tracks:
 
 Supported products:
 
-- Education OS
 - NGO OS
 - Legal OS
 - Media OS

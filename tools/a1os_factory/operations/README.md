@@ -11,7 +11,6 @@ python3 operations_generator.py product-name
 
 Example:
 
-python3 operations_generator.py education-os
 
 
 Generated:

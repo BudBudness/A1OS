@@ -106,7 +106,6 @@ Generated OS Families:
    - Analytics
    - Performance intelligence
 
-22. EducationOS
    - Schools
    - Universities
    - Learning intelligence
