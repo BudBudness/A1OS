@@ -106,3 +106,5 @@ a1os_status_runtime.json
 
 # A1OS generated release verification reports
 delivery-final-release-*/
+
+data/state.json
