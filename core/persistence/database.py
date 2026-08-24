@@ -22,6 +22,19 @@ class Database:
         return conn
 
     @classmethod
+    def close(cls):
+        """Close and clear the current thread-local database connection."""
+        conn = getattr(cls._local, "conn", None)
+        if conn is not None:
+            try:
+                conn.close()
+            finally:
+                try:
+                    del cls._local.conn
+                except AttributeError:
+                    pass
+
+    @classmethod
     def execute(cls, sql, params=()):
         conn = cls.connection()
         cur = conn.execute(sql, params)

@@ -49,5 +49,3 @@ class A1OSEngine:
 
     def stop(self):
         self._running = False
-
-engine = A1OSEngine()
