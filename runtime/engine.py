@@ -1,3 +1,6 @@
+from runtime.worker_registry import WorkerRegistry
+from observability.audit import AuditTrail
+from core.recovery.checkpoints import CheckpointStore
 import asyncio
 import logging
 
@@ -6,6 +9,9 @@ class A1OSEngine:
         self._running = False
         self._subscribers = set()
         self._workers = {}
+        self.worker_registry = WorkerRegistry()
+        self.audit = AuditTrail()
+        self.checkpoints = CheckpointStore()
         self.logger = logging.getLogger("A1OS.Engine")
 
     async def register_worker(self, name, worker):
