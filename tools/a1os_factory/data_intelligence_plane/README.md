@@ -6,7 +6,6 @@ python3 data_intelligence_engine.py product-name
 
 Example:
 
-python3 data_intelligence_engine.py legal-os
 
 Generated:
 

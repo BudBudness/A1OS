@@ -29,11 +29,6 @@ Generated OS Families:
    - Risk
    - Policy management
 
-6. LegalOS
-   - Legal intelligence
-   - Case management
-   - Compliance
-
 7. RealtyOS
    - Property management
    - Real estate intelligence

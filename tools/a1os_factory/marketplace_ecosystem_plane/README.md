@@ -7,7 +7,6 @@ python3 marketplace_engine.py product-name
 
 Example:
 
-python3 marketplace_engine.py legal-os
 
 
 Generated:

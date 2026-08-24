@@ -69,26 +69,6 @@
       "layers": [
         "a1os-product-template"
       ]
-    },
-    {
-      "product": "legal-os",
-      "profile": "legal",
-      "version": "2.0",
-      "status": "orchestrated",
-      "layers": [
-        "core",
-        "intelligence",
-        "api",
-        "web",
-        "deployments",
-        "docs",
-        "operations",
-        "validation",
-        "evolution",
-        "release",
-        "runtime",
-        "intelligence_runtime"
-      ]
     }
   ],
   "registry_status": "active"

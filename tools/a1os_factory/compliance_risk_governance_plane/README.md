@@ -7,7 +7,6 @@ python3 compliance_risk_engine.py product-name
 
 Example:
 
-python3 compliance_risk_engine.py legal-os
 
 
 Generated:

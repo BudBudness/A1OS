@@ -51,14 +51,6 @@
       "agents": "not_detected",
       "workflows": "not_detected",
       "status": "monitored"
-    },
-    {
-      "product": "legal-os",
-      "intelligence_layer": true,
-      "operations_layer": true,
-      "agents": "available",
-      "workflows": "available",
-      "status": "monitored"
     }
   ],
   "insights": {

@@ -6,7 +6,6 @@ python3 infrastructure_engine.py product-name
 
 Example:
 
-python3 infrastructure_engine.py legal-os
 
 Generated:
 

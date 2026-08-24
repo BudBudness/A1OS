@@ -6,7 +6,6 @@ python3 observability_reliability_engine.py product-name
 
 Example:
 
-python3 observability_reliability_engine.py legal-os
 
 
 Generated:

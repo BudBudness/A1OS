@@ -6,7 +6,6 @@ python3 ai_governance_engine.py product-name
 
 Example:
 
-python3 ai_governance_engine.py legal-os
 
 
 Generated:

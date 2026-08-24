@@ -7,7 +7,6 @@ python3 disaster_recovery_engine.py product-name
 
 Example:
 
-python3 disaster_recovery_engine.py legal-os
 
 
 Generated:

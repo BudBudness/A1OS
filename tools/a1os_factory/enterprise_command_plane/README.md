@@ -6,7 +6,6 @@ python3 enterprise_command_engine.py product-name
 
 Example:
 
-python3 enterprise_command_engine.py legal-os
 
 
 Generated:

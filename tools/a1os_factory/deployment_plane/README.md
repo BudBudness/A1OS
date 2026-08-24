@@ -6,7 +6,6 @@ python3 deployment_plane.py product-name
 
 Example:
 
-python3 deployment_plane.py legal-os
 
 Generated:
 

@@ -6,7 +6,6 @@ python3 workflow_automation_engine.py product-name
 
 Example:
 
-python3 workflow_automation_engine.py legal-os
 
 
 Generated:

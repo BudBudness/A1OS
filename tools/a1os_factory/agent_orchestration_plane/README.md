@@ -6,7 +6,6 @@ python3 agent_orchestration_engine.py product-name
 
 Example:
 
-python3 agent_orchestration_engine.py legal-os
 
 Generated:
 

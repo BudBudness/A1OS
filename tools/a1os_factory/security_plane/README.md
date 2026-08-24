@@ -6,7 +6,6 @@ python3 security_engine.py product-name
 
 Example:
 
-python3 security_engine.py legal-os
 
 Generated:
 

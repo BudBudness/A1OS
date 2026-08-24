@@ -7,7 +7,6 @@ python3 tenant_control_engine.py product-name
 
 Example:
 
-python3 tenant_control_engine.py legal-os
 
 
 Generated:

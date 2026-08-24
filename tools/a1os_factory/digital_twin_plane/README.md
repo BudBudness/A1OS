@@ -6,7 +6,6 @@ python3 digital_twin_engine.py product-name
 
 Example:
 
-python3 digital_twin_engine.py legal-os
 
 
 Generated:

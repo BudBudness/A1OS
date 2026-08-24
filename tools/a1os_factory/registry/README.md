@@ -28,7 +28,6 @@ Tracks:
 Supported products:
 
 - NGO OS
-- Legal OS
 - Media OS
 - Finance OS
 - Business OS

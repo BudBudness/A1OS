@@ -3,7 +3,6 @@
 Supported OS families:
 
 - NGO OS
-- Legal OS
 - Media OS
 - Finance OS
 - Business OS

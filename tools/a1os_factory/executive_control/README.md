@@ -25,7 +25,6 @@ Provides
 Supported Portfolio
 
 - NGO OS
-- Legal OS
 - Media OS
 - Finance OS
 - Business OS

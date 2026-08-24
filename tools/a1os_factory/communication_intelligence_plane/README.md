@@ -7,7 +7,6 @@ python3 communication_intelligence_engine.py product-name
 
 Example:
 
-python3 communication_intelligence_engine.py legal-os
 
 
 Generated:

@@ -6,7 +6,6 @@ python3 self_improvement_engine.py product-name
 
 Example:
 
-python3 self_improvement_engine.py legal-os
 
 
 Generated:

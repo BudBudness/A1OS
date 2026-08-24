@@ -7,7 +7,6 @@ python3 identity_access_engine.py product-name
 
 Example:
 
-python3 identity_access_engine.py legal-os
 
 
 Generated:

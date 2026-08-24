@@ -6,7 +6,6 @@ python3 api_mesh_engine.py product-name
 
 Example:
 
-python3 api_mesh_engine.py legal-os
 
 
 Generated:

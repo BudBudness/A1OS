@@ -7,7 +7,6 @@ python3 secops_engine.py product-name
 
 Example:
 
-python3 secops_engine.py legal-os
 
 
 Generated:

@@ -7,7 +7,6 @@ python3 billing_revenue_engine.py product-name
 
 Example:
 
-python3 billing_revenue_engine.py legal-os
 
 
 Generated:

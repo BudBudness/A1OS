@@ -7,7 +7,6 @@ python3 finops_resource_engine.py product-name
 
 Example:
 
-python3 finops_resource_engine.py legal-os
 
 
 Generated:

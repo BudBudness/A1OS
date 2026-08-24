@@ -39,12 +39,6 @@
       "health_score": 0,
       "status": "building",
       "layers": 1
-    },
-    {
-      "product": "legal-os",
-      "health_score": 80,
-      "status": "healthy",
-      "layers": 12
     }
   ],
   "executive_summary": {
