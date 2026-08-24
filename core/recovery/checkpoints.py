@@ -23,6 +23,7 @@ class CheckpointStore:
                 "INSERT INTO recovery_checkpoints VALUES (?, ?, ?)",
                 (checkpoint_id, component, json.dumps(state)),
             )
+            db.commit()
         return checkpoint_id
 
     def latest(self, component):
