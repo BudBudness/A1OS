@@ -1,29 +1,43 @@
 import json
+import sqlite3
 import uuid
-from core.persistence.database import Database
 
-class Recovery:
-    @staticmethod
-    def checkpoint(component, state):
+
+class CheckpointStore:
+    def __init__(self, db_path="a1os_state.db"):
+        self.db_path = db_path
+        self._init()
+
+    def _init(self):
+        with sqlite3.connect(self.db_path) as db:
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS recovery_checkpoints "
+                "(checkpoint_id TEXT PRIMARY KEY, component TEXT NOT NULL, state TEXT NOT NULL)"
+            )
+
+    def save(self, component, state):
         checkpoint_id = str(uuid.uuid4())
-        Database.execute(
-            """
-            INSERT INTO recovery_checkpoints
-            (checkpoint_id,component,state)
-            VALUES (?,?,?)
-            """,
-            (checkpoint_id, component, json.dumps(state))
-        )
+        with sqlite3.connect(self.db_path) as db:
+            db.execute(
+                "INSERT INTO recovery_checkpoints VALUES (?, ?, ?)",
+                (checkpoint_id, component, json.dumps(state)),
+            )
         return checkpoint_id
 
-    @staticmethod
-    def latest(component):
-        return Database.fetchone(
-            """
-            SELECT * FROM recovery_checkpoints
-            WHERE component=?
-            ORDER BY created_at DESC
-            LIMIT 1
-            """,
-            (component,)
-        )
+    def latest(self, component):
+        with sqlite3.connect(self.db_path) as db:
+            row = db.execute(
+                "SELECT checkpoint_id, component, state "
+                "FROM recovery_checkpoints WHERE component=? "
+                "ORDER BY rowid DESC LIMIT 1",
+                (component,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return {
+            "checkpoint_id": row[0],
+            "component": row[1],
+            "state": json.loads(row[2]),
+        }
