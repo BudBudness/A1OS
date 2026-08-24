@@ -5,7 +5,16 @@ class A1OSEngine:
     def __init__(self):
         self._running = False
         self._subscribers = set()
+        self._workers = {}
         self.logger = logging.getLogger("A1OS.Engine")
+
+    async def register_worker(self, name, worker):
+        if not isinstance(name, str) or not name:
+            raise ValueError("Worker name must be a non-empty string")
+        if worker is None:
+            raise ValueError("Worker instance is required")
+        self._workers[name] = worker
+        return worker
 
     def subscribe(self, callback):
         self._subscribers.add(callback)

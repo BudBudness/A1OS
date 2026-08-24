@@ -1,4 +1,3 @@
-from modules.trading import Trading
 from modules.procurement import Procurement
 
 class Orchestrator:

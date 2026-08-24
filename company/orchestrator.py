@@ -1,7 +1,7 @@
 from modules.intel.intel_worker import IntelWorker
 from modules.governance.governance_worker import GovernanceWorker
 from modules.ops.ops_worker import OpsWorker
-from modules.crm.crm_worker import CRMWorker
+from modules.crm.crm_worker import CrmWorker
 from modules.analytics.analytics_worker import AnalyticsWorker
 
 class Orchestrator:
@@ -10,7 +10,7 @@ class Orchestrator:
             "intel": IntelWorker(),
             "governance": GovernanceWorker(),
             "ops": OpsWorker(),
-            "crm": CRMWorker(),
+            "crm": CrmWorker(),
             "analytics": AnalyticsWorker()
         }
 

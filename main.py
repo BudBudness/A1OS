@@ -22,3 +22,8 @@ if __name__ == "__main__":
         port=3011,
         log_level="info",
     )
+
+
+# Canonical production runtime compatibility export.
+from runtime.engine import A1OSEngine
+A1OSRuntime = A1OSEngine
