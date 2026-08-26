@@ -5,9 +5,9 @@ from company.workers.ops_worker import OpsWorker
 from company.workers.procurement_worker import ProcurementWorker
 from modules.finance.finance_worker import FinanceWorker
 from modules.crm.crm_worker import CrmWorker
-import asyncio
 
-def register(runtime):
+
+async def register(runtime):
     workers = {
         "communication": CommWorker(),
         "development": DevWorker(),
@@ -15,12 +15,8 @@ def register(runtime):
         "operations": OpsWorker(),
         "procurement": ProcurementWorker(),
         "finance": FinanceWorker(),
-        "crm": CrmWorker()
+        "crm": CrmWorker(),
     }
-    
-    # Register workers using an event loop to handle the awaitable nature of the registration
-    async def _register_all():
-        for name, worker in workers.items():
-            await runtime.register_worker(name, worker)
 
-    asyncio.run(_register_all())
+    for name, worker in workers.items():
+        await runtime.register_worker(name, worker)
