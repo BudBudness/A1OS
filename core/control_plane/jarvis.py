@@ -167,6 +167,20 @@ def _plan(command: str) -> dict[str, Any]:
     return result
 
 
+
+
+@router.get("/status")
+async def jarvis_status():
+    return {
+        "status": "online",
+        "phase": "ready",
+        "message": "JARVIS online",
+        "a1os": "online",
+        "termux_linux": "connected",
+        "human_authority": True,
+        "autonomous_execution": "approval_gated",
+    }
+
 @router.post("/plan")
 async def plan(request: CommandRequest):
     return _plan(request.command)

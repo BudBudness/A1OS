@@ -1,3 +1,4 @@
+from core.control_plane.jarvis import router as jarvis_router
 import hashlib
 import json
 import os
@@ -348,11 +349,14 @@ async def _ws_send_to_org(organization_id, message):
 # APP
 # ============================================================
 
+
 app = FastAPI(
     title="A1OS Platform API",
     version="1.0.0",
     description="Multi-tenant platform backend serving industry-specific frontends.",
 )
+
+app.include_router(jarvis_router)
 
 app.add_middleware(
     CORSMiddleware,
