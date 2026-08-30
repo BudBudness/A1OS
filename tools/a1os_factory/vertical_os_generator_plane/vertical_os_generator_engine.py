@@ -1,3 +1,65 @@
+
+# A1OS_CATALOG_DRIVEN_GENERATOR_V1
+# Catalog is the authoritative source for reusable vertical templates.
+
+from pathlib import Path as _CatalogPath
+import json as _CatalogJSON
+
+_CATALOG_PATH = (
+    _CatalogPath(__file__).resolve().parents[3]
+    / "products"
+    / "templates"
+    / "vertical-catalog"
+    / "catalog.json"
+)
+
+def load_vertical_template(slug):
+    """Return the authoritative catalog definition for a vertical template."""
+    catalog = _CatalogJSON.loads(_CATALOG_PATH.read_text())
+    templates = catalog.get("templates", {})
+    template = templates.get(slug)
+
+    if template is None:
+        available = ", ".join(sorted(templates))
+        raise ValueError(
+            f"Unknown vertical template '{slug}'. Available templates: {available}"
+        )
+
+    required = ("slug", "name", "capabilities", "platform_domains")
+
+    for field in required:
+        if not template.get(field):
+            raise ValueError(
+                f"Invalid catalog template '{slug}': missing {field}"
+            )
+
+    if template["slug"] != slug:
+        raise ValueError(
+            f"Catalog slug mismatch: requested={slug} "
+            f"declared={template['slug']}"
+        )
+
+    return template
+
+
+def list_vertical_templates():
+    """Return all reusable vertical templates from the catalog."""
+    catalog = _CatalogJSON.loads(_CATALOG_PATH.read_text())
+    return catalog.get("templates", {})
+
+
+def validate_vertical_template(slug):
+    """Validate one catalog template without generating a product."""
+    template = load_vertical_template(slug)
+
+    return {
+        "valid": True,
+        "slug": template["slug"],
+        "name": template["name"],
+        "capabilities": template["capabilities"],
+        "platform_domains": template["platform_domains"],
+    }
+
 #!/usr/bin/env python3
 import subprocess
 
@@ -44,7 +106,10 @@ def validate_name(name: str) -> None:
         raise ValueError("hidden vertical names are not allowed")
 
 
-def generate(product: str) -> Path:
+def generate(product, template_slug):
+    template = load_vertical_template(template_slug)
+    if template.get('slug') != template_slug:
+        raise ValueError(f"Catalog/template mismatch: {template_slug}")
     name = normalize_name(product)
     validate_name(name)
 
@@ -143,15 +208,19 @@ def generate(product: str) -> Path:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 3:
         print(
             "Usage: python3 vertical_os_generator_engine.py "
-            "vertical-os-name"
+            "<template-slug> <vertical-os-name>"
         )
         return 2
 
+    template_slug = sys.argv[1]
+    name = sys.argv[2]
+
     try:
-        destination = generate(sys.argv[1])
+        load_vertical_template(template_slug)
+        destination = generate(name, template_slug)
     except Exception as exc:
         print(f"A1OS Vertical OS Generation FAILED: {exc}")
         return 1
