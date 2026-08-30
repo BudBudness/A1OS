@@ -1,0 +1,391 @@
+{
+  "name": "A1OS Vertical Template Catalog",
+  "version": "1.0.0",
+  "status": "catalog_definition",
+  "backend": "a1os-platform-api",
+  "core": "a1os-core",
+  "template_count": 15,
+  "templates": {
+    "school": {
+      "name": "School Management",
+      "slug": "school",
+      "description": "School operations, students, parents, admissions, attendance, fees and communications.",
+      "capabilities": [
+        "organizations",
+        "users",
+        "roles",
+        "parties",
+        "students",
+        "parents",
+        "admissions",
+        "attendance",
+        "fees",
+        "notifications",
+        "audit",
+        "site_content"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "education",
+        "notifications",
+        "audit"
+      ]
+    },
+    "car-wash": {
+      "name": "Car Wash",
+      "slug": "car-wash",
+      "description": "Vehicle customer management, service orders, pricing, payments and operations.",
+      "capabilities": [
+        "customers",
+        "vehicles",
+        "service_catalog",
+        "service_orders",
+        "payments",
+        "inventory",
+        "notifications",
+        "reports",
+        "audit"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "inventory",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "retail": {
+      "name": "Retail",
+      "slug": "retail",
+      "description": "Products, inventory, customers, sales, accounting and reporting.",
+      "capabilities": [
+        "customers",
+        "products",
+        "inventory",
+        "sales",
+        "purchases",
+        "ledger",
+        "reports"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "inventory",
+        "ledger",
+        "audit"
+      ]
+    },
+    "restaurant": {
+      "name": "Restaurant",
+      "slug": "restaurant",
+      "description": "Menu, tables, orders, customers, inventory and financial operations.",
+      "capabilities": [
+        "customers",
+        "menu",
+        "tables",
+        "orders",
+        "inventory",
+        "payments",
+        "ledger",
+        "reports"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "inventory",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "hotel": {
+      "name": "Hotel",
+      "slug": "hotel",
+      "description": "Guests, rooms, reservations, services, payments and operations.",
+      "capabilities": [
+        "guests",
+        "rooms",
+        "reservations",
+        "services",
+        "payments",
+        "inventory",
+        "ledger",
+        "reports"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "inventory",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "charity": {
+      "name": "Charity / NGO",
+      "slug": "charity",
+      "description": "Beneficiaries, donors, programs, cases, funds, expenses and reporting.",
+      "capabilities": [
+        "beneficiaries",
+        "donors",
+        "programs",
+        "cases",
+        "funds",
+        "expenses",
+        "reports",
+        "notifications",
+        "audit"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "clinic": {
+      "name": "Clinic",
+      "slug": "clinic",
+      "description": "Patients, appointments, services, billing, inventory and operations.",
+      "capabilities": [
+        "patients",
+        "appointments",
+        "services",
+        "billing",
+        "inventory",
+        "notifications",
+        "audit"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "inventory",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "salon": {
+      "name": "Salon / Barber",
+      "slug": "salon",
+      "description": "Customers, staff, services, appointments, products and payments.",
+      "capabilities": [
+        "customers",
+        "staff",
+        "services",
+        "appointments",
+        "products",
+        "payments",
+        "inventory",
+        "reports"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "inventory",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "real-estate": {
+      "name": "Real Estate",
+      "slug": "real-estate",
+      "description": "Properties, listings, clients, leases, payments and property operations.",
+      "capabilities": [
+        "properties",
+        "listings",
+        "clients",
+        "leases",
+        "payments",
+        "maintenance",
+        "reports",
+        "notifications"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "logistics": {
+      "name": "Logistics",
+      "slug": "logistics",
+      "description": "Customers, shipments, vehicles, drivers, tracking and financial operations.",
+      "capabilities": [
+        "customers",
+        "shipments",
+        "vehicles",
+        "drivers",
+        "tracking",
+        "billing",
+        "inventory",
+        "reports"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "inventory",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "professional-services": {
+      "name": "Professional Services",
+      "slug": "professional-services",
+      "description": "Clients, projects, tasks, time, billing and documents.",
+      "capabilities": [
+        "clients",
+        "projects",
+        "tasks",
+        "time_tracking",
+        "billing",
+        "documents",
+        "reports",
+        "notifications"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "music": {
+      "name": "Music / Artist",
+      "slug": "music",
+      "description": "Artists, releases, catalog, events, fans, revenue and media operations.",
+      "capabilities": [
+        "artists",
+        "releases",
+        "catalog",
+        "events",
+        "fans",
+        "media",
+        "revenue",
+        "analytics"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "events": {
+      "name": "Events",
+      "slug": "events",
+      "description": "Events, venues, tickets, attendees, vendors and payments.",
+      "capabilities": [
+        "events",
+        "venues",
+        "tickets",
+        "attendees",
+        "vendors",
+        "payments",
+        "notifications",
+        "reports"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "ledger",
+        "notifications",
+        "audit"
+      ]
+    },
+    "agriculture": {
+      "name": "Agriculture",
+      "slug": "agriculture",
+      "description": "Farms, crops, livestock, inputs, production, inventory and sales.",
+      "capabilities": [
+        "farms",
+        "crops",
+        "livestock",
+        "inputs",
+        "production",
+        "inventory",
+        "sales",
+        "reports"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "inventory",
+        "ledger",
+        "audit"
+      ]
+    },
+    "construction": {
+      "name": "Construction",
+      "slug": "construction",
+      "description": "Projects, sites, contractors, materials, procurement and financial control.",
+      "capabilities": [
+        "projects",
+        "sites",
+        "contractors",
+        "materials",
+        "procurement",
+        "inventory",
+        "budgets",
+        "ledger",
+        "reports"
+      ],
+      "platform_domains": [
+        "auth",
+        "tenancy",
+        "rbac",
+        "parties",
+        "products",
+        "inventory",
+        "ledger",
+        "audit"
+      ]
+    }
+  }
+}
