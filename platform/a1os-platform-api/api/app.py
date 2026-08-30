@@ -9,6 +9,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
+from fastapi.responses import FileResponse
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi import HTTPException
@@ -357,6 +358,13 @@ app = FastAPI(
 )
 
 app.include_router(jarvis_router)
+
+JARVIS_UI_PATH = Path(__file__).resolve().parents[3] / "core" / "control_plane" / "static" / "index.html"
+
+@app.get("/", include_in_schema=False)
+async def jarvis_operator_ui():
+    return FileResponse(JARVIS_UI_PATH)
+
 
 app.add_middleware(
     CORSMiddleware,

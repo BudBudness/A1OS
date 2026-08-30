@@ -1092,15 +1092,31 @@ document.addEventListener("click",e=>{
       window.__a1osLastPlan = result;
 
       const token = result.approval_token;
+
       if (result.requires_approval && token) {
         window.__a1osApprovalToken = token;
         window.__a1osRequiresApproval = true;
         ensureApprovalButton();
+      } else {
+        window.__a1osApprovalToken = null;
+        window.__a1osRequiresApproval = false;
       }
 
       el.value = "";
       el.textContent = "";
       el.dispatchEvent(new Event("input", {bubbles:true}));
+
+      /*
+       * JARVIS execution policy:
+       * - Read-only / autonomous-safe results are already executed by the API.
+       * - Consequential results remain approval-gated.
+       * The UI must therefore render the actual execution result rather
+       * than incorrectly presenting every response as "plan only".
+       */
+      window.dispatchEvent(new CustomEvent(
+        result.requires_approval ? "a1os:approval-required" : "a1os:execution-result",
+        {detail:result}
+      ));
 
       window.dispatchEvent(new CustomEvent("a1os:plan", {detail:result}));
     } catch (e) {
@@ -1841,6 +1857,75 @@ window.a1osStatusIntent = function (text) {
   }, true);
 
   window.a1osStatusTerminalGate = terminalStatus;
+})();
+</script>
+
+
+<script>
+(() => {
+  const API = "http://127.0.0.1:3013";
+
+  async function jarvis(command) {
+    const r = await fetch(API + "/api/jarvis/plan", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({command})
+    });
+    if (!r.ok) throw new Error("JARVIS HTTP " + r.status);
+    return await r.json();
+  }
+
+  async function approve(token) {
+    const r = await fetch(API + "/api/jarvis/approve", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({token})
+    });
+    if (!r.ok) throw new Error("APPROVAL HTTP " + r.status);
+    return await r.json();
+  }
+
+  window.A1OS_JARVIS = {jarvis, approve};
+
+  document.addEventListener("keydown", async e => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+
+    const el = e.target;
+    if (!el || !("value" in el)) return;
+
+    const command = el.value.trim();
+    if (!command) return;
+
+    try {
+      const plan = await jarvis(command);
+
+      console.log("JARVIS_PLAN", plan);
+
+      if (plan.requires_approval && plan.approval_token) {
+        const approved = confirm(
+          "JARVIS requires approval.\n\n" +
+          "Command: " + plan.command + "\n\n" +
+          "Approve execution?"
+        );
+
+        if (!approved) return;
+
+        const result = await approve(plan.approval_token);
+        console.log("JARVIS_EXECUTION", result);
+
+        alert(
+          result.status === "completed"
+            ? "Execution completed:\n" + (result.output || "")
+            : "Execution result:\n" + JSON.stringify(result)
+        );
+      } else {
+        alert(plan.message || JSON.stringify(plan));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("JARVIS ERROR: " + err.message);
+    }
+  });
 })();
 </script>
 

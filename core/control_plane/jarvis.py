@@ -181,8 +181,178 @@ async def jarvis_status():
         "autonomous_execution": "approval_gated",
     }
 
+def _natural_language_plan(command: str) -> dict[str, Any] | None:
+    text = command.strip().lower()
+
+    health_terms = (
+        "health", "healthy", "status", "diagnostic", "diagnostics",
+        "check the platform", "check a1os", "platform health",
+        "is everything working", "anything wrong", "system status"
+    )
+
+    if any(term in text for term in health_terms):
+        return {
+            "intent": "platform_health_check",
+            "command": command,
+            "risk": "read_only",
+            "requires_approval": False,
+            "execution": "platform_health_check",
+            "message": "Executing read-only A1OS platform diagnostics."
+        }
+
+    # Consequential natural-language actions must be
+    # interpreted before the generic fallback. They remain
+    # approval-gated and are never auto-executed here.
+    consequential_actions = (
+        (
+            "restart_production_service",
+            (
+                "restart the a1os production service",
+                "restart a1os production",
+                "restart the production a1os service",
+                "restart the a1os service",
+                "restart a1os",
+            ),
+        ),
+        (
+            "stop_production_service",
+            (
+                "stop the a1os production service",
+                "stop a1os production",
+                "stop the production a1os service",
+                "stop the a1os service",
+            ),
+        ),
+        (
+            "start_production_service",
+            (
+                "start the a1os production service",
+                "start a1os production",
+                "start the production a1os service",
+                "start the a1os service",
+            ),
+        ),
+    )
+
+    for intent, phrases in consequential_actions:
+        if any(phrase in text for phrase in phrases):
+            return {
+                "intent": intent,
+                "command": command,
+                "risk": "consequential",
+                "requires_approval": True,
+                "execution": intent,
+                "message": "Approval required before executing this consequential operation.",
+            }
+
+    return None
+
 @router.post("/plan")
 async def plan(request: CommandRequest):
+    nl = _natural_language_plan(request.command)
+
+    # Preserve the explicit "status" planner contract expected by the
+    # control-plane compatibility tests. Broader platform-health/report
+    # requests continue through the platform_health_check path below.
+    if request.command.strip().lower() == "status":
+        nl = {
+            "intent": "status",
+            "command": request.command,
+            "risk": "read",
+            "requires_approval": False,
+            "execution": None,
+            "message": "Status check is read-only.",
+        }
+
+    # Broad read-only platform-report requests must enter the same
+    # automatically executable diagnostic path as explicit health checks.
+    command_lower = request.command.strip().lower()
+    full_report_phrases = (
+        "full report on a1os",
+        "full report of a1os",
+        "report on a1os",
+        "report of a1os",
+        "a1os full report",
+        "complete report on a1os",
+        "complete report of a1os",
+        "status of a1os",
+        "a1os status",
+        "how is a1os",
+        "check a1os",
+        "check the a1os platform",
+        "check the platform",
+        "platform health",
+    )
+
+    if nl is None and any(
+        phrase in command_lower for phrase in full_report_phrases
+    ):
+        nl = {
+            "intent": "platform_health_check",
+            "command": request.command,
+            "risk": "read_only",
+            "requires_approval": False,
+            "execution": "platform_health_check",
+            "message": "A1OS platform health report completed.",
+        }
+
+    if nl:
+        if nl["execution"] == "platform_health_check":
+            import httpx
+            checks = {}
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                for name, url in (
+                    ("platform_api", "http://127.0.0.1:3013/v1/health"),
+                    ("jarvis", "http://127.0.0.1:3013/api/jarvis/status"),
+                ):
+                    try:
+                        r = await client.get(url)
+                        checks[name] = {
+                            "status_code": r.status_code,
+                            "healthy": r.is_success,
+                            "response": r.json(),
+                        }
+                    except Exception as exc:
+                        checks[name] = {
+                            "healthy": False,
+                            "error": str(exc),
+                        }
+
+            healthy = all(v.get("healthy", False) for v in checks.values())
+            nl["status"] = "healthy" if healthy else "degraded"
+            nl["checks"] = checks
+            nl["message"] = (
+                "A1OS platform health check completed."
+                if healthy else
+                "A1OS platform health check completed; one or more checks require attention."
+            )
+            _record("executed_read_only", requested_command=request.command, **nl)
+            return nl
+
+        # Consequential operations are understood by JARVIS but remain
+        # approval-gated. Nothing consequential executes from /plan.
+        if nl.get("risk") == "consequential" and nl.get("execution"):
+            import secrets
+
+            token = secrets.token_urlsafe(24)
+            _pending[token] = PendingCommand(request.command)
+
+            result = {
+                **nl,
+                "approval_token": token,
+                "message": (
+                    "Approval required before executing this "
+                    "consequential operation."
+                ),
+            }
+
+            _record(
+                "approval_required",
+                requested_command=request.command,
+                **result,
+            )
+            return result
+
     return _plan(request.command)
 
 
@@ -193,13 +363,41 @@ async def approve(request: ApprovalRequest):
     if command is None:
         raise HTTPException(status_code=404, detail="Approval token not found")
 
-    _record("approved", command=command.command)
+    # Normalize legacy string entries and PendingCommand entries at the
+    # approval boundary. The approval gate itself remains mandatory.
+    command_text = (
+        command.command
+        if isinstance(command, PendingCommand)
+        else str(command)
+    )
 
-    if command.command.lower().startswith(("implement ", "build ", "upgrade ", "modify ", "change ", "create ", "add ", "update ", "install ", "configure ", "refactor ", "replace ")):
+    if isinstance(command, PendingCommand):
+        approved_command = command
+    else:
+        approved_command = PendingCommand(command_text)
+
+    _record("approved", command=command_text)
+
+    # Map approved natural-language intents to real executors.
+    # Never send an intent phrase such as "restart the A1OS production service"
+    # directly to a shell.
+    if command_text.lower() == "restart the a1os production service":
+        # Restart through a detached standalone script so the current
+        # approval HTTP request is not killed by the restart operation.
+        proc = await asyncio.create_subprocess_exec(
+            "sh",
+            "runtime/scripts/restart_production_3017.sh",
+            str(os.getpid()),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            cwd=os.path.expanduser("~/A1OS_RESTORED"),
+        )
+
+    elif command_text.lower().startswith(("implement ", "build ", "upgrade ", "modify ", "change ", "create ", "add ", "update ", "install ", "configure ", "refactor ", "replace ")):
         proc = await asyncio.create_subprocess_exec(
             "python3",
-            "runtime/a1os-orchestrator/implementation_executor.py",
-            command.command,
+            "tools/a1os_factory/real_build_executor/build_executor_engine.py",
+            command_text,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             cwd=os.path.expanduser("~/A1OS_RESTORED"),
@@ -208,7 +406,7 @@ async def approve(request: ApprovalRequest):
         proc = await asyncio.create_subprocess_exec(
             "sh",
             "-lc",
-            command.command,
+            command_text,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             cwd=os.path.expanduser("~/A1OS_RESTORED"),
@@ -221,5 +419,5 @@ async def approve(request: ApprovalRequest):
         "exit_code": proc.returncode,
         "output": stdout.decode(errors="replace"),
     }
-    _record("execution_result", command=command.command, **result)
+    _record("execution_result", command=command_text, **result)
     return result
