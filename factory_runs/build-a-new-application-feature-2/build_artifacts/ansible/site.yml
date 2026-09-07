@@ -1,0 +1,7 @@
+- name: Configure build-a-new-application-feature
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Report product
+      ansible.builtin.debug:
+        msg: "Configuring build-a-new-application-feature"

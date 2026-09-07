@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: build-a-harmless-test-capability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: build-a-harmless-test-capability
+  template:
+    metadata:
+      labels:
+        app: build-a-harmless-test-capability
+    spec:
+      containers:
+        - name: build-a-harmless-test-capability
+          image: build-a-harmless-test-capability:latest
+          imagePullPolicy: IfNotPresent

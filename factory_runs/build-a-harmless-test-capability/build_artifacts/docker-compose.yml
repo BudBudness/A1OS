@@ -1,0 +1,5 @@
+services:
+  build-a-harmless-test-capability:
+    build: .
+    container_name: build-a-harmless-test-capability
+    restart: unless-stopped

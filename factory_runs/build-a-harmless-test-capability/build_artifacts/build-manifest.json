@@ -1,0 +1,20 @@
+{
+  "product": "build-a-harmless-test-capability",
+  "request": "build a harmless test capability",
+  "artifact_root": "/data/data/com.termux/files/home/A1OS_RESTORED/factory_runs/build-a-harmless-test-capability/build_artifacts",
+  "files": [
+    ".github/workflows/ci.yml",
+    "Dockerfile",
+    "README.md",
+    "ansible/site.yml",
+    "app/README.md",
+    "docker-compose.yml",
+    "k8s/deployment.yaml",
+    "k8s/service.yaml",
+    "product.json",
+    "terraform/main.tf"
+  ],
+  "file_count": 10,
+  "deployment_performed": false,
+  "status": "verified"
+}

@@ -23,8 +23,8 @@ s.loader.exec_module(m)
 uvicorn.run(
     m.app,
     host="127.0.0.1",
-    port=3017,
+    port=3013,
     workers=1,
     proxy_headers=True
 )
-' > jarvis-3017.log 2>&1 &
+' > runtime/a1os-platform-api-3013.log 2>&1 &

@@ -1,0 +1,36 @@
+{
+  "contract": "a1os-edge-provider",
+  "version": "1.0.0",
+  "default_provider": "cloudflare",
+  "provider_selection": "configuration",
+  "deployment_authority": "a1os-deployment-plane",
+  "providers": {
+    "cloudflare": {
+      "declared": true,
+      "executable": true,
+      "adapter": "cloudflare_adapter"
+    },
+    "tailscale": {
+      "declared": true,
+      "executable": false,
+      "adapter": "tailscale_adapter"
+    },
+    "nginx": {
+      "declared": true,
+      "executable": false,
+      "adapter": "nginx_adapter"
+    },
+    "caddy": {
+      "declared": true,
+      "executable": false,
+      "adapter": "caddy_adapter"
+    },
+    "direct": {
+      "declared": true,
+      "executable": true,
+      "adapter": "direct_adapter"
+    }
+  },
+  "selection_environment_variable": "A1OS_EDGE_PROVIDER",
+  "runtime_selection": true
+}

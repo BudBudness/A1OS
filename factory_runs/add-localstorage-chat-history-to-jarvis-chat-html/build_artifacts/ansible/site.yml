@@ -1,0 +1,7 @@
+- name: Configure add-localstorage-chat-history-to-jarvis-chat-html
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Report product
+      ansible.builtin.debug:
+        msg: "Configuring add-localstorage-chat-history-to-jarvis-chat-html"

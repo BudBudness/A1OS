@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: build-a-new-application-feature
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: build-a-new-application-feature
+  template:
+    metadata:
+      labels:
+        app: build-a-new-application-feature
+    spec:
+      containers:
+        - name: build-a-new-application-feature
+          image: build-a-new-application-feature:latest
+          imagePullPolicy: IfNotPresent

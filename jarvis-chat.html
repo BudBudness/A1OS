@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🤖 JARVIS Chat</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui;background:#0a0a0f;color:#e0e0e0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    #header{background:#1a1a2e;padding:12px 16px;border-bottom:1px solid #333;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+    #header h1{font-size:18px;background:linear-gradient(135deg,#00d4ff,#7b2ffc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    #status{font-size:11px;color:#4ade80;background:#1a3a2a;padding:3px 10px;border-radius:20px}
+    #chat{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+    .msg{max-width:90%;padding:10px 14px;border-radius:12px;word-wrap:break-word}
+    .user{align-self:flex-end;background:#1a3a5a;border:1px solid #2a5a7a}
+    .jarvis{align-self:flex-start;background:#1a1a2e;border:1px solid #333}
+    .msg pre{background:#0a0a12;padding:8px;border-radius:6px;font-size:11px;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+    #quick-actions{display:flex;gap:6px;padding:6px 16px;background:#1a1a2e;border-bottom:1px solid #333;flex-wrap:wrap;flex-shrink:0}
+    #quick-actions button{background:#2a2a4e;border:1px solid #444;color:#e0e0e0;padding:4px 12px;border-radius:16px;font-size:11px;cursor:pointer}
+    #quick-actions button:hover{background:#3a3a6e}
+    #input-area{display:flex;gap:8px;padding:10px 16px;background:#1a1a2e;border-top:1px solid #333;flex-shrink:0}
+    #input{flex:1;padding:10px 14px;border-radius:24px;border:1px solid #333;background:#0a0a12;color:#e0e0e0;font-size:15px;outline:none}
+    #input:focus{border-color:#7b2ffc}
+    #send{padding:10px 18px;border-radius:24px;border:none;background:linear-gradient(135deg,#00d4ff,#7b2ffc);color:#fff;font-weight:600;cursor:pointer}
+    .approve-btn{margin-top:6px;padding:6px 14px;border-radius:12px;border:none;background:#7b2ffc;color:#fff;cursor:pointer}
+    .loading{color:#888;font-style:italic}
+    #clear-btn{background:#333;border:none;color:#e0e0e0;padding:4px 12px;border-radius:16px;font-size:11px;cursor:pointer;margin-left:auto}
+    #clear-btn:hover{background:#555}
+  </style>
+</head>
+<body>
+<div id="header">
+  <h1>🤖 JARVIS</h1>
+  <span id="status">● ONLINE</span>
+  <button id="clear-btn">Clear Chat</button>
+</div>
+<div id="quick-actions">
+  <button onclick="sendQuick('status')">📊 Status</button>
+  <button onclick="sendQuick('help')">❓ Help</button>
+  <button onclick="sendQuick('terminal ls -la')">📁 List Files</button>
+  <button onclick="sendQuick('terminal ps aux')">📋 Processes</button>
+</div>
+<div id="chat">
+  <div class="msg jarvis">👋 I'm JARVIS. Ask me anything.</div>
+</div>
+<div id="input-area">
+  <input id="input" placeholder="Ask JARVIS..." autofocus />
+  <button id="send">Send</button>
+</div>
+<script>
+const API='https://edge.pyongcity.org/api/jarvis';
+const chat=document.getElementById('chat');
+const input=document.getElementById('input');
+const sendBtn=document.getElementById('send');
+const statusEl=document.getElementById('status');
+const clearBtn=document.getElementById('clear-btn');
+
+// Load chat history from localStorage
+function loadHistory() {
+  try {
+    const saved = localStorage.getItem('jarvis_chat_history');
+    if (saved) {
+      const msgs = JSON.parse(saved);
+      chat.innerHTML = '';
+      msgs.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'msg ' + m.role;
+        div.innerHTML = m.content.replace(/\n/g, '<br>');
+        chat.appendChild(div);
+      });
+      chat.scrollTop = chat.scrollHeight;
+    }
+  } catch(e) {}
+}
+
+function saveHistory() {
+  try {
+    const msgs = [];
+    chat.querySelectorAll('.msg').forEach(el => {
+      const role = el.classList.contains('user') ? 'user' : 'jarvis';
+      msgs.push({ role, content: el.innerHTML.replace(/<br>/g, '\n') });
+    });
+    localStorage.setItem('jarvis_chat_history', JSON.stringify(msgs));
+  } catch(e) {}
+}
+
+function addMessage(role, content) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = content.replace(/\n/g, '<br>');
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  saveHistory();
+}
+
+function speak(data) {
+  if(data.output) return '📋 ' + data.output;
+  if(data.detail) return '❌ ' + data.detail;
+  if(data.message) return '💬 ' + data.message;
+  if(data.status==='healthy') return '✅ All systems healthy.';
+  if(data.status==='online') return '✅ JARVIS online.';
+  if(data.requires_approval) return '⚠️ Click Approve to proceed.';
+  if(data.intent==='unknown'||data.intent==='empty') return "❌ I don't understand. Try 'status' or 'help'.";
+  return '📦 ' + JSON.stringify(data);
+}
+
+window.approve = async function(token) {
+  addMessage('user', '🔑 Approved');
+  try {
+    const r = await fetch(API + '/approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
+    const d = await r.json();
+    addMessage('jarvis', d.output ? '📋 ' + d.output : '✅ Done');
+  } catch(e) { addMessage('jarvis', '❌ ' + e.message); }
+  saveHistory();
+};
+
+window.sendQuick = function(cmd) {
+  input.value = cmd;
+  sendCommand();
+};
+
+async function sendCommand() {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addMessage('user', '💬 ' + text);
+
+  const load = document.createElement('div');
+  load.className = 'msg jarvis loading';
+  load.textContent = '⏳ Thinking...';
+  chat.appendChild(load);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const r = await fetch(API + '/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: text })
+    });
+    const d = await r.json();
+    load.remove();
+    if (d.intent === 'terminal' && d.requires_approval) {
+      addMessage('jarvis', '⚠️ Approve: <b>' + text + '</b><br><button class="approve-btn" onclick="approve(\'' + d.approval_token + '\')">✅ Approve</button>');
+    } else {
+      addMessage('jarvis', speak(d));
+    }
+    saveHistory();
+  } catch(e) {
+    load.remove();
+    addMessage('jarvis', '❌ ' + e.message);
+    saveHistory();
+  }
+}
+
+clearBtn.addEventListener('click', function() {
+  chat.innerHTML = '<div class="msg jarvis">👋 Chat cleared.</div>';
+  localStorage.removeItem('jarvis_chat_history');
+});
+
+input.addEventListener('keydown', function(e) { if (e.key === 'Enter') sendCommand(); });
+sendBtn.addEventListener('click', sendCommand);
+
+// Load history on startup
+loadHistory();
+
+// Check status
+fetch(API + '/status')
+  .then(r => r.json())
+  .then(d => {
+    statusEl.textContent = '● ' + d.status.toUpperCase();
+    statusEl.style.color = d.status === 'online' ? '#4ade80' : '#ff6b6b';
+  })
+  .catch(() => { statusEl.textContent = '● OFFLINE'; statusEl.style.color = '#ff6b6b'; });
+</script>
+</body>
+</html>
+<script>
+const NLP = {
+  patterns: [
+    { match: /list files|show files|ls/i, cmd: 'terminal ls -la' },
+    { match: /processes|running|ps/i, cmd: 'terminal ps aux' },
+    { match: /memory|ram|free/i, cmd: 'terminal free -h' },
+    { match: /database|tables|sqlite/i, cmd: 'terminal sqlite3 ~/A1OS_RESTORED/a1os_state.db .tables' },
+    { match: /status|health|check/i, cmd: 'Full system status' },
+    { match: /help|what can you do|capabilities/i, cmd: 'help' },
+  ]
+};
+const origSend = sendCommand;
+sendCommand = async function() {
+  const text = input.value.trim();
+  if (!text) return;
+  // Check if text matches any NLP pattern
+  for (const p of NLP.patterns) {
+    if (p.match.test(text)) {
+      input.value = p.cmd;
+      break;
+    }
+  }
+  origSend();
+};
+</script>

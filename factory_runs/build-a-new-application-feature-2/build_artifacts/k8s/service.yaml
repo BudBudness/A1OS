@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: build-a-new-application-feature
+spec:
+  selector:
+    app: build-a-new-application-feature
+  ports:
+    - port: 80
+      targetPort: 8000

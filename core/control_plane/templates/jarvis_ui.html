@@ -1,0 +1,1 @@
+<!DOCTYPE html><html><head><title>JARVIS UI</title></head><body><h1>🤖 JARVIS</h1><pre id="status">Loading...</pre><script>fetch("/api/jarvis/status").then(r=>r.json()).then(d=>document.getElementById("status").textContent=JSON.stringify(d,null,2))</script></body></html>

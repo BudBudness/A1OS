@@ -1,24 +1,14 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
-cd "$(dirname "$0")/../.."
-export PYTHONPATH="$PWD"
-exec python3 - <<'PY'
-import importlib.util
-import uvicorn
 
-APP = "platform/a1os-platform-api/api/app.py"
-spec = importlib.util.spec_from_file_location("a1os_production_api", APP)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+# Hardened Parameter Enforcements
+ROOT="/data/data/com.termux/files/home/A1OS_RESTORED"
+export PYTHONPATH="$ROOT/platform/a1os-platform-api/api:$ROOT"
+export A1OS_RUNTIME_ENV="production"
+export A1OS_COOKIE_SECURE="true"
+export A1OS_SERVICE_NAME="a1os-platform-api"
 
-if not hasattr(module, "app"):
-    raise RuntimeError("FastAPI app object not found")
+cd "$ROOT/platform/a1os-platform-api/api" || exit 1
 
-uvicorn.run(
-    module.app,
-    host="127.0.0.1",
-    port=3013,
-    workers=1,
-    proxy_headers=True,
-)
-PY
+# Force the execution strictly into foreground mode under the active package environment
+exec "$ROOT/.venv-test/bin/python3" -m uvicorn app:app --host 127.0.0.1 --port 3013 --workers 1 --proxy-headers

@@ -47,30 +47,57 @@ class ExecutionBroker:
             raise ValueError("NUL byte is not allowed")
         return command
 
-    async def execute(self, command: str, *, approved: bool = False) -> dict[str, Any]:
+    async def execute(
+        self,
+        command: str,
+        *,
+        approved: bool = False,
+        authorization: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         command = self.validate(command)
 
-        if not approved:
-            self._record("execution_denied", command=command)
-            raise ExecutionDenied("Human approval is required")
+        # SECURITY HARDENING:
+        # A boolean approval is never sufficient authority for shell execution.
+        # Broker execution requires capability-bound authorization/provenance.
+        if not approved or not isinstance(authorization, dict):
+            self._record(
+                "execution_denied",
+                command=command,
+                reason="missing_capability_bound_authorization",
+            )
+            raise ExecutionDenied(
+                "Capability-bound authorization is required"
+            )
 
-        self._record("execution_started", command=command)
+        required = {"capability", "provenance"}
+        if not required.issubset(authorization):
+            self._record(
+                "execution_denied",
+                command=command,
+                reason="invalid_authorization",
+            )
+            raise ExecutionDenied(
+                "Invalid capability-bound authorization"
+            )
 
-        proc = await asyncio.create_subprocess_exec(
-            "sh",
-            "-lc",
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            cwd=os.path.expanduser("~/A1OS_RESTORED"),
-        )
-        stdout, _ = await proc.communicate()
-
-        result = ExecutionResult(
+        self._record(
+            "execution_started",
             command=command,
-            exit_code=proc.returncode,
-            output=stdout.decode(errors="replace"),
-        ).as_dict()
+            capability=authorization["capability"],
+        )
 
-        self._record("execution_result", **result)
-        return result
+        # SECURITY INVARIANT:
+        # ExecutionBroker is not a shell gateway.
+        #
+        # Executable behavior must be represented by an explicit
+        # A1OS capability and executed through CapabilityRegistry.
+        self._record(
+            "execution_denied",
+            command=command,
+            capability=authorization.get("capability"),
+            reason="arbitrary_shell_execution_retired",
+        )
+        raise ExecutionDenied(
+            "Arbitrary shell execution is retired; "
+            "execute only through an authorized A1OS capability."
+        )

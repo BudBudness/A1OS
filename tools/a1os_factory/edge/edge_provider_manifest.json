@@ -1,0 +1,15 @@
+{
+  "contract": "a1os-edge-provider",
+  "version": "1.0",
+  "default_provider": "cloudflare",
+  "supported_providers": [
+    "cloudflare",
+    "tailscale",
+    "nginx",
+    "caddy",
+    "direct"
+  ],
+  "provider_selection": "configuration",
+  "deployment_authority": "a1os-deployment-plane",
+  "production_execution": false
+}

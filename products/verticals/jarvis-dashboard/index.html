@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><title>JARVIS Dashboard</title></head>
+<body>
+  <h1>🤖 JARVIS Status</h1>
+  <div id="status">Loading...</div>
+  <button onclick="fetchStatus()">Refresh</button>
+  <script>
+    async function fetchStatus() {
+      const res = await fetch("/api/jarvis/status");
+      const data = await res.json();
+      document.getElementById("status").innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+    }
+    fetchStatus();
+  </script>
+</body>
+</html>

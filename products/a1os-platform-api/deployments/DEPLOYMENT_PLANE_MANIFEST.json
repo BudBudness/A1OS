@@ -1,0 +1,15 @@
+{
+  "product": "a1os-platform-api",
+  "factory_version": "3.0",
+  "status": "deployment_ready",
+  "generated": "2026-09-01T16:15:45.933346",
+  "capabilities": [
+    "docker",
+    "database",
+    "cicd",
+    "monitoring",
+    "backup",
+    "cloudflare",
+    "secrets"
+  ]
+}

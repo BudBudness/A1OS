@@ -1,0 +1,5 @@
+services:
+  add-localstorage-chat-history-to-jarvis-chat-html:
+    build: .
+    container_name: add-localstorage-chat-history-to-jarvis-chat-html
+    restart: unless-stopped

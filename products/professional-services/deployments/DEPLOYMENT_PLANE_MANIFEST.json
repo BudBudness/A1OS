@@ -1,0 +1,15 @@
+{
+  "product": "professional-services",
+  "factory_version": "3.0",
+  "status": "deployment_ready",
+  "generated": "2026-09-06T20:47:36.874625",
+  "capabilities": [
+    "docker",
+    "database",
+    "cicd",
+    "monitoring",
+    "backup",
+    "cloudflare",
+    "secrets"
+  ]
+}

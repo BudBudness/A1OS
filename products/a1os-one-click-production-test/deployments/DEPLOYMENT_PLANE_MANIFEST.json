@@ -1,0 +1,15 @@
+{
+  "product": "a1os-one-click-production-test",
+  "factory_version": "3.0",
+  "status": "deployment_ready",
+  "generated": "2026-08-31T14:34:22.976749",
+  "capabilities": [
+    "docker",
+    "database",
+    "cicd",
+    "monitoring",
+    "backup",
+    "cloudflare",
+    "secrets"
+  ]
+}

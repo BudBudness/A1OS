@@ -1,3 +1,4 @@
+from fastapi.staticfiles import StaticFiles
 from core.control_plane.jarvis import router as jarvis_router
 import hashlib
 import json
@@ -10,11 +11,15 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi.responses import FileResponse
+from a1os_hardening import connection as a1os_db, money as a1os_money, tenant as a1os_tenant
+from construction_domain import router as construction_router
+from a1os_production_boundary import principal as a1os_principal, require as a1os_require, tenant_id as a1os_tenant_id, actor as a1os_actor, money as a1os_money, audit as a1os_audit, migrate as a1os_boundary_migrate
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 ROOT = Path(__file__).resolve().parents[3]
 SCHEMA_PATH = ROOT / "platform" / "a1os-platform-api" / "database" / "schema.sql"
@@ -351,12 +356,855 @@ async def _ws_send_to_org(organization_id, message):
 # ============================================================
 
 
+a1os_boundary_migrate()
+
 app = FastAPI(
     title="A1OS Platform API",
     version="1.0.0",
     description="Multi-tenant platform backend serving industry-specific frontends.",
 )
 
+
+# ============================================================
+# PROFESSIONAL SERVICES — CLIENTS API
+# A1OS-owned persistent storage
+# ============================================================
+
+import sqlite3
+import uuid
+from typing import Any
+from fastapi import HTTPException
+from pydantic import BaseModel, Field
+
+_CLIENTS_DB = (
+    Path(__file__).resolve().parents[3]
+    / "data"
+    / "professional_services.db"
+)
+
+_CLIENTS_DB.parent.mkdir(parents=True, exist_ok=True)
+
+
+def _clients_db():
+    conn = sqlite3.connect(_CLIENTS_DB)
+    conn.row_factory = sqlite3.Row
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS professional_services_clients (
+            id TEXT PRIMARY KEY,
+            tenant_id TEXT NOT NULL DEFAULT 'primary-tenant',
+            name TEXT NOT NULL,
+            email TEXT,
+            phone TEXT,
+            company TEXT,
+            status TEXT NOT NULL DEFAULT 'active',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_ps_clients_tenant
+        ON professional_services_clients(tenant_id)
+    """)
+    conn.commit()
+    return conn
+
+
+class ProfessionalServicesClient(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    email: str | None = None
+    phone: str | None = None
+    company: str | None = None
+    status: str = "active"
+
+
+class ProfessionalServicesClientUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    email: str | None = None
+    phone: str | None = None
+    company: str | None = None
+    status: str | None = None
+
+
+def _client_row(row):
+    return dict(row) if row else None
+
+
+@app.get("/v1/professional-services/clients")
+def list_professional_services_clients():
+    conn = _clients_db()
+    try:
+        rows = conn.execute("""
+            SELECT id, tenant_id, name, email, phone, company,
+                   status, created_at, updated_at
+            FROM professional_services_clients
+            WHERE tenant_id = ?
+            ORDER BY created_at DESC
+        """, ("primary-tenant",)).fetchall()
+
+        clients = [_client_row(row) for row in rows]
+
+        return {
+            "clients": clients,
+            "count": len(clients),
+        }
+    finally:
+        conn.close()
+
+
+@app.get("/v1/professional-services/clients/{client_id}")
+def get_professional_services_client(client_id: str):
+    conn = _clients_db()
+    try:
+        row = conn.execute("""
+            SELECT id, tenant_id, name, email, phone, company,
+                   status, created_at, updated_at
+            FROM professional_services_clients
+            WHERE id = ? AND tenant_id = ?
+        """, (client_id, "primary-tenant")).fetchone()
+
+        client = _client_row(row)
+
+        if client is None:
+            raise HTTPException(status_code=404, detail="Client not found")
+
+        return client
+    finally:
+        conn.close()
+
+
+@app.post("/v1/professional-services/clients", status_code=201)
+def create_professional_services_client(
+    client: ProfessionalServicesClient,
+):
+    client_id = str(uuid.uuid4())
+
+    conn = _clients_db()
+    try:
+        conn.execute("""
+            INSERT INTO professional_services_clients
+            (id, tenant_id, name, email, phone, company, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            client_id,
+            "primary-tenant",
+            client.name,
+            client.email,
+            client.phone,
+            client.company,
+            client.status,
+        ))
+        conn.commit()
+
+        row = conn.execute("""
+            SELECT id, tenant_id, name, email, phone, company,
+                   status, created_at, updated_at
+            FROM professional_services_clients
+            WHERE id = ?
+        """, (client_id,)).fetchone()
+
+        return _client_row(row)
+    finally:
+        conn.close()
+
+
+@app.put("/v1/professional-services/clients/{client_id}")
+def update_professional_services_client(
+    client_id: str,
+    client: ProfessionalServicesClientUpdate,
+):
+    updates = client.model_dump(exclude_unset=True)
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No changes supplied")
+
+    allowed = {"name", "email", "phone", "company", "status"}
+    updates = {
+        key: value
+        for key, value in updates.items()
+        if key in allowed
+    }
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid changes supplied")
+
+    updates["updated_at"] = "CURRENT_TIMESTAMP"
+
+    conn = _clients_db()
+    try:
+        exists = conn.execute("""
+            SELECT id
+            FROM professional_services_clients
+            WHERE id = ? AND tenant_id = ?
+        """, (client_id, "primary-tenant")).fetchone()
+
+        if exists is None:
+            raise HTTPException(status_code=404, detail="Client not found")
+
+        assignments = []
+        values = []
+
+        for key, value in updates.items():
+            if key == "updated_at":
+                assignments.append("updated_at = CURRENT_TIMESTAMP")
+            else:
+                assignments.append(f"{key} = ?")
+                values.append(value)
+
+        values.extend([client_id, "primary-tenant"])
+
+        conn.execute(
+            f"""
+            UPDATE professional_services_clients
+            SET {", ".join(assignments)}
+            WHERE id = ? AND tenant_id = ?
+            """,
+            values,
+        )
+        conn.commit()
+
+        row = conn.execute("""
+            SELECT id, tenant_id, name, email, phone, company,
+                   status, created_at, updated_at
+            FROM professional_services_clients
+            WHERE id = ? AND tenant_id = ?
+        """, (client_id, "primary-tenant")).fetchone()
+
+        return _client_row(row)
+    finally:
+        conn.close()
+
+
+@app.delete("/v1/professional-services/clients/{client_id}")
+def delete_professional_services_client(client_id: str):
+    conn = _clients_db()
+    try:
+        exists = conn.execute("""
+            SELECT id
+            FROM professional_services_clients
+            WHERE id = ? AND tenant_id = ?
+        """, (client_id, "primary-tenant")).fetchone()
+
+        if exists is None:
+            raise HTTPException(status_code=404, detail="Client not found")
+
+        conn.execute("""
+            DELETE FROM professional_services_clients
+            WHERE id = ? AND tenant_id = ?
+        """, (client_id, "primary-tenant"))
+        conn.commit()
+
+        return {
+            "deleted": True,
+            "id": client_id,
+        }
+    finally:
+        conn.close()
+
+
+
+# ============================================================
+# PROFESSIONAL SERVICES — PROJECTS
+# ============================================================
+
+from uuid import uuid4
+import sqlite3 as _ps_projects_sqlite3
+
+_PS_PROJECTS_DB = (
+    Path(__file__).resolve().parents[3]
+    / "data"
+    / "professional_services.db"
+)
+
+def _ps_projects_db():
+    conn = _ps_projects_sqlite3.connect(_PS_PROJECTS_DB)
+    conn.row_factory = _ps_projects_sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+@app.get("/v1/professional-services/projects")
+async def professional_services_projects_list():
+    conn = _ps_projects_db()
+    try:
+        rows = conn.execute("""
+            SELECT
+                p.*,
+                c.name AS client_name
+            FROM professional_services_projects p
+            LEFT JOIN professional_services_clients c
+                ON c.id = p.client_id
+                AND c.tenant_id = p.tenant_id
+            WHERE p.tenant_id = ?
+            ORDER BY p.created_at DESC
+        """, ("primary-tenant",)).fetchall()
+
+        projects = [dict(row) for row in rows]
+        return {"projects": projects, "count": len(projects)}
+    finally:
+        conn.close()
+
+
+@app.get("/v1/professional-services/projects/{project_id}")
+async def professional_services_project_get(project_id: str):
+    conn = _ps_projects_db()
+    try:
+        row = conn.execute("""
+            SELECT
+                p.*,
+                c.name AS client_name
+            FROM professional_services_projects p
+            LEFT JOIN professional_services_clients c
+                ON c.id = p.client_id
+                AND c.tenant_id = p.tenant_id
+            WHERE p.id = ?
+              AND p.tenant_id = ?
+        """, (project_id, "primary-tenant")).fetchone()
+
+        if row is None:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        return dict(row)
+    finally:
+        conn.close()
+
+
+@app.post("/v1/professional-services/projects")
+async def professional_services_project_create(payload: dict):
+    name = str(payload.get("name", "")).strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Project name is required")
+
+    client_id = payload.get("client_id") or None
+
+    conn = _ps_projects_db()
+    try:
+        if client_id:
+            client = conn.execute("""
+                SELECT id
+                FROM professional_services_clients
+                WHERE id = ?
+                  AND tenant_id = ?
+            """, (client_id, "primary-tenant")).fetchone()
+
+            if client is None:
+                raise HTTPException(status_code=400, detail="Client not found")
+
+        project_id = str(uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+
+        conn.execute("""
+            INSERT INTO professional_services_projects (
+                id, tenant_id, client_id, name, service_type,
+                status, value_ugx, progress, start_date,
+                due_date, description, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            project_id,
+            "primary-tenant",
+            client_id,
+            name,
+            str(payload.get("service_type", "")).strip() or None,
+            str(payload.get("status", "active")).strip() or "active",
+            int(payload.get("value_ugx", 0) or 0),
+            max(0, min(100, int(payload.get("progress", 0) or 0))),
+            payload.get("start_date") or None,
+            payload.get("due_date") or None,
+            str(payload.get("description", "")).strip() or None,
+            now,
+            now,
+        ))
+        conn.commit()
+
+        row = conn.execute("""
+            SELECT
+                p.*,
+                c.name AS client_name
+            FROM professional_services_projects p
+            LEFT JOIN professional_services_clients c
+                ON c.id = p.client_id
+                AND c.tenant_id = p.tenant_id
+            WHERE p.id = ?
+              AND p.tenant_id = ?
+        """, (project_id, "primary-tenant")).fetchone()
+
+        return dict(row)
+    finally:
+        conn.close()
+
+
+@app.put("/v1/professional-services/projects/{project_id}")
+async def professional_services_project_update(
+    project_id: str,
+    payload: dict,
+):
+    conn = _ps_projects_db()
+    try:
+        existing = conn.execute("""
+            SELECT id
+            FROM professional_services_projects
+            WHERE id = ?
+              AND tenant_id = ?
+        """, (project_id, "primary-tenant")).fetchone()
+
+        if existing is None:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        client_id = payload.get("client_id") or None
+
+        if client_id:
+            client = conn.execute("""
+                SELECT id
+                FROM professional_services_clients
+                WHERE id = ?
+                  AND tenant_id = ?
+            """, (client_id, "primary-tenant")).fetchone()
+
+            if client is None:
+                raise HTTPException(status_code=400, detail="Client not found")
+
+        fields = {
+            "name": str(payload.get("name", "")).strip(),
+            "client_id": client_id,
+            "service_type": str(payload.get("service_type", "")).strip() or None,
+            "status": str(payload.get("status", "active")).strip() or "active",
+            "value_ugx": int(payload.get("value_ugx", 0) or 0),
+            "progress": max(0, min(100, int(payload.get("progress", 0) or 0))),
+            "start_date": payload.get("start_date") or None,
+            "due_date": payload.get("due_date") or None,
+            "description": str(payload.get("description", "")).strip() or None,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        if not fields["name"]:
+            raise HTTPException(status_code=400, detail="Project name is required")
+
+        conn.execute("""
+            UPDATE professional_services_projects
+            SET name = ?,
+                client_id = ?,
+                service_type = ?,
+                status = ?,
+                value_ugx = ?,
+                progress = ?,
+                start_date = ?,
+                due_date = ?,
+                description = ?,
+                updated_at = ?
+            WHERE id = ?
+              AND tenant_id = ?
+        """, (
+            fields["name"],
+            fields["client_id"],
+            fields["service_type"],
+            fields["status"],
+            fields["value_ugx"],
+            fields["progress"],
+            fields["start_date"],
+            fields["due_date"],
+            fields["description"],
+            fields["updated_at"],
+            project_id,
+            "primary-tenant",
+        ))
+        conn.commit()
+
+        row = conn.execute("""
+            SELECT
+                p.*,
+                c.name AS client_name
+            FROM professional_services_projects p
+            LEFT JOIN professional_services_clients c
+                ON c.id = p.client_id
+                AND c.tenant_id = p.tenant_id
+            WHERE p.id = ?
+              AND p.tenant_id = ?
+        """, (project_id, "primary-tenant")).fetchone()
+
+        return dict(row)
+    finally:
+        conn.close()
+
+
+@app.delete("/v1/professional-services/projects/{project_id}")
+async def professional_services_project_delete(project_id: str):
+    conn = _ps_projects_db()
+    try:
+        result = conn.execute("""
+            DELETE FROM professional_services_projects
+            WHERE id = ?
+              AND tenant_id = ?
+        """, (project_id, "primary-tenant"))
+
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        conn.commit()
+        return {
+            "status": "deleted",
+            "project_id": project_id,
+        }
+    finally:
+        conn.close()
+
+
+# ============================================================
+# MANAGED FRONTEND VERTICALS
+# ============================================================
+
+PROFESSIONAL_SERVICES_DIST = (
+    Path(__file__).resolve().parents[3]
+    / "products"
+    / "verticals"
+    / "professional-services"
+    / "dist"
+)
+
+CONSTRUCTION_DIST = (
+    Path(__file__).resolve().parents[3]
+    / "products"
+    / "verticals"
+    / "construction"
+    / "dist"
+)
+
+if CONSTRUCTION_DIST.exists():
+    app.mount(
+        "/apps/construction",
+        StaticFiles(directory=CONSTRUCTION_DIST, html=True),
+        name="construction",
+    )
+
+if PROFESSIONAL_SERVICES_DIST.exists():
+    app.mount(
+        "/apps/professional-services",
+        StaticFiles(
+            directory=PROFESSIONAL_SERVICES_DIST,
+            html=True,
+        ),
+        name="professional-services",
+    )
+
+
+from fastapi import HTTPException
+from pydantic import BaseModel
+from datetime import datetime
+import sqlite3
+import uuid as _quote_uuid
+
+_PS_DB = Path(__file__).resolve().parents[3] / "data" / "professional_services.db"
+
+class ProfessionalServicesQuoteIn(BaseModel):
+    client_id: str | None = None
+    title: str
+    description: str | None = None
+    amount: float = 0
+    currency: str = "UGX"
+    status: str = "draft"
+    valid_until: str | None = None
+
+def _ps_quote_db():
+    con = sqlite3.connect(_PS_DB)
+    con.row_factory = sqlite3.Row
+    return con
+
+@app.get("/v1/professional-services/quotes")
+def ps_quotes_list():
+    con = _ps_quote_db()
+    rows = con.execute("""
+        SELECT q.*, c.name AS client_name
+        FROM professional_services_quotes q
+        LEFT JOIN professional_services_clients c ON c.id = q.client_id
+        ORDER BY q.created_at DESC
+    """).fetchall()
+    con.close()
+    return {"quotes": [dict(r) for r in rows], "count": len(rows)}
+
+@app.get("/v1/professional-services/quotes/{quote_id}")
+def ps_quote_get(quote_id: str):
+    con = _ps_quote_db()
+    row = con.execute("""
+        SELECT q.*, c.name AS client_name
+        FROM professional_services_quotes q
+        LEFT JOIN professional_services_clients c ON c.id = q.client_id
+        WHERE q.id = ?
+    """, (quote_id,)).fetchone()
+    con.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    return dict(row)
+
+@app.post("/v1/professional-services/quotes")
+def ps_quote_create(payload: ProfessionalServicesQuoteIn):
+    quote_id = str(_quote_uuid.uuid4())
+    number = "QT-" + datetime.utcnow().strftime("%Y%m%d") + "-" + quote_id[:8].upper()
+    con = _ps_quote_db()
+    try:
+        con.execute("""
+            INSERT INTO professional_services_quotes
+            (id, client_id, quote_number, title, description, amount,
+             currency, status, valid_until, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            quote_id, payload.client_id, number, payload.title,
+            payload.description, payload.amount, payload.currency,
+            payload.status, payload.valid_until
+        ))
+        con.commit()
+    finally:
+        con.close()
+    return ps_quote_get(quote_id)
+
+@app.put("/v1/professional-services/quotes/{quote_id}")
+def ps_quote_update(quote_id: str, payload: ProfessionalServicesQuoteIn):
+    con = _ps_quote_db()
+    exists = con.execute(
+        "SELECT id FROM professional_services_quotes WHERE id = ?",
+        (quote_id,)
+    ).fetchone()
+    if not exists:
+        con.close()
+        raise HTTPException(status_code=404, detail="Quote not found")
+    con.execute("""
+        UPDATE professional_services_quotes
+        SET client_id=?, title=?, description=?, amount=?, currency=?,
+            status=?, valid_until=?, updated_at=CURRENT_TIMESTAMP
+        WHERE id=?
+    """, (
+        payload.client_id, payload.title, payload.description,
+        payload.amount, payload.currency, payload.status,
+        payload.valid_until, quote_id
+    ))
+    con.commit()
+    con.close()
+    return ps_quote_get(quote_id)
+
+@app.delete("/v1/professional-services/quotes/{quote_id}")
+def ps_quote_delete(quote_id: str):
+    con = _ps_quote_db()
+    cur = con.execute(
+        "DELETE FROM professional_services_quotes WHERE id = ?",
+        (quote_id,)
+    )
+    con.commit()
+    con.close()
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    return {"deleted": True, "id": quote_id}
+
+
+# --- Professional Services Invoices API ---
+
+class ProfessionalServicesInvoiceIn(BaseModel):
+    client_id: str | None = None
+    quote_id: str | None = None
+    title: str
+    description: str | None = None
+    amount: float = 0
+    paid_amount: float = 0
+    currency: str = "UGX"
+    status: str = "unpaid"
+    due_date: str | None = None
+
+def _ps_invoice_db():
+    con = sqlite3.connect(_PS_DB)
+    con.row_factory = sqlite3.Row
+    return con
+
+@app.get("/v1/professional-services/invoices")
+def ps_invoices_list():
+    con = _ps_invoice_db()
+    rows = con.execute("""
+        SELECT i.*, c.name AS client_name,
+               q.quote_number
+        FROM professional_services_invoices i
+        LEFT JOIN professional_services_clients c
+          ON c.id = i.client_id
+        LEFT JOIN professional_services_quotes q
+          ON q.id = i.quote_id
+        ORDER BY i.created_at DESC
+    """).fetchall()
+    con.close()
+    return {"invoices": [dict(r) for r in rows], "count": len(rows)}
+
+@app.get("/v1/professional-services/invoices/{invoice_id}")
+def ps_invoice_get(invoice_id: str):
+    con = _ps_invoice_db()
+    row = con.execute("""
+        SELECT i.*, c.name AS client_name,
+               q.quote_number
+        FROM professional_services_invoices i
+        LEFT JOIN professional_services_clients c
+          ON c.id = i.client_id
+        LEFT JOIN professional_services_quotes q
+          ON q.id = i.quote_id
+        WHERE i.id = ?
+    """, (invoice_id,)).fetchone()
+    con.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    return dict(row)
+
+@app.post("/v1/professional-services/invoices")
+def ps_invoice_create(payload: ProfessionalServicesInvoiceIn):
+    invoice_id = str(uuid.uuid4())
+    invoice_number = (
+        "INV-" +
+        datetime.utcnow().strftime("%Y%m%d") +
+        "-" +
+        invoice_id[:8].upper()
+    )
+
+    con = _ps_invoice_db()
+    try:
+        con.execute("""
+            INSERT INTO professional_services_invoices
+            (
+                id, client_id, quote_id, invoice_number,
+                title, description, amount, paid_amount,
+                currency, status, due_date, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            invoice_id,
+            payload.client_id,
+            payload.quote_id,
+            invoice_number,
+            payload.title,
+            payload.description,
+            payload.amount,
+            payload.paid_amount,
+            payload.currency,
+            payload.status,
+            payload.due_date,
+        ))
+        con.commit()
+    finally:
+        con.close()
+
+    return ps_invoice_get(invoice_id)
+
+@app.put("/v1/professional-services/invoices/{invoice_id}")
+def ps_invoice_update(
+    invoice_id: str,
+    payload: ProfessionalServicesInvoiceIn
+):
+    con = _ps_invoice_db()
+
+    exists = con.execute(
+        "SELECT id FROM professional_services_invoices WHERE id = ?",
+        (invoice_id,)
+    ).fetchone()
+
+    if not exists:
+        con.close()
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    con.execute("""
+        UPDATE professional_services_invoices
+        SET client_id=?,
+            quote_id=?,
+            title=?,
+            description=?,
+            amount=?,
+            paid_amount=?,
+            currency=?,
+            status=?,
+            due_date=?,
+            updated_at=CURRENT_TIMESTAMP
+        WHERE id=?
+    """, (
+        payload.client_id,
+        payload.quote_id,
+        payload.title,
+        payload.description,
+        payload.amount,
+        payload.paid_amount,
+        payload.currency,
+        payload.status,
+        payload.due_date,
+        invoice_id,
+    ))
+
+    con.commit()
+    con.close()
+
+    return ps_invoice_get(invoice_id)
+
+@app.delete("/v1/professional-services/invoices/{invoice_id}")
+def ps_invoice_delete(invoice_id: str):
+    con = _ps_invoice_db()
+
+    cur = con.execute(
+        "DELETE FROM professional_services_invoices WHERE id = ?",
+        (invoice_id,)
+    )
+
+    con.commit()
+    con.close()
+
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    return {"deleted": True, "id": invoice_id}
+
+@app.post("/v1/professional-services/quotes/{quote_id}/convert-to-invoice")
+def ps_quote_convert_to_invoice(quote_id: str):
+    con = _ps_invoice_db()
+
+    quote = con.execute("""
+        SELECT id, client_id, quote_number, title,
+               description, amount, currency
+        FROM professional_services_quotes
+        WHERE id = ?
+    """, (quote_id,)).fetchone()
+
+    if not quote:
+        con.close()
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    invoice_id = str(uuid.uuid4())
+    invoice_number = (
+        "INV-" +
+        datetime.utcnow().strftime("%Y%m%d") +
+        "-" +
+        invoice_id[:8].upper()
+    )
+
+    con.execute("""
+        INSERT INTO professional_services_invoices
+        (
+            id, client_id, quote_id, invoice_number,
+            title, description, amount, paid_amount,
+            currency, status, updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'unpaid', CURRENT_TIMESTAMP)
+    """, (
+        invoice_id,
+        quote["client_id"],
+        quote["id"],
+        invoice_number,
+        quote["title"],
+        quote["description"],
+        quote["amount"],
+        quote["currency"],
+    ))
+
+    con.execute("""
+        UPDATE professional_services_quotes
+        SET status='accepted',
+            updated_at=CURRENT_TIMESTAMP
+        WHERE id=?
+    """, (quote_id,))
+
+    con.commit()
+    con.close()
+
+    return ps_invoice_get(invoice_id)
+
+
+app.include_router(construction_router)
 app.include_router(jarvis_router)
 
 JARVIS_UI_PATH = Path(__file__).resolve().parents[3] / "core" / "control_plane" / "static" / "index.html"
@@ -364,6 +1212,33 @@ JARVIS_UI_PATH = Path(__file__).resolve().parents[3] / "core" / "control_plane" 
 @app.get("/", include_in_schema=False)
 async def jarvis_operator_ui():
     return FileResponse(JARVIS_UI_PATH)
+
+
+class A1OSSecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault(
+            "Referrer-Policy",
+            "strict-origin-when-cross-origin",
+        )
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "camera=(), microphone=(), geolocation=(), payment=()",
+        )
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; object-src 'none'; frame-ancestors 'none'",
+        )
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
+        return response
+
+
+app.add_middleware(A1OSSecurityHeadersMiddleware)
 
 
 app.add_middleware(
@@ -2741,3 +3616,34 @@ async def websocket_endpoint(websocket: WebSocket):
         room = WS_ROOMS.get(organization_id, [])
         if websocket in room:
             room.remove(websocket)
+
+
+# ps_complete_modules
+@app.get("/v1/professional-services/payments")
+def ps_payments(): return {"payments":[],"count":0}
+@app.get("/v1/professional-services/tasks")
+def ps_tasks(): return {"tasks":[],"count":0}
+@app.get("/v1/professional-services/documents")
+def ps_documents(): return {"documents":[],"count":0}
+@app.get("/v1/professional-services/reports/financial")
+def ps_financial(): return {"currency":"UGX","invoiced":0,"paid":0,"outstanding":0}
+@app.get("/v1/professional-services/reports/receivables")
+def ps_receivables(): return {"receivables":[],"count":0}
+@app.get("/v1/professional-services/settings")
+def ps_settings(): return {"settings":{}}
+
+from professional_services_complete import router as professional_services_complete_router
+app.include_router(professional_services_complete_router)
+
+
+@app.get("/v1/professional-services/audit")
+def professional_services_audit():
+    import sqlite3
+    try:
+        con=sqlite3.connect("/data/data/com.termux/files/home/A1OS_RESTORED/data/professional_services.db")
+        con.row_factory=sqlite3.Row
+        rows=con.execute("SELECT id,tenant_id,actor,action,resource,resource_id,created_at FROM professional_services_audit_log ORDER BY id DESC LIMIT 200").fetchall()
+        con.close()
+        return {"audit":[dict(x) for x in rows],"count":len(rows)}
+    except Exception as e:
+        return {"audit":[],"count":0,"error":str(e)}

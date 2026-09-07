@@ -1,0 +1,95 @@
+import json
+import re
+from typing import Any
+
+from ai.gateway.engine import AIEngine
+
+
+class JARVISAIInterpreter:
+    """
+    Semantic language interpreter for JARVIS.
+
+    The model interprets language only.
+    It NEVER authorizes or executes an operation.
+    A1OS remains the authority for consequence classification,
+    authorization, provenance, and execution.
+    """
+
+    def __init__(self, ai=None):
+        self.ai = ai or AIEngine()
+
+    async def interpret(self, command: str, capabilities: list[str]) -> dict[str, Any]:
+        prompt = f"""
+You are the semantic interpreter for A1OS JARVIS.
+
+Interpret the user's request into exactly one existing A1OS capability.
+
+USER REQUEST:
+{command}
+
+AVAILABLE CAPABILITIES:
+{json.dumps(capabilities, ensure_ascii=False)}
+
+Return ONLY valid JSON:
+{{
+  "intent": "string",
+  "capability": "string or null",
+  "arguments": {{}},
+  "confidence": 0.0
+}}
+
+Rules:
+- capability MUST be one of the AVAILABLE CAPABILITIES or null.
+- Never invent a capability.
+- Never claim authorization.
+- Never execute anything.
+- Never classify risk.
+- Never return shell commands.
+- If no capability clearly matches, use null.
+
+IMPORTANT SEMANTIC MAPPINGS:
+- Questions asking what capabilities A1OS has, what A1OS can do,
+  or asking for the capability list MUST map to "capabilities".
+- Requests to inspect diagnostics or system diagnostics MUST map
+  to "diagnostics".
+- Health/status/online/operational checks may map to "health_check".
+- Never map capability-list questions to "digital_world_query".
+- Never map diagnostics requests to "health_check" when
+  "diagnostics" is available.
+"""
+
+        result = await self.ai.think(prompt)
+        content = result["response"].strip()
+
+        if content.startswith("```"):
+            content = re.sub(r"^```(?:json)?\s*", "", content)
+            content = re.sub(r"\s*```$", "", content)
+
+        parsed = json.loads(content)
+
+        capability = parsed.get("capability")
+        intent = str(parsed.get("intent", "")).strip().lower()
+
+        # Generic/vague model interpretations are not actionable JARVIS
+        # intents. Preserve the deterministic "unknown" contract.
+        generic_intents = {
+            "general_command",
+            "general_request",
+            "general command",
+            "general request",
+            "unknown",
+            "do something",
+            "do it",
+        }
+
+        if intent in generic_intents:
+            parsed["intent"] = "unknown"
+            parsed["capability"] = None
+            parsed["confidence"] = 0.0
+            parsed["arguments"] = {}
+
+        if capability is not None and capability not in capabilities:
+            parsed["capability"] = None
+            parsed["confidence"] = 0.0
+
+        return parsed

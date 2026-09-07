@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: add-localstorage-chat-history-to-jarvis-chat-html
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: add-localstorage-chat-history-to-jarvis-chat-html
+  template:
+    metadata:
+      labels:
+        app: add-localstorage-chat-history-to-jarvis-chat-html
+    spec:
+      containers:
+        - name: add-localstorage-chat-history-to-jarvis-chat-html
+          image: add-localstorage-chat-history-to-jarvis-chat-html:latest
+          imagePullPolicy: IfNotPresent

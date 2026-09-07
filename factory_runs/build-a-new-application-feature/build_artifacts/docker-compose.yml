@@ -1,0 +1,5 @@
+services:
+  build-a-new-application-feature:
+    build: .
+    container_name: build-a-new-application-feature
+    restart: unless-stopped

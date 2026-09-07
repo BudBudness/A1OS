@@ -1,0 +1,50 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:#f5f7fa;color:#172033}
+button{font:inherit;cursor:pointer}
+.app{display:flex;min-height:100vh}
+aside{width:240px;background:#101827;color:#fff;padding:24px 16px;display:flex;flex-direction:column}
+.brand{padding:8px 12px 28px}
+.brand strong{display:block;font-size:25px}
+.brand span{font-size:12px;color:#9ca8ba}
+nav{display:grid;gap:5px}
+nav button,.audit{border:0;background:transparent;color:#aeb9c9;text-align:left;padding:12px;border-radius:8px}
+nav button:hover,.nav button.active,.audit:hover{background:#1b2638;color:#fff}
+nav button.active{background:#26344a;color:#fff}
+.audit{margin-top:auto}
+main{flex:1;padding:32px;min-width:0}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+header small{color:#728096;font-size:11px;letter-spacing:.08em}
+h1{margin:5px 0 0;font-size:30px}
+h2{margin-top:0}
+.primary{border:0;border-radius:8px;padding:11px 16px;background:#172033;color:white}
+.primary:disabled{opacity:.5}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:24px}
+.card,.panel{background:#fff;border:1px solid #e3e8ef;border-radius:12px;padding:20px}
+.card span{display:block;color:#748197;font-size:13px}
+.card strong{display:block;font-size:28px;margin-top:8px}
+.panel{overflow:auto}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+pre{white-space:pre-wrap}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:13px;border-bottom:1px solid #edf0f4;white-space:nowrap}
+th{font-size:12px;color:#69778b;text-transform:uppercase}
+.danger{border:0;background:#fff0f0;color:#b42318;padding:7px 10px;border-radius:6px}
+.error{background:#fff0f0;border:1px solid #ffd1d1;color:#a71919;padding:12px;border-radius:8px;margin-bottom:18px}
+.empty{text-align:center;color:#718096;padding:50px}
+@media(max-width:900px){
+ aside{width:190px}
+ main{padding:20px}
+ .stats{grid-template-columns:repeat(3,1fr)}
+ .grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+ .app{display:block}
+ aside{width:100%;padding:12px}
+ nav{display:flex;overflow:auto}
+ nav button{white-space:nowrap}
+ .audit{display:none}
+ main{padding:16px}
+ .stats{grid-template-columns:repeat(2,1fr)}
+ header{gap:12px}
+ h1{font-size:24px}
+}

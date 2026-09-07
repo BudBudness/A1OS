@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import asyncio
 import os
-import shlex
 from dataclasses import dataclass
 from typing import Any
 from enum import Enum
-import secrets
 
 from fastapi import APIRouter, HTTPException
 from .execution_broker import ExecutionBroker, ExecutionDenied
 from pydantic import BaseModel
+from core.control_plane.jarvis_ai import JARVISAIInterpreter
+from core.state import system as a1os_system, HumanApprovalMarker
 
 
+import secrets
 router = APIRouter(prefix="/api/jarvis", tags=["jarvis"])
 
 _execution_broker = ExecutionBroker()
@@ -63,9 +64,13 @@ class ApprovalRequest(BaseModel):
 @dataclass
 class PendingCommand:
     command: str
+    capability: str | None = None
+    arguments: dict[str, Any] | None = None
 
 
 _pending: dict[str, PendingCommand] = {}
+
+_jarvis_ai_interpreter = JARVISAIInterpreter()
 
 LITTLE_OAKS_VERTICAL = {
     "name": "little-oaks",
@@ -100,36 +105,23 @@ def _plan(command: str) -> dict[str, Any]:
         return result
 
     if lowered in {"stop", "halt", "shutdown a1os", "stop a1os"}:
-        token = secrets.token_urlsafe(24)
-        _pending[token] = PendingCommand(
-            "pkill -f 'A1OS_RESTORED' || true"
-        )
-        result = {
+        return {
             "intent": "stop",
-            "command": "pkill -f 'A1OS_RESTORED' || true",
+            "command": text,
             "risk": RiskLevel.DESTRUCTIVE,
             "requires_approval": True,
-            "approval_token": token,
+            "execution": None,
+            "message": (
+                "Legacy stop execution is retired; "
+                "use an explicitly registered A1OS capability."
+            ),
         }
-        _record("approval_required", requested_command=text, **result)
-        return result
 
     if lowered.startswith(("run ", "execute ", "terminal ", "termux ")):
-        parts = text.split(maxsplit=1)
-        command_text = parts[1].strip() if len(parts) == 2 else ""
-        if not command_text:
-            raise HTTPException(status_code=400, detail="Missing command")
-        token = secrets.token_urlsafe(24)
-        _pending[token] = PendingCommand(command_text)
-        result = {
-            "intent": "terminal",
-            "command": command_text,
-            "risk": RiskLevel.EXECUTE,
-            "requires_approval": True,
-            "approval_token": token,
-        }
-        _record("approval_required", requested_command=text, **result)
-        return result
+        raise HTTPException(
+            status_code=410,
+            detail="Legacy terminal execution retired; use an authorized A1OS capability.",
+        )
 
     implementation_terms = (
         "implement", "build", "upgrade", "modify", "change", "create",
@@ -137,23 +129,19 @@ def _plan(command: str) -> dict[str, Any]:
     )
 
     if any(term in text.lower() for term in implementation_terms):
-        pending_command = text
-
-        token = secrets.token_urlsafe(32)
-        _pending[token] = PendingCommand(pending_command)
-
-        result = {
-            "intent": "implementation",
-            "command": pending_command,
+        # Consequential implementation requests must be resolved by the
+        # semantic capability planner. Do not terminate the request here.
+        return {
+            "intent": "unknown",
+            "command": text,
             "risk": RiskLevel.EXECUTE,
             "requires_approval": True,
-            "approval_token": token,
-            "message": "Implementation plan prepared. Human approval required before execution.",
+            "execution": None,
+            "message": (
+                "Implementation request requires explicit A1OS "
+                "capability resolution."
+            ),
         }
-        _record("planned", requested_command=text, **{
-            k:v for k,v in result.items() if k != "approval_token"
-        })
-        return result
 
     result = {
         "intent": "unknown",
@@ -205,6 +193,18 @@ def _natural_language_plan(command: str) -> dict[str, Any] | None:
     # approval-gated and are never auto-executed here.
     consequential_actions = (
         (
+            "deploy_application",
+            (
+                "deploy the application to production",
+                "deploy application to production",
+                "deploy the app to production",
+                "deploy to production",
+                "deploy the application",
+                "deploy application",
+            ),
+        ),
+
+        (
             "restart_production_service",
             (
                 "restart the a1os production service",
@@ -249,11 +249,12 @@ def _natural_language_plan(command: str) -> dict[str, Any] | None:
 
 @router.post("/plan")
 async def plan(request: CommandRequest):
+    # ---------------------------------------------------------------
+    # 1. Deterministic planner ALWAYS gets first priority.
+    #    This preserves established JARVIS contracts.
+    # ---------------------------------------------------------------
     nl = _natural_language_plan(request.command)
 
-    # Preserve the explicit "status" planner contract expected by the
-    # control-plane compatibility tests. Broader platform-health/report
-    # requests continue through the platform_health_check path below.
     if request.command.strip().lower() == "status":
         nl = {
             "intent": "status",
@@ -264,9 +265,8 @@ async def plan(request: CommandRequest):
             "message": "Status check is read-only.",
         }
 
-    # Broad read-only platform-report requests must enter the same
-    # automatically executable diagnostic path as explicit health checks.
     command_lower = request.command.strip().lower()
+
     full_report_phrases = (
         "full report on a1os",
         "full report of a1os",
@@ -296,10 +296,15 @@ async def plan(request: CommandRequest):
             "message": "A1OS platform health report completed.",
         }
 
+    # ---------------------------------------------------------------
+    # 2. Existing deterministic executions.
+    # ---------------------------------------------------------------
     if nl:
         if nl["execution"] == "platform_health_check":
             import httpx
+
             checks = {}
+
             async with httpx.AsyncClient(timeout=5.0) as client:
                 for name, url in (
                     ("platform_api", "http://127.0.0.1:3013/v1/health"),
@@ -318,21 +323,30 @@ async def plan(request: CommandRequest):
                             "error": str(exc),
                         }
 
-            healthy = all(v.get("healthy", False) for v in checks.values())
+            healthy = all(
+                value.get("healthy", False)
+                for value in checks.values()
+            )
+
             nl["status"] = "healthy" if healthy else "degraded"
             nl["checks"] = checks
             nl["message"] = (
                 "A1OS platform health check completed."
-                if healthy else
-                "A1OS platform health check completed; one or more checks require attention."
+                if healthy
+                else
+                "A1OS platform health check completed; "
+                "one or more checks require attention."
             )
-            _record("executed_read_only", requested_command=request.command, **nl)
+
+            _record(
+                "executed_read_only",
+                requested_command=request.command,
+                **nl,
+            )
             return nl
 
-        # Consequential operations are understood by JARVIS but remain
-        # approval-gated. Nothing consequential executes from /plan.
+        # Consequential operations remain approval-gated.
         if nl.get("risk") == "consequential" and nl.get("execution"):
-            import secrets
 
             token = secrets.token_urlsafe(24)
             _pending[token] = PendingCommand(request.command)
@@ -353,7 +367,195 @@ async def plan(request: CommandRequest):
             )
             return result
 
-    return _plan(request.command)
+    # ---------------------------------------------------------------
+    # 3. Run the complete deterministic planner.
+    #
+    #    IMPORTANT:
+    #    _plan() recognizes terminal, stop, implementation, status,
+    #    etc. BEFORE AI is ever consulted.
+    # ---------------------------------------------------------------
+    deterministic = _plan(request.command)
+
+    # ---------------------------------------------------------------
+    # 4. Explicit capability-information and diagnostics requests
+    # must reach semantic interpretation before deterministic broad
+    # health matching can terminate the request.
+    lowered_request = request.command.strip().lower()
+
+    semantic_priority_terms = (
+        "diagnostic",
+        "diagnostics",
+        "capabilities",
+        "what can a1os",
+        "what can you do",
+        "what are you capable",
+    )
+
+    semantic_priority = any(
+        term in lowered_request
+        for term in semantic_priority_terms
+    )
+
+    if deterministic.get("intent") != "unknown" and not semantic_priority:
+        return deterministic
+
+    if semantic_priority:
+        deterministic = {
+            "intent": "unknown",
+            "command": None,
+            "risk": RiskLevel.READ,
+            "requires_approval": False,
+            "approval_token": None,
+            "message": "Semantic interpretation required.",
+        }
+
+    # ---------------------------------------------------------------
+    # 4. ONLY genuinely unknown requests reach semantic AI.
+    # ---------------------------------------------------------------
+    try:
+        ai_result = await _jarvis_ai_interpreter.interpret(
+            request.command,
+            a1os_system.capabilities.list(),
+        )
+
+        capability = ai_result.get("capability")
+        confidence = float(
+            ai_result.get("confidence", 0.0) or 0.0
+        )
+
+        if not capability or confidence < 0.80:
+            return deterministic
+
+        # AI does NOT determine risk or authorization.
+        # The capability itself must pass through A1OS's
+        # universal consequence gate.
+        arguments = ai_result.get("arguments") or {}
+
+        # AI interprets language only. A1OS decides consequence,
+        # authorization, provenance, and whether execution is admitted.
+        try:
+            gate = a1os_system._universal_consequence_gate(
+                capability=capability,
+                kwargs=arguments,
+            )
+            if hasattr(gate, "__await__"):
+                gate = await gate
+        except Exception as exc:
+            _record(
+                "semantic_consequence_gate_failed",
+                requested_command=request.command,
+                capability=capability,
+                error=str(exc),
+            )
+            return {
+                "intent": ai_result.get("intent") or capability,
+                "command": request.command,
+                "capability": capability,
+                "arguments": arguments,
+                "risk": RiskLevel.READ,
+                "requires_approval": True,
+                "approval_token": None,
+                "execution": "a1os_capability",
+                "status": "blocked",
+                "error": str(exc),
+                "message": "A1OS consequence gate could not authorize execution.",
+            }
+
+        classification = gate.get("classification")
+        requires_authorization = bool(
+            gate.get("requires_authorization", False)
+        )
+        allowed = bool(gate.get("allowed", False))
+
+        if not allowed or requires_authorization:
+            token = secrets.token_urlsafe(32)
+            _pending[token] = PendingCommand(
+                command=request.command,
+                capability=capability,
+                arguments=dict(arguments),
+            )
+
+            response = {
+                "intent": ai_result.get("intent") or capability,
+                "command": request.command,
+                "capability": capability,
+                "arguments": arguments,
+                "risk": (
+                    RiskLevel.EXECUTE
+                    if classification == "consequential"
+                    else RiskLevel.READ
+                ),
+                "requires_approval": True,
+                "approval_token": token,
+                "execution": "a1os_capability",
+                "message": (
+                    "Semantic request resolved. Human approval required "
+                    "before consequential execution."
+                ),
+            }
+
+            _record(
+                "semantic_approval_required",
+                requested_command=request.command,
+                **response,
+            )
+            return response
+
+        response = {
+            "intent": ai_result.get("intent") or capability,
+            "command": request.command,
+            "capability": capability,
+            "arguments": arguments,
+            "risk": RiskLevel.READ,
+            "requires_approval": False,
+            "approval_token": None,
+            "execution": "a1os_capability",
+            "message": "Request semantically resolved by JARVIS.",
+        }
+
+        _record(
+            "semantic_plan",
+            requested_command=request.command,
+            **response,
+        )
+
+        try:
+            result = await a1os_system.execute(
+                capability,
+                **arguments,
+            )
+        except Exception as exc:
+            _record(
+                "semantic_execution_failed",
+                requested_command=request.command,
+                capability=capability,
+                error=str(exc),
+            )
+
+            return {
+                **response,
+                "status": "failed",
+                "error": str(exc),
+            }
+
+        response["status"] = "completed"
+        response["result"] = result
+
+        _record(
+            "executed_semantic_capability",
+            requested_command=request.command,
+            **response,
+        )
+
+        return response
+
+    except Exception as exc:
+        _record(
+            "semantic_plan_failed",
+            requested_command=request.command,
+            error=str(exc),
+        )
+        return deterministic
 
 
 @router.post("/approve")
@@ -371,53 +573,79 @@ async def approve(request: ApprovalRequest):
         else str(command)
     )
 
-    if isinstance(command, PendingCommand):
-        approved_command = command
+    # Only typed PendingCommand records may cross the approval boundary.
+    # Legacy/string entries have no capability binding and therefore fail closed.
+    if not isinstance(command, PendingCommand):
+        raise HTTPException(
+            status_code=403,
+            detail="Legacy approval record rejected; capability binding is required.",
+        )
+
+    capability = command.capability
+    capability_kwargs = dict(command.arguments or {})
+
+    if not capability:
+        raise HTTPException(
+            status_code=403,
+            detail="Approval is not bound to an authorized A1OS capability.",
+        )
+
+    target_action = (
+        capability_kwargs.get("action")
+        or capability_kwargs.get("target_action")
+        or capability_kwargs.get("operation")
+        or ""
+    )
+
+    marker = HumanApprovalMarker(
+        token=request.token,
+        capability=capability,
+        command=command_text,
+        entity_id="primary-device",
+        target_action=target_action,
+    )
+
+    # Bind the exact pending user command to the approval execution.
+    # This is consumed only by the universal consequence gate.
+    capability_kwargs["_approval_command"] = command_text
+    capability_kwargs["_human_approval"] = marker
+
+    _record(
+        "approved",
+        command=command_text,
+        capability=capability,
+        target_action=target_action,
+    )
+
+    try:
+        result = await a1os_system.execute(
+            capability,
+            **capability_kwargs,
+        )
+    except Exception as exc:
+        _record(
+            "execution_denied",
+            command=command_text,
+            capability=capability,
+            reason=str(exc),
+        )
+        raise HTTPException(
+            status_code=403,
+            detail=str(exc),
+        )
+
+    if isinstance(result, dict):
+        _record(
+            "execution_result",
+            command=command_text,
+            **result,
+        )
     else:
-        approved_command = PendingCommand(command_text)
-
-    _record("approved", command=command_text)
-
-    # Map approved natural-language intents to real executors.
-    # Never send an intent phrase such as "restart the A1OS production service"
-    # directly to a shell.
-    if command_text.lower() == "restart the a1os production service":
-        # Restart through a detached standalone script so the current
-        # approval HTTP request is not killed by the restart operation.
-        proc = await asyncio.create_subprocess_exec(
-            "sh",
-            "runtime/scripts/restart_production_3017.sh",
-            str(os.getpid()),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            cwd=os.path.expanduser("~/A1OS_RESTORED"),
+        _record(
+            "execution_result",
+            command=command_text,
+            capability=capability,
+            result=result,
         )
 
-    elif command_text.lower().startswith(("implement ", "build ", "upgrade ", "modify ", "change ", "create ", "add ", "update ", "install ", "configure ", "refactor ", "replace ")):
-        proc = await asyncio.create_subprocess_exec(
-            "python3",
-            "tools/a1os_factory/real_build_executor/build_executor_engine.py",
-            command_text,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            cwd=os.path.expanduser("~/A1OS_RESTORED"),
-        )
-    else:
-        proc = await asyncio.create_subprocess_exec(
-            "sh",
-            "-lc",
-            command_text,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            cwd=os.path.expanduser("~/A1OS_RESTORED"),
-        )
-
-    stdout, _ = await proc.communicate()
-
-    result = {
-        "status": "completed" if proc.returncode == 0 else "failed",
-        "exit_code": proc.returncode,
-        "output": stdout.decode(errors="replace"),
-    }
-    _record("execution_result", command=command_text, **result)
     return result
