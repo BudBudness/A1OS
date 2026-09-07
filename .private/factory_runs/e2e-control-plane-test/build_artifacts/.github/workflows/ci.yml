@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate generated product
+        run: |
+          test -f README.md
+          test -f Dockerfile
+          test -f docker-compose.yml
+          test -f k8s/deployment.yaml
+          test -f terraform/main.tf
+          test -f ansible/site.yml

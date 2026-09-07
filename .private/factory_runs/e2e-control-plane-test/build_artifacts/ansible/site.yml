@@ -1,0 +1,7 @@
+- name: Configure e2e-control-plane-test
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Report product
+      ansible.builtin.debug:
+        msg: "Configuring e2e-control-plane-test"

@@ -1,4 +1,4 @@
-from fastapi.staticfiles import StaticFiles
+import pathlib
 from core.control_plane.jarvis import router as jarvis_router
 import hashlib
 import json
@@ -12,8 +12,8 @@ from typing import Optional
 
 from fastapi.responses import FileResponse
 from a1os_hardening import connection as a1os_db, money as a1os_money, tenant as a1os_tenant
-from construction_domain import router as construction_router
 from a1os_production_boundary import principal as a1os_principal, require as a1os_require, tenant_id as a1os_tenant_id, actor as a1os_actor, money as a1os_money, audit as a1os_audit, migrate as a1os_boundary_migrate
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi import HTTPException
@@ -76,6 +76,7 @@ def _init_db():
             INSERT INTO organizations (code, name, industry)
             VALUES (?, ?, ?)
             """,
+            ("a1os", "A1OS", "technology"),
         )
         org_id = conn.execute(
             "SELECT id FROM organizations WHERE code = 'ICR'"
@@ -358,11 +359,16 @@ async def _ws_send_to_org(organization_id, message):
 
 a1os_boundary_migrate()
 
+
 app = FastAPI(
     title="A1OS Platform API",
     version="1.0.0",
     description="Multi-tenant platform backend serving industry-specific frontends.",
 )
+
+
+
+
 
 
 # ============================================================
@@ -1204,7 +1210,6 @@ def ps_quote_convert_to_invoice(quote_id: str):
     return ps_invoice_get(invoice_id)
 
 
-app.include_router(construction_router)
 app.include_router(jarvis_router)
 
 JARVIS_UI_PATH = Path(__file__).resolve().parents[3] / "core" / "control_plane" / "static" / "index.html"
@@ -3647,3 +3652,7 @@ def professional_services_audit():
         return {"audit":[dict(x) for x in rows],"count":len(rows)}
     except Exception as e:
         return {"audit":[],"count":0,"error":str(e)}
+
+
+# JARVIS Chat public static surface — intentionally mounted after FastAPI app creation.
+app.mount("/jarvis-chat", StaticFiles(directory=str(Path(__file__).resolve().parents[4] / "products" / "verticals" / "jarvis-chat"), html=True), name="jarvis-chat")

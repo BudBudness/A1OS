@@ -1,0 +1,5 @@
+services:
+  e2e-control-plane-test:
+    build: .
+    container_name: e2e-control-plane-test
+    restart: unless-stopped
