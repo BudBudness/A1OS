@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$HOME/A1OS_RESTORED"
-APP="$ROOT/products/verticals/little-oaks"
+APP="$ROOT/clients/little-oaks"
 DIST="$APP/dist"
 SERVICE="$PREFIX/var/service/little-oaks"
 PORT=3012

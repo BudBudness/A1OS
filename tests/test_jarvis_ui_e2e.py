@@ -46,6 +46,6 @@ def test_little_oaks_vertical_resolves_through_control_plane():
     vertical = resolve_vertical("little-oaks")
 
     assert vertical["name"] == "little-oaks"
-    assert vertical["runtime"] == "products/verticals/little-oaks"
+    assert vertical["runtime"] == "clients/little-oaks"
     assert vertical["backend"] == "a1os-platform-api"
     assert vertical["core"] == "a1os-core"

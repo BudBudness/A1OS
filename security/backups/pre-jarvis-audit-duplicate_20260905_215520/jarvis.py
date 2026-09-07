@@ -72,7 +72,7 @@ _jarvis_ai_interpreter = JARVISAIInterpreter()
 
 LITTLE_OAKS_VERTICAL = {
     "name": "little-oaks",
-    "runtime": "products/verticals/little-oaks",
+    "runtime": "clients/little-oaks",
     "backend": "a1os-platform-api",
     "core": "a1os-core",
 }

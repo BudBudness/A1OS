@@ -1,9 +1,0 @@
-{
-  "name": "a1os-platform-api",
-  "runtime": "a1os-frontend-runtime",
-  "version": "1.0",
-  "backend": "a1os-platform-api",
-  "core": "a1os-core",
-  "frontend_owned": true,
-  "backend_owned": false
-}

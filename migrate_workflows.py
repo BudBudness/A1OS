@@ -1,6 +1,6 @@
 from pathlib import Path
 
-BASE = Path("products/verticals/little-oaks")
+BASE = Path("clients/little-oaks")
 LEGACY = BASE / "director-dashboard/index.html"
 MODULES = BASE / "workflows"
 
