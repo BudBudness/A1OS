@@ -11,4 +11,4 @@ export A1OS_SERVICE_NAME="a1os-platform-api"
 cd "$ROOT/platform/a1os-platform-api/api" || exit 1
 
 # Force the execution strictly into foreground mode under the active package environment
-exec "$ROOT/.venv-test/bin/python3" -m uvicorn app:app --host 127.0.0.1 --port 3013 --workers 1 --proxy-headers
+exec "$ROOT/.venv-test/bin/python3" -m uvicorn app:app --host 127.0.0.1 --port 3013 --workers 4 --proxy-headers
