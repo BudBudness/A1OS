@@ -4,7 +4,7 @@
   "status": "catalog_definition",
   "backend": "a1os-platform-api",
   "core": "a1os-core",
-  "template_count": 15,
+  "template_count": 50,
   "templates": {
     "school": {
       "name": "School Management",
@@ -386,6 +386,111 @@
         "ledger",
         "audit"
       ]
+    },
+    "pharmacy": {
+      "name": "Pharmacy"
+    },
+    "gym-fitness": {
+      "name": "Gym & Fitness"
+    },
+    "beauty-spa": {
+      "name": "Beauty Spa"
+    },
+    "laundry-dry-cleaning": {
+      "name": "Laundry & Dry Cleaning"
+    },
+    "bakery": {
+      "name": "Bakery"
+    },
+    "hardware-store": {
+      "name": "Hardware Store"
+    },
+    "auto-garage": {
+      "name": "Auto Garage"
+    },
+    "fuel-station": {
+      "name": "Fuel Station"
+    },
+    "farm-supply": {
+      "name": "Farm Supply"
+    },
+    "travel-tours": {
+      "name": "Travel & Tours"
+    },
+    "property-management": {
+      "name": "Property Management"
+    },
+    "legal-practice": {
+      "name": "Legal Practice"
+    },
+    "accounting-firm": {
+      "name": "Accounting Firm"
+    },
+    "cleaning-services": {
+      "name": "Cleaning Services"
+    },
+    "security-company": {
+      "name": "Security Company"
+    },
+    "dental-practice": {
+      "name": "Dental Practice"
+    },
+    "veterinary-practice": {
+      "name": "Veterinary Practice"
+    },
+    "medical-laboratory": {
+      "name": "Medical Laboratory"
+    },
+    "optical-shop": {
+      "name": "Optical Shop"
+    },
+    "maternity-womens-clinic": {
+      "name": "Maternity & Women's Clinic"
+    },
+    "daycare": {
+      "name": "Daycare"
+    },
+    "training-center": {
+      "name": "Training Center"
+    },
+    "driving-school": {
+      "name": "Driving School"
+    },
+    "printing-design": {
+      "name": "Printing & Design"
+    },
+    "photography-studio": {
+      "name": "Photography Studio"
+    },
+    "event-rental": {
+      "name": "Event Rental"
+    },
+    "catering-business": {
+      "name": "Catering Business"
+    },
+    "butchery": {
+      "name": "Butchery"
+    },
+    "supermarket": {
+      "name": "Supermarket"
+    },
+    "wholesale-distributor": {
+      "name": "Wholesale Distributor"
+    },
+    "mobile-money-agent": {
+      "name": "Mobile Money Agent"
+    },
+    "courier-delivery": {
+      "name": "Courier & Delivery"
+    },
+    "transport-company": {
+      "name": "Transport Company"
+    },
+    "construction-contractor": {
+      "name": "Construction Contractor"
+    },
+    "manufacturing-sme": {
+      "name": "Manufacturing SME"
     }
   }
 }
