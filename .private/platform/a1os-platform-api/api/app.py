@@ -54,50 +54,104 @@ def db():
 def _init_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = db()
-    schema = SCHEMA_PATH.read_text()
-    conn.executescript(schema)
-    conn.commit()
 
-    org = conn.execute("SELECT id FROM organizations LIMIT 1").fetchone()
-    if org is None:
-        admin_email = os.getenv("A1OS_PLATFORM_ADMIN_EMAIL", "admin@a1os.io")
-        secret_path = pathlib.Path.home() / ".a1os" / "platform-admin-password"
-        if not secret_path.exists():
+    try:
+        schema = SCHEMA_PATH.read_text()
+        conn.executescript(schema)
+        conn.commit()
+
+        # --------------------------------------------------------
+        # Idempotent platform bootstrap
+        #
+        # Organization and administrator are reconciled
+        # independently. An existing organization must never
+        # prevent creation of a missing platform administrator.
+        # --------------------------------------------------------
+
+        org = conn.execute(
+            "SELECT id FROM organizations WHERE code = 'a1os' LIMIT 1"
+        ).fetchone()
+
+        if org is None:
+            conn.execute(
+                """
+                INSERT INTO organizations (code, name, industry)
+                VALUES (?, ?, ?)
+                """,
+                ("a1os", "A1OS", "technology"),
+            )
+            conn.commit()
+
+            org = conn.execute(
+                "SELECT id FROM organizations WHERE code = 'a1os' LIMIT 1"
+            ).fetchone()
+
+        if org is None:
             raise RuntimeError(
-                "Platform admin bootstrap secret is missing: "
-                f"{secret_path}"
+                "A1OS bootstrap failed: platform organization could not be resolved"
             )
 
-        admin_password = secret_path.read_text().strip()
-        if not admin_password:
-            raise RuntimeError("Platform admin bootstrap secret is empty")
-        conn.execute(
-            """
-            INSERT INTO organizations (code, name, industry)
-            VALUES (?, ?, ?)
-            """,
-            ("a1os", "A1OS", "technology"),
+        org_id = org["id"]
+        admin_email = os.getenv(
+            "A1OS_PLATFORM_ADMIN_EMAIL",
+            "admin@a1os.io",
         )
-        org_id = conn.execute(
-            "SELECT id FROM organizations WHERE code = 'ICR'"
-        ).fetchone()["id"]
-        conn.execute(
-            """
-            INSERT INTO users
-            (organization_id, email, full_name, password_hash, role)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                org_id,
-                admin_email,
-                "A1OS Platform Administrator",
-                _hash_password(admin_password),
-                "super_admin",
-            ),
-        )
-        conn.commit()
-    conn.close()
 
+        admin = conn.execute(
+            "SELECT id FROM users WHERE email = ? LIMIT 1",
+            (admin_email,),
+        ).fetchone()
+
+        if admin is None:
+            secret_path = pathlib.Path.home() / ".a1os" / "platform-admin-password"
+
+            if not secret_path.exists():
+                raise RuntimeError(
+                    "Platform admin bootstrap secret is missing: "
+                    f"{secret_path}"
+                )
+
+            admin_password = secret_path.read_text().strip()
+
+            if not admin_password:
+                raise RuntimeError(
+                    "Platform admin bootstrap secret is empty"
+                )
+
+            conn.execute(
+                """
+                INSERT INTO users
+                (organization_id, email, full_name, password_hash, role)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    org_id,
+                    admin_email,
+                    "A1OS Platform Administrator",
+                    _hash_password(admin_password),
+                    "super_admin",
+                ),
+            )
+            conn.commit()
+
+        else:
+            # Existing administrator is preserved.
+            # Bootstrap never rotates an existing password.
+            conn.execute(
+                """
+                UPDATE users
+                SET organization_id = ?,
+                    role = 'super_admin',
+                    active = 1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (org_id, admin["id"]),
+            )
+            conn.commit()
+
+    finally:
+        conn.close()
 
 # ============================================================
 # PASSWORD HASHING

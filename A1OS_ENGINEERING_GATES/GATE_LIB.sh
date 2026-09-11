@@ -86,30 +86,39 @@ health() {
 }
 
 login() {
-    local payload token
+    local payload
+    local token
+    local had_xtrace=0
 
-    [ -n "${A1OS_ADMIN_PASSWORD:-}" ] ||
+    if [ -z "${A1OS_ADMIN_PASSWORD:-}" ]; then
         die "A1OS_ADMIN_PASSWORD is required"
+    fi
 
-    payload="$(python3 - <<PY
-import json
-print(json.dumps({
-    "email": "admin@a1os.io",
-    "password": """${A1OS_ADMIN_PASSWORD}"""
-}))
-PY
-)"
+    case "$-" in
+        *x*)
+            had_xtrace=1
+            set +x
+            ;;
+    esac
 
-    token="$(
-        curl -fsS --max-time 10 \
-        -H 'Content-Type: application/json' \
+    payload="$(python3 -c 'import json, os; print(json.dumps({"email":"admin@a1os.io","password":os.environ["A1OS_ADMIN_PASSWORD"]}))')"
+
+    token="$(curl -fsS --max-time 10 \
+        -H "Content-Type: application/json" \
         -X POST \
         http://127.0.0.1:3013/v1/auth/login \
         -d "$payload" |
-        python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])'
-    )"
+        python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')"
 
-    [ -n "$token" ] || die "Authentication returned no token"
+    unset payload
+
+    if [ "$had_xtrace" -eq 1 ]; then
+        set -x
+    fi
+
+    if [ -z "$token" ]; then
+        die "Authentication token missing"
+    fi
 
     printf '%s' "$token"
 }

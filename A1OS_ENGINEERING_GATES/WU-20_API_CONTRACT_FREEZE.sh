@@ -1,4 +1,10 @@
 #!/data/data/com.termux/files/usr/bin/bash
+
+# A1OS_CURRENT_PLATFORM_PYTHONPATH
+# The production architecture keeps core under .private/core.
+# Establish the same import boundary for every contract-test invocation.
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export PYTHONPATH="$ROOT/.private/platform/a1os-platform-api/api:$ROOT/.private:$ROOT${PYTHONPATH:+:$PYTHONPATH}"
 set -Eeuo pipefail
 
 source "$(dirname "$0")/GATE_LIB.sh"
