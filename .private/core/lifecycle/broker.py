@@ -1,4 +1,5 @@
 from __future__ import annotations
+import inspect
 
 import time
 import uuid
@@ -101,6 +102,88 @@ class ExecutionBroker:
 
             try:
                 value = self.executor(request)
+
+                checkpoint = {
+                    "request_id": request_id,
+                    "attempt": attempts,
+                    "timestamp": time.time(),
+                }
+
+                if not self.verify(value):
+                    raise RuntimeError("verification_failed")
+
+                result = ExecutionResult(
+                    request_id=request_id,
+                    state=ExecutionState.COMPLETED,
+                    result=value,
+                    attempts=attempts,
+                    heartbeat=heartbeat,
+                    checkpoint=checkpoint,
+                )
+                self._audit(request, result)
+                return result
+
+            except Exception as exc:
+                if attempts > self.max_retries:
+                    result = ExecutionResult(
+                        request_id=request_id,
+                        state=ExecutionState.FAILED,
+                        error=str(exc),
+                        attempts=attempts,
+                        heartbeat=heartbeat,
+                    )
+                    self._audit(request, result)
+                    return result
+
+    async def execute_async(self, request: ExecutionRequest) -> ExecutionResult:
+        request_id = request.request_id or str(uuid.uuid4())
+
+        if not self.validate(request):
+            result = ExecutionResult(
+                request_id,
+                ExecutionState.FAILED,
+                error="validation_failed",
+            )
+            self._audit(request, result)
+            return result
+
+        if not self.authorize(request):
+            result = ExecutionResult(
+                request_id,
+                ExecutionState.FAILED,
+                error="authorization_failed",
+            )
+            self._audit(request, result)
+            return result
+
+        if not self.approve(request):
+            result = ExecutionResult(
+                request_id,
+                ExecutionState.FAILED,
+                error="human_approval_required",
+            )
+            self._audit(request, result)
+            return result
+
+        if self.executor is None:
+            result = ExecutionResult(
+                request_id,
+                ExecutionState.FAILED,
+                error="executor_not_configured",
+            )
+            self._audit(request, result)
+            return result
+
+        attempts = 0
+
+        while True:
+            attempts += 1
+            heartbeat = True
+
+            try:
+                value = self.executor(request)
+                if inspect.isawaitable(value):
+                    value = await value
 
                 checkpoint = {
                     "request_id": request_id,

@@ -77,3 +77,34 @@ def test_heartbeat_contract():
     heartbeat = broker.heartbeat("test-request")
     assert heartbeat["request_id"] == "test-request"
     assert heartbeat["alive"] is True
+
+
+
+
+def test_async_executor_bridge():
+    import asyncio
+    from core.lifecycle import ExecutionBroker, ExecutionRequest, ExecutionState
+
+    async def executor(request):
+        return {"bridge": "runtime", "request_id": request.request_id}
+
+    async def run():
+        broker = ExecutionBroker(
+            executor=executor,
+            authorizer=lambda request: True,
+        )
+
+        request = ExecutionRequest(
+            command="runtime.probe",
+            payload={"probe": True},
+            approval_token="approved",
+            request_id="async-runtime-bridge",
+        )
+
+        result = await broker.execute_async(request)
+
+        assert result.state == ExecutionState.COMPLETED
+        assert result.result["bridge"] == "runtime"
+        assert result.attempts == 1
+
+    asyncio.run(run())

@@ -18,7 +18,36 @@ class Database:
             conn.execute("PRAGMA journal_mode=WAL")
             conn.execute("PRAGMA foreign_keys=ON")
             conn.execute("PRAGMA busy_timeout=5000")
-            cls._local.conn = conn
+
+        # Canonical durable execution queue schema.
+        # Created at the persistence boundary so every real Runtime/worker
+        # using DurableQueue receives the same task store.
+        conn.executescript("""
+        CREATE TABLE IF NOT EXISTS tasks (
+            task_id TEXT PRIMARY KEY,
+            target TEXT NOT NULL,
+            role TEXT NOT NULL,
+            action TEXT NOT NULL,
+            payload TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'queued',
+            attempts INTEGER NOT NULL DEFAULT 0,
+            max_attempts INTEGER NOT NULL DEFAULT 3,
+            error TEXT,
+            next_attempt_at TEXT,
+            completed_at TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_tasks_pending
+        ON tasks(status, next_attempt_at, created_at);
+
+        CREATE INDEX IF NOT EXISTS idx_tasks_target
+        ON tasks(target);
+        """)
+        conn.commit()
+
+        cls._local.conn = conn
         return conn
 
     @classmethod
