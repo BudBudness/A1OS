@@ -270,7 +270,7 @@ class A1OS:
         if not isinstance(request, str) or not request.strip():
             raise RuntimeError("build_change requires a non-empty request")
 
-        import subprocess
+        from core.execution.v2.security.sandbox import Sandbox
         import sys
 
         executor = (
@@ -1206,7 +1206,7 @@ class A1OS:
 
             services = [
                 line
-                for line in result.stdout.splitlines()
+                for line in stdout.splitlines()
                 if line.strip()
             ]
 
@@ -1303,17 +1303,17 @@ class A1OS:
                 f"Unsupported network management operation: {operation}"
             )
 
-        result = subprocess.run(
-            commands[operation],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        result = await Sandbox().execute(commands[operation])
+        if getattr(result, "error", None):
+            raise RuntimeError(result.error)
+        output = result.result
+        return_code = getattr(output, "returncode", 0)
+        stdout = getattr(output, "stdout", "") or ""
 
         return {
             "status": "network_inventory_complete",
             "operation": operation,
-            "return_code": result.returncode,
+            "return_code": return_code,
             "output": result.stdout.splitlines(),
             "errors": result.stderr.splitlines(),
         }
@@ -1361,17 +1361,17 @@ class A1OS:
                 f"Unsupported security audit operation: {operation}"
             )
 
-        result = subprocess.run(
-            commands[operation],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        result = await Sandbox().execute(commands[operation])
+        if getattr(result, "error", None):
+            raise RuntimeError(result.error)
+        output = result.result
+        return_code = getattr(output, "returncode", 0)
+        stdout = getattr(output, "stdout", "") or ""
 
         return {
             "status": "security_audit_complete",
             "operation": operation,
-            "return_code": result.returncode,
+            "return_code": return_code,
             "findings": [
                 line
                 for line in result.stdout.splitlines()
