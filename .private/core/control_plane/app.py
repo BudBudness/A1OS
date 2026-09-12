@@ -84,17 +84,7 @@ def _validate_command(command: str) -> None:
         raise HTTPException(status_code=403, detail="Command blocked by control-plane policy")
 
 
-async def _execute(command: str) -> tuple[int, str, str]:
-    proc = await asyncio.create_subprocess_exec(
-        "bash",
-        "-lc",
-        command,
-        cwd=str(SAFE_ROOT),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await proc.communicate()
-    return proc.returncode, stdout.decode(errors="replace"), stderr.decode(errors="replace")
+# Retired: raw subprocess execution removed. All execution is lifecycle-governed.
 
 
 @app.get("/")
