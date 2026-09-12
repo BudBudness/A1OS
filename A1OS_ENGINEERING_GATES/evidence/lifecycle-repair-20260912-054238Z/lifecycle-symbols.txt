@@ -1,0 +1,511 @@
+.private/core/state.py:35:    """Trusted in-process marker created only after JARVIS approval."""
+.private/core/state.py:87:    async def execute(self, name, **kwargs):
+.private/core/state.py:95:        # Universal dispatcher-level consequence gate.
+.private/core/state.py:104:        approval_marker = kwargs.get("_human_approval")
+.private/core/state.py:107:        gate_kwargs["_human_approval"] = approval_marker
+.private/core/state.py:143:        handler_kwargs.pop("_human_approval", None)
+.private/core/state.py:456:            "security_audit",
+.private/core/state.py:457:            self._capability_security_audit,
+.private/core/state.py:579:        Mandatory consequence classification at dispatcher level.
+.private/core/state.py:598:            "security_audit",
+.private/core/state.py:625:        approval = kwargs.get("_human_approval")
+.private/core/state.py:627:        if isinstance(approval, HumanApprovalMarker):
+.private/core/state.py:628:            entity_id = approval.entity_id
+.private/core/state.py:629:            target_action = approval.target_action or target_action
+.private/core/state.py:650:        # explicitly consumes a pending human approval.
+.private/core/state.py:651:        approval = kwargs.get("_human_approval")
+.private/core/state.py:653:        if not isinstance(approval, HumanApprovalMarker):
+.private/core/state.py:661:                    "Explicit human approval is required. "
+.private/core/state.py:666:        if approval.capability != capability:
+.private/core/state.py:676:        if approval.entity_id != entity_id:
+.private/core/state.py:689:            if approval.command != requested:
+.private/core/state.py:700:            requested = kwargs.get("_approval_command", "")
+.private/core/state.py:710:            if approval.command.strip() != requested.strip():
+.private/core/state.py:721:            "authorized": True,
+.private/core/state.py:723:            "human_authorized": True,
+.private/core/state.py:725:            "decision": "human_authorized",
+.private/core/state.py:727:            "reason": "Explicit human approval verified in-process.",
+.private/core/state.py:738:                "human_authorized",
+.private/core/state.py:760:            approval_id=authorization.get("approval_id"),
+.private/core/state.py:771:                "autonomous_authorized",
+.private/core/state.py:783:        Proves dispatcher-level interception of a dynamically added
+.private/core/state.py:1046:        approval_id=None,
+.private/core/state.py:1070:            "approval_id": approval_id,
+.private/core/state.py:1158:        a separately verified human approval and must subsequently
+.private/core/state.py:1165:        if operation == "authorize":
+.private/core/state.py:1167:                "authorized": False,
+.private/core/state.py:1189:            "authorized": False,
+.private/core/state.py:1351:    async def _capability_security_audit(self, operation="open_ports", **kwargs):
+.private/core/state.py:1361:                f"Unsupported security audit operation: {operation}"
+.private/core/state.py:1372:            "status": "security_audit_complete",
+.private/core/state.py:2104:            "authorize",
+.private/core/state.py:2200:            decision = "authorized"
+.private/core/state.py:2201:            status = "sovereign_action_authorized"
+.private/core/state.py:2209:        if operation == "authorize":
+.private/core/state.py:2255:            "authorize",
+.private/core/state.py:2264:            operation="authorize",
+.private/core/state.py:2283:        if policy["decision"] != "authorized":
+.private/core/state.py:2287:                "reason": "action_not_autonomously_authorized",
+.private/core/state.py:2291:            "status": "sovereign_control_authorized",
+.private/core/state.py:3318:    async def execute(self, action: str, **kwargs) -> dict:
+.private/core/state.py:3319:        """Execute capability through unified dispatcher."""
+.private/core/agent.py:17:        # 2. Apply the code (Requires your approval gate)
+.private/core/api.py:57:async def execute_task(payload: ExecutePayload, x_signature: str = Header(None)):
+.private/core/execution/framework.py:4:from core.execution.dispatcher import route_task
+.private/core/execution/v2/__init__.py:1:from .dispatcher.engine import DistributedDispatcher
+.private/core/execution/v2/checkpoint.py:6:    def __init__(self, path: str = "checkpoints/"):
+.private/core/execution/v2/dag/engine.py:47:    def execute(self):
+.private/core/execution/v2/dispatcher/engine.py:12:    def dispatch(self, task, context=None):
+.private/core/execution/v2/dispatcher/engine.py:17:            raise PermissionError(f"Role not authorized: {role}")
+.private/core/execution/v2/dispatcher/engine.py:42:    async def dispatch(self, *args, **kwargs):
+.private/core/execution/v2/dispatcher/engine.py:44:            "status": "dispatched",
+.private/core/execution/v2/dispatcher/gatekeeper.py:2:    def request_approval(self, task_id, decision):
+.private/core/execution/v2/recovery.py:9:        from core.execution.v2.dispatcher.engine import DistributedDispatcher
+.private/core/execution/v2/recovery.py:10:        self.dispatcher = DistributedDispatcher()
+.private/core/execution/v2/recovery.py:13:            if data.get("status") == "dispatched":
+.private/core/execution/v2/recovery.py:14:                self.dispatcher.dispatch(data.get("decision"))
+.private/core/execution/v2/registry/node_registry.py:8:    def heartbeat(self, node_id):
+.private/core/execution/v2/security/sandbox.py:5:    def execute(self, cmd_list):
+.private/core/execution/v2/security/sanitizer.py:5:    def validate(self, action, data):
+.private/core/execution/v2/worker/pool.py:9:    def execute(self, task_func: Callable, *args: Any, **kwargs: Any) -> Any:
+.private/core/optimization_loop.py:13:        action = gov.authorize_optimization(report)
+.private/core/persistence/database.py:38:    def execute(cls, sql, params=()):
+.private/core/registry.py:6:    def execute(self, action, payload):
+.private/core/registry.py:10:    def execute(self, action, payload):
+.private/core/registry.py:18:    def execute(self, action, payload):
+.private/core/runtime.py:7:from core.control_plane.human_approval import HumanApprovalController, ApprovalDenied
+.private/core/runtime.py:22:    def __init__(self, system=None, approval_controller=None):
+.private/core/runtime.py:24:        self.approval_controller = (
+.private/core/runtime.py:25:            approval_controller
+.private/core/runtime.py:26:            if approval_controller is not None
+.private/core/runtime.py:73:    async def execute(self, task_id: str, payload: Dict[str, Any]):
+.private/core/runtime.py:102:                    # consumes an already-issued, exact-bound approval. The controller never
+.private/core/runtime.py:104:                    approval_id = payload.get("approval_id")
+.private/core/runtime.py:105:                    if not approval_id:
+.private/core/runtime.py:106:                        raise ApprovalDenied("Explicit human approval is required")
+.private/core/runtime.py:109:                        approval = self.approval_controller.consume(
+.private/core/runtime.py:110:                            approval_id=approval_id,
+.private/core/runtime.py:121:                    if not isinstance(approval, dict):
+.private/core/runtime.py:122:                        raise ApprovalDenied("Invalid approval record")
+.private/core/utils/inject.py:12:        "approval_state": "APPROVED"
+.private/core/worker.py:7:    async def execute(self, event: Dict[str, Any]) -> Any:
+.private/core/control_plane/app.py:22:    async def dispatch(self, request, call_next):
+.private/core/control_plane/app.py:52:    approval_required: bool = False
+.private/core/control_plane/app.py:122:        "autonomous_execution": "approval_gated",
+.private/core/control_plane/app.py:135:        detail="Raw command execution retired; use authorized A1OS capabilities."
+.private/core/control_plane/app.py:144:            status="approval_required",
+.private/core/control_plane/app.py:146:            approval_required=True,
+.private/core/control_plane/jarvis.py:10:from .execution_broker import ExecutionBroker, ExecutionDenied
+.private/core/control_plane/jarvis.py:19:_execution_broker = ExecutionBroker()
+.private/core/control_plane/jarvis.py:32:    requires_approval: bool
+.private/core/control_plane/jarvis.py:33:    approval_token: str | None = None
+.private/core/control_plane/jarvis.py:37:_audit_log: list[dict[str, Any]] = []
+.private/core/control_plane/jarvis.py:51:    _audit_log.append({"event": event, **data})
+.private/core/control_plane/jarvis.py:94:        return {"intent": "empty", "requires_approval": False}
+.private/core/control_plane/jarvis.py:101:            "requires_approval": False,
+.private/core/control_plane/jarvis.py:102:            "approval_token": None,
+.private/core/control_plane/jarvis.py:112:            "requires_approval": True,
+.private/core/control_plane/jarvis.py:123:            detail="Legacy terminal execution retired; use an authorized A1OS capability.",
+.private/core/control_plane/jarvis.py:138:            "requires_approval": True,
+.private/core/control_plane/jarvis.py:150:        "requires_approval": False,
+.private/core/control_plane/jarvis.py:151:        "approval_token": None,
+.private/core/control_plane/jarvis.py:169:        "autonomous_execution": "approval_gated",
+.private/core/control_plane/jarvis.py:186:            "requires_approval": False,
+.private/core/control_plane/jarvis.py:193:    # approval-gated and are never auto-executed here.
+.private/core/control_plane/jarvis.py:243:                "requires_approval": True,
+.private/core/control_plane/jarvis.py:263:            "requires_approval": False,
+.private/core/control_plane/jarvis.py:294:            "requires_approval": False,
+.private/core/control_plane/jarvis.py:348:        # Consequential operations remain approval-gated.
+.private/core/control_plane/jarvis.py:356:                "approval_token": token,
+.private/core/control_plane/jarvis.py:364:                "approval_required",
+.private/core/control_plane/jarvis.py:407:            "requires_approval": False,
+.private/core/control_plane/jarvis.py:408:            "approval_token": None,
+.private/core/control_plane/jarvis.py:456:                "requires_approval": True,
+.private/core/control_plane/jarvis.py:457:                "approval_token": None,
+.private/core/control_plane/jarvis.py:461:                "message": "A1OS consequence gate could not authorize execution.",
+.private/core/control_plane/jarvis.py:488:                "requires_approval": True,
+.private/core/control_plane/jarvis.py:489:                "approval_token": token,
+.private/core/control_plane/jarvis.py:492:                    "Semantic request resolved. Human approval required "
+.private/core/control_plane/jarvis.py:498:                "semantic_approval_required",
+.private/core/control_plane/jarvis.py:510:            "requires_approval": False,
+.private/core/control_plane/jarvis.py:511:            "approval_token": None,
+.private/core/control_plane/jarvis.py:569:    # approval boundary. The approval gate itself remains mandatory.
+.private/core/control_plane/jarvis.py:576:    # Only typed PendingCommand records may cross the approval boundary.
+.private/core/control_plane/jarvis.py:581:            detail="Legacy approval record rejected; capability binding is required.",
+.private/core/control_plane/jarvis.py:590:            detail="Approval is not bound to an authorized A1OS capability.",
+.private/core/control_plane/jarvis.py:608:    # Bind the exact pending user command to the approval execution.
+.private/core/control_plane/jarvis.py:610:    capability_kwargs["_approval_command"] = command_text
+.private/core/control_plane/jarvis.py:611:    capability_kwargs["_human_approval"] = marker
+.private/core/control_plane/execution_broker.py:28:class ExecutionBroker:
+.private/core/control_plane/execution_broker.py:32:        self._audit: list[dict[str, Any]] = []
+.private/core/control_plane/execution_broker.py:35:    def audit(self) -> list[dict[str, Any]]:
+.private/core/control_plane/execution_broker.py:36:        return list(self._audit)
+.private/core/control_plane/execution_broker.py:39:        self._audit.append({"event": event, **data})
+.private/core/control_plane/execution_broker.py:42:    def validate(command: str) -> str:
+.private/core/control_plane/execution_broker.py:50:    async def execute(
+.private/core/control_plane/execution_broker.py:60:        # A boolean approval is never sufficient authority for shell execution.
+.private/core/control_plane/execution_broker.py:90:        # ExecutionBroker is not a shell gateway.
+.private/core/control_plane/execution_broker.py:102:            "execute only through an authorized A1OS capability."
+.private/core/control_plane/human_approval.py:17:    Explicit human-approval boundary for consequential A1OS execution.
+.private/core/control_plane/human_approval.py:20:      - approval is bound to exact task/capability/action/entity
+.private/core/control_plane/human_approval.py:21:      - client-supplied approval flags are never trusted
+.private/core/control_plane/human_approval.py:22:      - approvals expire
+.private/core/control_plane/human_approval.py:24:      - approval cannot authorize a different action
+.private/core/control_plane/human_approval.py:25:      - state is persisted locally for auditability
+.private/core/control_plane/human_approval.py:29:    def __init__(self, state_dir: str = "runtime/approvals") -> None:
+.private/core/control_plane/human_approval.py:76:                "Only human_required decisions may enter approval"
+.private/core/control_plane/human_approval.py:99:        approval_id = f"approval-{uuid.uuid4()}"
+.private/core/control_plane/human_approval.py:103:            "approval_id": approval_id,
+.private/core/control_plane/human_approval.py:117:        path = self.state_dir / f"{approval_id}.json"
+.private/core/control_plane/human_approval.py:125:            "approval_id": approval_id,
+.private/core/control_plane/human_approval.py:133:        approval_id: str,
+.private/core/control_plane/human_approval.py:140:        path = self.state_dir / f"{approval_id}.json"
+.private/core/control_plane/human_approval.py:186:        record["approval_provenance"] = {
+.private/core/control_plane/human_approval.py:187:            "approval_id": approval_id,
+.private/core/control_plane/human_approval.py:196:        record["approval_provenance"]["record_hash"] = self._hash(
+.private/core/control_plane/human_approval.py:197:            record["approval_provenance"]
+.private/core/control_plane/human_approval.py:210:            "approval_id": approval_id,
+.private/core/control_plane/human_approval.py:220:        approval_id: str,
+.private/core/control_plane/human_approval.py:227:        path = self.state_dir / f"{approval_id}.json"
+.private/core/control_plane/human_approval.py:240:            raise ApprovalDenied("Human approval has not been granted")
+.private/core/control_plane/human_approval.py:258:        approval_provenance = record.get("approval_provenance")
+.private/core/control_plane/human_approval.py:260:        if not isinstance(approval_provenance, dict):
+.private/core/control_plane/human_approval.py:263:        provenance_hash = approval_provenance.get("record_hash")
+.private/core/control_plane/human_approval.py:264:        unsigned_provenance = dict(approval_provenance)
+.private/core/control_plane/human_approval.py:272:        # Single-use approval.
+.private/core/control_plane/human_approval.py:285:            "authorized": True,
+.private/core/control_plane/human_approval.py:287:            "approval_id": approval_id,
+.private/core/control_plane/human_approval.py:292:            "approver_id": record["approval_provenance"]["approver_id"],
+.private/core/control_plane/human_approval.py:293:            "approval_provenance": record["approval_provenance"],
+.private/core/control_plane/human_approval.py:296:    def get(self, approval_id: str) -> dict[str, Any] | None:
+.private/core/control_plane/human_approval.py:297:        path = self.state_dir / f"{approval_id}.json"
+.private/core/control_plane/human_approval.py:305:approval_controller = HumanApprovalController()
+.private/core/control_plane/static/index.html:470:.approval{
+.private/core/control_plane/static/index.html:479:.approval.show{display:block}
+.private/core/control_plane/static/index.html:481:.approval-title{
+.private/core/control_plane/static/index.html:486:.approval-meta{
+.private/core/control_plane/static/index.html:577:.jarvis-approval{
+.private/core/control_plane/static/index.html:581:.jarvis-approval button{
+.private/core/control_plane/static/index.html:609: window.dispatchEvent(new CustomEvent("a1os:theme",{detail:t}));
+.private/core/control_plane/static/index.html:676:    document.dispatchEvent(new CustomEvent("a1os:response", {
+.private/core/control_plane/static/index.html:828: if(!plan?.requires_approval || !plan?.approval_token){
+.private/core/control_plane/static/index.html:833: pendingToken=plan.approval_token;
+.private/core/control_plane/static/index.html:836: card.className="approval show";
+.private/core/control_plane/static/index.html:838:   <div class="approval-title">Human approval required</div>
+.private/core/control_plane/static/index.html:839:   <div class="approval-meta">
+.private/core/control_plane/static/index.html:906:   if(d.requires_approval){
+.private/core/control_plane/static/index.html:907:     addMessage(d.message||"Implementation plan prepared. Human approval required.","jarvis");
+.private/core/control_plane/static/index.html:1063:      el.dispatchEvent(new Event("input", {bubbles:true}));
+.private/core/control_plane/static/index.html:1064:      el.dispatchEvent(new Event("change", {bubbles:true}));
+.private/core/control_plane/static/index.html:1067:      el.dispatchEvent(new InputEvent("input", {bubbles:true, inputType:"insertText"}));
+.private/core/control_plane/static/index.html:1094:      const token = result.approval_token;
+.private/core/control_plane/static/index.html:1096:      if (result.requires_approval && token) {
+.private/core/control_plane/static/index.html:1107:      el.dispatchEvent(new Event("input", {bubbles:true}));
+.private/core/control_plane/static/index.html:1112:       * - Consequential results remain approval-gated.
+.private/core/control_plane/static/index.html:1116:      window.dispatchEvent(new CustomEvent(
+.private/core/control_plane/static/index.html:1117:        result.requires_approval ? "a1os:approval-required" : "a1os:execution-result",
+.private/core/control_plane/static/index.html:1121:      window.dispatchEvent(new CustomEvent("a1os:plan", {detail:result}));
+.private/core/control_plane/static/index.html:1124:      window.dispatchEvent(new CustomEvent("a1os:error", {detail:String(e)}));
+.private/core/control_plane/static/index.html:1148:      window.dispatchEvent(new CustomEvent("a1os:execution", {detail:result}));
+.private/core/control_plane/static/index.html:1150:      console.error("A1OS approval failed:", e);
+.private/core/control_plane/static/index.html:1155:      window.dispatchEvent(new CustomEvent("a1os:error", {detail:String(e)}));
+.private/core/control_plane/static/index.html:1192:        window.dispatchEvent(new CustomEvent("a1os:files", {
+.private/core/control_plane/static/index.html:1209:        window.dispatchEvent(new CustomEvent("a1os:microphone", {detail:stream}));
+.private/core/control_plane/static/index.html:1239:      window.dispatchEvent(new CustomEvent("a1os:new-chat"));
+.private/core/control_plane/static/index.html:1245:      window.dispatchEvent(new CustomEvent("a1os:search"));
+.private/core/control_plane/static/index.html:1251:      window.dispatchEvent(new CustomEvent("a1os:notifications"));
+.private/core/control_plane/static/index.html:1257:      window.dispatchEvent(new CustomEvent("a1os:settings"));
+.private/core/control_plane/static/index.html:1310:    approval:true
+.private/core/control_plane/static/index.html:1533:          composer.dispatchEvent(new Event("input",{bubbles:true}));
+.private/core/control_plane/static/index.html:1699:      window.dispatchEvent(
+.private/core/control_plane/static/index.html:1715:      window.dispatchEvent(
+.private/core/control_plane/static/index.html:1726:   * the planning/approval pipeline.
+.private/core/control_plane/static/index.html:1904:      if (plan.requires_approval && plan.approval_token) {
+.private/core/control_plane/static/index.html:1906:          "JARVIS requires approval.\n\n" +
+.private/core/control_plane/static/index.html:1913:        const result = await approve(plan.approval_token);
+.private/core/control_plane/static/index.html:1942:    window.dispatchEvent(new CustomEvent("a1os:jarvis-status",{
+.private/core/control_plane/static/index.html:1960:    window.dispatchEvent(new CustomEvent(
+.private/core/control_plane/app.py.pre-jarvis-route-fix.20260901-205504:22:    async def dispatch(self, request, call_next):
+.private/core/control_plane/app.py.pre-jarvis-route-fix.20260901-205504:52:    approval_required: bool = False
+.private/core/control_plane/app.py.pre-jarvis-route-fix.20260901-205504:122:        "autonomous_execution": "approval_gated",
+.private/core/control_plane/app.py.pre-jarvis-route-fix.20260901-205504:137:        "autonomous_execution": "approval_gated",
+.private/core/control_plane/app.py.pre-jarvis-route-fix.20260901-205504:147:            status="approval_required",
+.private/core/control_plane/app.py.pre-jarvis-route-fix.20260901-205504:149:            approval_required=True,
+.private/core/control_plane/jarvis_ai.py:13:    It NEVER authorizes or executes an operation.
+.private/core/control_plane/templates/chat.html:13:async function sendCommand(){const text=input.value.trim();if(!text)return;input.value='';addMessage('user','💬 '+text);const loading=document.createElement('div');loading.className='msg jarvis loading';loading.textContent='⏳ Thinking...';chat.appendChild(loading);chat.scrollTop=chat.scrollHeight;try{const res=await fetch('/api/jarvis/plan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:text})});const data=await res.json();loading.remove();if(data.intent==='terminal'&&data.requires_approval){addMessage('jarvis','⚠️ Approval needed. Token: '+data.approval_token)}else if(data.status==='healthy'||data.status==='online'){addMessage('jarvis','✅ '+(data.message||'System healthy'))}else if(data.output){addMessage('jarvis','📋 Output:\n<pre>'+data.output+'</pre>')}else if(data.detail){addMessage('jarvis','❌ '+data.detail)}else{addMessage('jarvis','📦 Response:\n<pre>'+JSON.stringify(data,null,2)+'</pre>')}}catch(e){loading.remove();addMessage('jarvis','❌ '+e.message)}}
+.private/core/dispatcher.py:13:    """Generic worker dispatcher for A1OS"""
+.private/core/dispatcher.py:30:    async def dispatch(self, target: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+.private/core/dispatcher.py:35:        Unknown or unauthorized capabilities fail closed.
+.private/core/dispatcher.py:41:        authorization = await self.authorization_adapter.authorize(
+.private/core/dispatcher.py:119:dispatcher = Dispatcher()
+.private/core/auth/lifecycle.py:29:    def validate(cls, token):
+.private/core/queue/durable.py:61:        # Human-approval denials are terminal: retrying cannot manufacture
+.private/core/recovery/checkpoints.py:15:                "CREATE TABLE IF NOT EXISTS recovery_checkpoints "
+.private/core/recovery/checkpoints.py:16:                "(checkpoint_id TEXT PRIMARY KEY, component TEXT NOT NULL, state TEXT NOT NULL)"
+.private/core/recovery/checkpoints.py:20:        checkpoint_id = str(uuid.uuid4())
+.private/core/recovery/checkpoints.py:23:                "INSERT INTO recovery_checkpoints VALUES (?, ?, ?)",
+.private/core/recovery/checkpoints.py:24:                (checkpoint_id, component, json.dumps(state)),
+.private/core/recovery/checkpoints.py:27:        return checkpoint_id
+.private/core/recovery/checkpoints.py:32:                "SELECT checkpoint_id, component, state "
+.private/core/recovery/checkpoints.py:33:                "FROM recovery_checkpoints WHERE component=? "
+.private/core/recovery/checkpoints.py:42:            "checkpoint_id": row[0],
+.private/core/dispatcher.py.pre-canonical-20260826162556.bak:13:    """Generic worker dispatcher for A1OS"""
+.private/core/dispatcher.py.pre-canonical-20260826162556.bak:30:    async def dispatch(self, target: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+.private/core/dispatcher.py.pre-canonical-20260826162556.bak:35:        Unknown or unauthorized capabilities fail closed.
+.private/core/dispatcher.py.pre-canonical-20260826162556.bak:41:        authorization = await self.authorization_adapter.authorize(
+.private/core/dispatcher.py.pre-canonical-20260826162556.bak:119:dispatcher = Dispatcher()
+.private/core/state.py.bak.readonly-gate-20260903-195116:57:    async def execute(self, name, **kwargs):
+.private/core/state.py.bak.readonly-gate-20260903-195116:65:        # Universal dispatcher-level consequence gate.
+.private/core/state.py.bak.readonly-gate-20260903-195116:321:            "security_audit",
+.private/core/state.py.bak.readonly-gate-20260903-195116:322:            self._capability_security_audit,
+.private/core/state.py.bak.readonly-gate-20260903-195116:414:        Mandatory consequence classification at dispatcher level.
+.private/core/state.py.bak.readonly-gate-20260903-195116:484:            operation="authorize",
+.private/core/state.py.bak.readonly-gate-20260903-195116:501:        authorized = bool(
+.private/core/state.py.bak.readonly-gate-20260903-195116:502:            authorization.get("authorized")
+.private/core/state.py.bak.readonly-gate-20260903-195116:508:        if not authorized:
+.private/core/state.py.bak.readonly-gate-20260903-195116:533:                "autonomous_authorized",
+.private/core/state.py.bak.readonly-gate-20260903-195116:555:            approval_id=authorization.get("approval_id"),
+.private/core/state.py.bak.readonly-gate-20260903-195116:566:                "autonomous_authorized",
+.private/core/state.py.bak.readonly-gate-20260903-195116:578:        Proves dispatcher-level interception of a dynamically added
+.private/core/state.py.bak.readonly-gate-20260903-195116:841:        approval_id=None,
+.private/core/state.py.bak.readonly-gate-20260903-195116:865:            "approval_id": approval_id,
+.private/core/state.py.bak.readonly-gate-20260903-195116:949:        if operation == "authorize":
+.private/core/state.py.bak.readonly-gate-20260903-195116:951:                "authorized": True,
+.private/core/state.py.bak.readonly-gate-20260903-195116:975:            "authorized": False,
+.private/core/state.py.bak.readonly-gate-20260903-195116:1136:    async def _capability_security_audit(self, operation="open_ports", **kwargs):
+.private/core/state.py.bak.readonly-gate-20260903-195116:1146:                f"Unsupported security audit operation: {operation}"
+.private/core/state.py.bak.readonly-gate-20260903-195116:1157:            "status": "security_audit_complete",
+.private/core/state.py.bak.readonly-gate-20260903-195116:1845:            "authorize",
+.private/core/state.py.bak.readonly-gate-20260903-195116:1941:            decision = "authorized"
+.private/core/state.py.bak.readonly-gate-20260903-195116:1942:            status = "sovereign_action_authorized"
+.private/core/state.py.bak.readonly-gate-20260903-195116:1950:        if operation == "authorize":
+.private/core/state.py.bak.readonly-gate-20260903-195116:1996:            "authorize",
+.private/core/state.py.bak.readonly-gate-20260903-195116:2005:            operation="authorize",
+.private/core/state.py.bak.readonly-gate-20260903-195116:2024:        if policy["decision"] != "authorized":
+.private/core/state.py.bak.readonly-gate-20260903-195116:2028:                "reason": "action_not_autonomously_authorized",
+.private/core/state.py.bak.readonly-gate-20260903-195116:2032:            "status": "sovereign_control_authorized",
+.private/core/state.py.bak.readonly-gate-20260903-195116:3064:    async def execute(self, action: str, **kwargs) -> dict:
+.private/core/state.py.bak.readonly-gate-20260903-195116:3065:        """Execute capability through unified dispatcher."""
+.private/core/state.py.bak.finance-capability.20260903-212501:57:    async def execute(self, name, **kwargs):
+.private/core/state.py.bak.finance-capability.20260903-212501:65:        # Universal dispatcher-level consequence gate.
+.private/core/state.py.bak.finance-capability.20260903-212501:321:            "security_audit",
+.private/core/state.py.bak.finance-capability.20260903-212501:322:            self._capability_security_audit,
+.private/core/state.py.bak.finance-capability.20260903-212501:414:        Mandatory consequence classification at dispatcher level.
+.private/core/state.py.bak.finance-capability.20260903-212501:433:            "security_audit",
+.private/core/state.py.bak.finance-capability.20260903-212501:491:            operation="authorize",
+.private/core/state.py.bak.finance-capability.20260903-212501:508:        authorized = bool(
+.private/core/state.py.bak.finance-capability.20260903-212501:509:            authorization.get("authorized")
+.private/core/state.py.bak.finance-capability.20260903-212501:515:        if not authorized:
+.private/core/state.py.bak.finance-capability.20260903-212501:540:                "autonomous_authorized",
+.private/core/state.py.bak.finance-capability.20260903-212501:562:            approval_id=authorization.get("approval_id"),
+.private/core/state.py.bak.finance-capability.20260903-212501:573:                "autonomous_authorized",
+.private/core/state.py.bak.finance-capability.20260903-212501:585:        Proves dispatcher-level interception of a dynamically added
+.private/core/state.py.bak.finance-capability.20260903-212501:848:        approval_id=None,
+.private/core/state.py.bak.finance-capability.20260903-212501:872:            "approval_id": approval_id,
+.private/core/state.py.bak.finance-capability.20260903-212501:956:        if operation == "authorize":
+.private/core/state.py.bak.finance-capability.20260903-212501:958:                "authorized": True,
+.private/core/state.py.bak.finance-capability.20260903-212501:982:            "authorized": False,
+.private/core/state.py.bak.finance-capability.20260903-212501:1143:    async def _capability_security_audit(self, operation="open_ports", **kwargs):
+.private/core/state.py.bak.finance-capability.20260903-212501:1153:                f"Unsupported security audit operation: {operation}"
+.private/core/state.py.bak.finance-capability.20260903-212501:1164:            "status": "security_audit_complete",
+.private/core/state.py.bak.finance-capability.20260903-212501:1852:            "authorize",
+.private/core/state.py.bak.finance-capability.20260903-212501:1948:            decision = "authorized"
+.private/core/state.py.bak.finance-capability.20260903-212501:1949:            status = "sovereign_action_authorized"
+.private/core/state.py.bak.finance-capability.20260903-212501:1957:        if operation == "authorize":
+.private/core/state.py.bak.finance-capability.20260903-212501:2003:            "authorize",
+.private/core/state.py.bak.finance-capability.20260903-212501:2012:            operation="authorize",
+.private/core/state.py.bak.finance-capability.20260903-212501:2031:        if policy["decision"] != "authorized":
+.private/core/state.py.bak.finance-capability.20260903-212501:2035:                "reason": "action_not_autonomously_authorized",
+.private/core/state.py.bak.finance-capability.20260903-212501:2039:            "status": "sovereign_control_authorized",
+.private/core/state.py.bak.finance-capability.20260903-212501:3071:    async def execute(self, action: str, **kwargs) -> dict:
+.private/core/state.py.bak.finance-capability.20260903-212501:3072:        """Execute capability through unified dispatcher."""
+.private/platform/a1os-platform-api/api/app.py:15:from a1os_production_boundary import principal as a1os_principal, require as a1os_require, tenant_id as a1os_tenant_id, actor as a1os_actor, money as a1os_money, audit as a1os_audit, migrate as a1os_boundary_migrate
+.private/platform/a1os-platform-api/api/app.py:233:        "audit:read",
+.private/platform/a1os-platform-api/api/app.py:346:def _audit(conn, actor, entity_type, entity_id, action, details=None):
+.private/platform/a1os-platform-api/api/app.py:349:        INSERT INTO audit_log
+.private/platform/a1os-platform-api/api/app.py:1277:    async def dispatch(self, request, call_next):
+.private/platform/a1os-platform-api/api/app.py:1429:        _audit(conn, dict(user), "auth", user["id"], "login", {"email": email})
+.private/platform/a1os-platform-api/api/app.py:1547:        _audit(conn, actor, "user", actor["id"], "change_password", {})
+.private/platform/a1os-platform-api/api/app.py:1617:        _audit(conn, actor, "organization", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py:1661:        _audit(conn, actor, "organization", organization_id, "updated",
+.private/platform/a1os-platform-api/api/app.py:1730:        _audit(
+.private/platform/a1os-platform-api/api/app.py:1877:        _audit(conn, actor, "user", cur.lastrowid, "created", {"email": email})
+.private/platform/a1os-platform-api/api/app.py:1909:        _audit(
+.private/platform/a1os-platform-api/api/app.py:1978:        _audit(conn, actor, "user", user_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py:2039:        _audit(conn, actor, "role", cur.lastrowid, "created", {"name": name})
+.private/platform/a1os-platform-api/api/app.py:2096:        _audit(conn, actor, "role", role_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py:2186:        _audit(conn, actor, "party", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py:2222:        _audit(conn, actor, "party", party_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py:2310:        _audit(conn, actor, "product", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py:2346:        _audit(conn, actor, "product", product_id, "updated",
+.private/platform/a1os-platform-api/api/app.py:2423:        _audit(conn, actor, "account", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py:2500:        _audit(conn, actor, "ledger", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py:2810:        _audit(conn, actor, "stock", item_id, movement_type,
+.private/platform/a1os-platform-api/api/app.py:2955:        _audit(
+.private/platform/a1os-platform-api/api/app.py:3050:        _audit(
+.private/platform/a1os-platform-api/api/app.py:3179:        _audit(conn, actor, "education_parent", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py:3214:        _audit(conn, actor, "education_parent", parent_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py:3243:        _audit(conn, actor, "education_admission", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py:3280:        _audit(conn, actor, "education_admission", admission_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py:3319:        _audit(conn, actor, "education_attendance", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py:3361:        _audit(conn, actor, "education_attendance", attendance_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py:3397:        _audit(conn, actor, "education_fee", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py:3437:        _audit(conn, actor, "education_fee", fee_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py:3463:        _audit(conn, actor, "education_site_content", cur.lastrowid, "created", {"content_key": key})
+.private/platform/a1os-platform-api/api/app.py:3497:        _audit(conn, actor, "education_site_content", content_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py:3572:        _audit(conn, actor, "notification", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py:3583:@app.get("/v1/audit")
+.private/platform/a1os-platform-api/api/app.py:3584:def list_audit_logs(request: Request):
+.private/platform/a1os-platform-api/api/app.py:3585:    actor = _require_permission(request, "audit:read")
+.private/platform/a1os-platform-api/api/app.py:3606:            FROM audit_log a
+.private/platform/a1os-platform-api/api/app.py:3698:@app.get("/v1/professional-services/audit")
+.private/platform/a1os-platform-api/api/app.py:3699:def professional_services_audit():
+.private/platform/a1os-platform-api/api/app.py:3704:        rows=con.execute("SELECT id,tenant_id,actor,action,resource,resource_id,created_at FROM professional_services_audit_log ORDER BY id DESC LIMIT 200").fetchall()
+.private/platform/a1os-platform-api/api/app.py:3706:        return {"audit":[dict(x) for x in rows],"count":len(rows)}
+.private/platform/a1os-platform-api/api/app.py:3708:        return {"audit":[],"count":0,"error":str(e)}
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:15:from a1os_production_boundary import principal as a1os_principal, require as a1os_require, tenant_id as a1os_tenant_id, actor as a1os_actor, money as a1os_money, audit as a1os_audit, migrate as a1os_boundary_migrate
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:179:        "audit:read",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:292:def _audit(conn, actor, entity_type, entity_id, action, details=None):
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:295:        INSERT INTO audit_log
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1223:    async def dispatch(self, request, call_next):
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1375:        _audit(conn, dict(user), "auth", user["id"], "login", {"email": email})
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1493:        _audit(conn, actor, "user", actor["id"], "change_password", {})
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1563:        _audit(conn, actor, "organization", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1607:        _audit(conn, actor, "organization", organization_id, "updated",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1676:        _audit(
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1823:        _audit(conn, actor, "user", cur.lastrowid, "created", {"email": email})
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1855:        _audit(
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1924:        _audit(conn, actor, "user", user_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:1985:        _audit(conn, actor, "role", cur.lastrowid, "created", {"name": name})
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2042:        _audit(conn, actor, "role", role_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2132:        _audit(conn, actor, "party", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2168:        _audit(conn, actor, "party", party_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2256:        _audit(conn, actor, "product", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2292:        _audit(conn, actor, "product", product_id, "updated",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2369:        _audit(conn, actor, "account", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2446:        _audit(conn, actor, "ledger", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2756:        _audit(conn, actor, "stock", item_id, movement_type,
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2901:        _audit(
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:2996:        _audit(
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3125:        _audit(conn, actor, "education_parent", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3160:        _audit(conn, actor, "education_parent", parent_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3189:        _audit(conn, actor, "education_admission", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3226:        _audit(conn, actor, "education_admission", admission_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3265:        _audit(conn, actor, "education_attendance", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3307:        _audit(conn, actor, "education_attendance", attendance_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3343:        _audit(conn, actor, "education_fee", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3383:        _audit(conn, actor, "education_fee", fee_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3409:        _audit(conn, actor, "education_site_content", cur.lastrowid, "created", {"content_key": key})
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3443:        _audit(conn, actor, "education_site_content", content_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3518:        _audit(conn, actor, "notification", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3529:@app.get("/v1/audit")
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3530:def list_audit_logs(request: Request):
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3531:    actor = _require_permission(request, "audit:read")
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3552:            FROM audit_log a
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3644:@app.get("/v1/professional-services/audit")
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3645:def professional_services_audit():
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3650:        rows=con.execute("SELECT id,tenant_id,actor,action,resource,resource_id,created_at FROM professional_services_audit_log ORDER BY id DESC LIMIT 200").fetchall()
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3652:        return {"audit":[dict(x) for x in rows],"count":len(rows)}
+.private/platform/a1os-platform-api/api/app.py.pre-bootstrap-fix.20260911-153352:3654:        return {"audit":[],"count":0,"error":str(e)}
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:174:        "audit:read",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:287:def _audit(conn, actor, entity_type, entity_id, action, details=None):
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:290:        INSERT INTO audit_log
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:357:    async def dispatch(self, request, call_next):
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:522:        _audit(conn, dict(user), "auth", user["id"], "login", {"email": email})
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:640:        _audit(conn, actor, "user", actor["id"], "change_password", {})
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:710:        _audit(conn, actor, "organization", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:754:        _audit(conn, actor, "organization", organization_id, "updated",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:823:        _audit(
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:970:        _audit(conn, actor, "user", cur.lastrowid, "created", {"email": email})
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1002:        _audit(
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1071:        _audit(conn, actor, "user", user_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1132:        _audit(conn, actor, "role", cur.lastrowid, "created", {"name": name})
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1189:        _audit(conn, actor, "role", role_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1279:        _audit(conn, actor, "party", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1315:        _audit(conn, actor, "party", party_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1403:        _audit(conn, actor, "product", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1439:        _audit(conn, actor, "product", product_id, "updated",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1516:        _audit(conn, actor, "account", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1593:        _audit(conn, actor, "ledger", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:1903:        _audit(conn, actor, "stock", item_id, movement_type,
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2048:        _audit(
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2143:        _audit(
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2272:        _audit(conn, actor, "education_parent", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2307:        _audit(conn, actor, "education_parent", parent_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2336:        _audit(conn, actor, "education_admission", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2373:        _audit(conn, actor, "education_admission", admission_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2412:        _audit(conn, actor, "education_attendance", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2454:        _audit(conn, actor, "education_attendance", attendance_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2490:        _audit(conn, actor, "education_fee", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2530:        _audit(conn, actor, "education_fee", fee_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2556:        _audit(conn, actor, "education_site_content", cur.lastrowid, "created", {"content_key": key})
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2590:        _audit(conn, actor, "education_site_content", content_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2665:        _audit(conn, actor, "notification", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2676:@app.get("/v1/audit")
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2677:def list_audit_logs(request: Request):
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2678:    actor = _require_permission(request, "audit:read")
+.private/platform/a1os-platform-api/api/app.py.failed-security-patch.20260901-192900:2699:            FROM audit_log a
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:15:from a1os_production_boundary import principal as a1os_principal, require as a1os_require, tenant_id as a1os_tenant_id, actor as a1os_actor, money as a1os_money, audit as a1os_audit, migrate as a1os_boundary_migrate
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:179:        "audit:read",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:292:def _audit(conn, actor, entity_type, entity_id, action, details=None):
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:295:        INSERT INTO audit_log
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1223:    async def dispatch(self, request, call_next):
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1375:        _audit(conn, dict(user), "auth", user["id"], "login", {"email": email})
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1493:        _audit(conn, actor, "user", actor["id"], "change_password", {})
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1563:        _audit(conn, actor, "organization", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1607:        _audit(conn, actor, "organization", organization_id, "updated",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1676:        _audit(
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1823:        _audit(conn, actor, "user", cur.lastrowid, "created", {"email": email})
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1855:        _audit(
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1924:        _audit(conn, actor, "user", user_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:1985:        _audit(conn, actor, "role", cur.lastrowid, "created", {"name": name})
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2042:        _audit(conn, actor, "role", role_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2132:        _audit(conn, actor, "party", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2168:        _audit(conn, actor, "party", party_id, "updated", list(updates.keys()))
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2256:        _audit(conn, actor, "product", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2292:        _audit(conn, actor, "product", product_id, "updated",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2369:        _audit(conn, actor, "account", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2446:        _audit(conn, actor, "ledger", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2756:        _audit(conn, actor, "stock", item_id, movement_type,
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2901:        _audit(
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:2996:        _audit(
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3125:        _audit(conn, actor, "education_parent", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3160:        _audit(conn, actor, "education_parent", parent_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3189:        _audit(conn, actor, "education_admission", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3226:        _audit(conn, actor, "education_admission", admission_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3265:        _audit(conn, actor, "education_attendance", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3307:        _audit(conn, actor, "education_attendance", attendance_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3343:        _audit(conn, actor, "education_fee", cur.lastrowid, "created", payload)
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3383:        _audit(conn, actor, "education_fee", fee_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3409:        _audit(conn, actor, "education_site_content", cur.lastrowid, "created", {"content_key": key})
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3443:        _audit(conn, actor, "education_site_content", content_id, "updated", list(updates))
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3518:        _audit(conn, actor, "notification", cur.lastrowid, "created",
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3529:@app.get("/v1/audit")
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3530:def list_audit_logs(request: Request):
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3531:    actor = _require_permission(request, "audit:read")
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3552:            FROM audit_log a
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3644:@app.get("/v1/professional-services/audit")
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3645:def professional_services_audit():
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3650:        rows=con.execute("SELECT id,tenant_id,actor,action,resource,resource_id,created_at FROM professional_services_audit_log ORDER BY id DESC LIMIT 200").fetchall()
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3652:        return {"audit":[dict(x) for x in rows],"count":len(rows)}
+.private/platform/a1os-platform-api/api/app.py.pre-admin-bootstrap-repair.20260911-151338Z:3654:        return {"audit":[],"count":0,"error":str(e)}
+.private/platform/a1os-platform-api/api/professional_services_complete.py:10:def audit(c,action,resource,rid=None):
+.private/platform/a1os-platform-api/api/professional_services_complete.py:11: c.execute("INSERT INTO professional_services_audit_log(tenant_id,actor,action,resource,resource_id) VALUES(?,?,?,?,?)",("primary-tenant","system",action,resource,rid))
+.private/platform/a1os-platform-api/api/professional_services_complete.py:42: c.execute("UPDATE professional_services_invoices SET paid_amount=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",(paid,status,p.invoice_id)); audit(c,"create","payment",rid); audit(c,"payment_applied","invoice",p.invoice_id); c.commit(); c.close()
+.private/platform/a1os-platform-api/api/professional_services_complete.py:52: c.execute("DELETE FROM professional_services_payments WHERE id=?",(rid,)); audit(c,"delete","payment",rid); c.commit(); c.close(); return {"deleted":True,"id":rid}
+.private/platform/a1os-platform-api/api/professional_services_complete.py:58: c=db(); rid=str(uuid.uuid4()); c.execute("INSERT INTO professional_services_tasks(id,tenant_id,client_id,project_id,title,description,status,priority,due_date,assigned_to) VALUES(?,?,?,?,?,?,?,?,?,?)",(rid,"primary-tenant",x.client_id,x.project_id,x.title,x.description,x.status,x.priority,x.due_date,x.assigned_to)); audit(c,"create","task",rid); c.commit(); c.close(); return {"id":rid,**x.model_dump()}
+.private/platform/a1os-platform-api/api/professional_services_complete.py:63: c.execute("UPDATE professional_services_tasks SET client_id=?,project_id=?,title=?,description=?,status=?,priority=?,due_date=?,assigned_to=? WHERE id=?",(x.client_id,x.project_id,x.title,x.description,x.status,x.priority,x.due_date,x.assigned_to,rid)); audit(c,"update","task",rid); c.commit(); c.close(); return {"id":rid,**x.model_dump()}
+.private/platform/a1os-platform-api/api/professional_services_complete.py:66: c=db(); q=c.execute("DELETE FROM professional_services_tasks WHERE id=?",(rid,)); audit(c,"delete","task",rid); c.commit(); c.close()
+.private/platform/a1os-platform-api/api/professional_services_complete.py:74: c=db(); rid=str(uuid.uuid4()); c.execute("INSERT INTO professional_services_documents(id,tenant_id,client_id,project_id,name,document_type,storage_path,status) VALUES(?,?,?,?,?,?,?,?)",(rid,"primary-tenant",x.client_id,x.project_id,x.name,x.document_type,x.storage_path,x.status)); audit(c,"create","document",rid); c.commit(); c.close(); return {"id":rid,**x.model_dump()}
+.private/platform/a1os-platform-api/api/professional_services_complete.py:77: c=db(); q=c.execute("DELETE FROM professional_services_documents WHERE id=?",(rid,)); audit(c,"delete","document",rid); c.commit(); c.close()
+.private/platform/a1os-platform-api/api/professional_services_complete.py:85: c=db(); c.execute("INSERT INTO professional_services_settings(id,tenant_id,setting_key,setting_value,updated_at) VALUES(?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(tenant_id,setting_key) DO UPDATE SET setting_value=excluded.setting_value,updated_at=CURRENT_TIMESTAMP",(str(uuid.uuid4()),"primary-tenant",x.key,x.value)); audit(c,"update","setting",x.key); c.commit(); c.close(); return {"key":x.key,"value":x.value}
+.private/platform/a1os-platform-api/api/a1os_hardening.py:19:def audit(c,actor,action,resource,resource_id=None):
+.private/platform/a1os-platform-api/api/a1os_hardening.py:20:    c.execute("INSERT INTO professional_services_audit_log(tenant_id,actor,action,resource,resource_id) VALUES(?,?,?,?,?)",(TENANT,actor,action,resource,resource_id))
+.private/platform/a1os-platform-api/api/a1os_hardening.py:25:    c.execute("""CREATE TABLE IF NOT EXISTS professional_services_audit_log(
+.private/platform/a1os-platform-api/api/a1os_hardening.py:30:def validate():
+.private/platform/a1os-platform-api/api/a1os_hardening.py:34:    required={"professional_services_clients","professional_services_projects","professional_services_quotes","professional_services_invoices","professional_services_payments","professional_services_tasks","professional_services_documents","professional_services_settings","professional_services_audit_log","a1os_migrations"}
+.private/platform/a1os-platform-api/api/a1os_production_boundary.py:146:def audit(c, p, action, resource, resource_id=None):
+.private/platform/a1os-platform-api/api/a1os_production_boundary.py:148:        INSERT INTO professional_services_audit_log
+.private/platform/a1os-platform-api/PRODUCT.md:43:| Audit | `GET /audit` |
+.private/platform/a1os-platform-api/database/schema.sql:137:CREATE TABLE IF NOT EXISTS audit_log (
+.private/platform/a1os-platform-api/database/schema.sql:152:CREATE INDEX IF NOT EXISTS idx_audit_org ON audit_log (organization_id, created_at);

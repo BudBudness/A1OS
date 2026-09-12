@@ -91,13 +91,7 @@ login() {
     local had_xtrace=0
 
     if [ -z "${A1OS_ADMIN_PASSWORD:-}" ]; then
-        local secret_file="${A1OS_ADMIN_PASSWORD_FILE:-$HOME/.a1os/platform-admin-password}"
-        if [ -r "$secret_file" ]; then
-            A1OS_ADMIN_PASSWORD="$(cat "$secret_file")"
-            export A1OS_ADMIN_PASSWORD
-        else
-            die "A1OS_ADMIN_PASSWORD is required"
-        fi
+        die "A1OS_ADMIN_PASSWORD is required"
     fi
 
     case "$-" in
