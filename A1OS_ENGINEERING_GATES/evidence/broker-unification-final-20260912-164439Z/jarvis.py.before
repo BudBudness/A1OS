@@ -7,10 +7,7 @@ from typing import Any
 from enum import Enum
 
 from fastapi import APIRouter, HTTPException
-from core.lifecycle import ExecutionBroker
-
-class ExecutionDenied(PermissionError):
-    pass
+from .execution_broker import ExecutionBroker, ExecutionDenied
 from pydantic import BaseModel
 from core.control_plane.jarvis_ai import JARVISAIInterpreter
 from core.state import system as a1os_system, HumanApprovalMarker

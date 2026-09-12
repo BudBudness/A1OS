@@ -1,0 +1,6 @@
+ M .private/core/control_plane/jarvis.py
+?? A1OS_ENGINEERING_GATES/evidence/broker-unification-audit-20260912-162334Z/
+?? A1OS_ENGINEERING_GATES/evidence/broker-unification-final-20260912-164439Z/
+?? A1OS_ENGINEERING_GATES/evidence/lifecycle-integration-20260912-162520Z/
+?? A1OS_ENGINEERING_GATES/evidence/runtime-lifecycle-integration-20260912-120008Z/
+?? A1OS_ENGINEERING_GATES/evidence/runtime-path-audit-20260912-154609Z/
