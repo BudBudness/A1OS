@@ -108,3 +108,9 @@ a1os_status_runtime.json
 delivery-final-release-*/
 
 data/state.json
+# A1OS generated audit/runtime evidence
+A1OS_ENGINEERING_GATES/evidence/*-audit-*/
+A1OS_ENGINEERING_GATES/evidence/*-integration-*/
+A1OS_ENGINEERING_GATES/evidence/runtime-path-*/
+A1OS_ENGINEERING_GATES/evidence/runtime-lifecycle-*/
+A1OS_ENGINEERING_GATES/evidence/wu20-secret-bootstrap-*/
