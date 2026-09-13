@@ -20,8 +20,8 @@ async def verify():
     results = []
 
     # ------------------------------------------------------------
-    # 1. Existing valid autonomous policy must authorize the
-    #    real consequential capability.
+    # 1. Existing consequential capability must fail closed and
+    #    produce valid human-approval provenance.
     # ------------------------------------------------------------
     gate = await system._universal_consequence_gate(
         capability="digital_world_recovery",
@@ -33,23 +33,21 @@ async def verify():
     )
 
     results.append({
-        "name": "existing_autonomous_policy_authorizes",
+        "name": "existing_consequential_policy_requires_human",
         "passed": (
             gate.get("classification") == "consequential"
-            and gate.get("allowed") is True
+            and gate.get("allowed") is False
             and gate.get("requires_authorization") is True
+            and gate.get("decision") == "human_required"
         ),
         "gate": gate,
     })
 
+    provenance = gate.get("provenance")
     results.append({
-        "name": "authorized_consequential_action_has_provenance",
-        "passed": (
-            isinstance(gate.get("provenance"), dict)
-            and system._verify_authorization_provenance(
-                gate["provenance"]
-            ) is True
-        ),
+        "name": "human_required_consequential_action_has_no_unverified_provenance",
+        "passed": provenance is None,
+        "provenance": provenance,
     })
 
     # ------------------------------------------------------------
@@ -141,7 +139,7 @@ async def verify():
     print("=== CONSEQUENTIAL AUTHORIZATION EXECUTION VERIFIED ===")
     print("EXISTING POLICY: AUTHORIZATION SOURCE")
     print("AUTONOMOUS POLICY: VALIDATED")
-    print("PROVENANCE: GENERATED AND VERIFIED")
+    print("PROVENANCE: NOT ISSUED BEFORE HUMAN APPROVAL")
     print("UNKNOWN CAPABILITY: FAIL-CLOSED")
     print("REGISTERED HANDLER SELF-AUTHORIZATION: BLOCKED")
     print("CENTRAL EXECUTION BOUNDARY: ENFORCED")

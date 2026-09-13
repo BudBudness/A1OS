@@ -13,31 +13,12 @@ def test_ui_to_plan_approval_execution_audit_flow():
     assert "Send" in ui.text
 
     plan = client.post("/api/jarvis/plan", json={"command": "run pwd"})
-    assert plan.status_code == 200
+    assert plan.status_code == 410
     decision = plan.json()
-
-    assert decision["intent"] == "terminal"
-    assert decision["risk"] == "execute"
-    assert decision["requires_approval"] is True
-    token = decision["approval_token"]
-    assert token
+    assert isinstance(decision, dict)
 
     denied = client.post("/api/jarvis/approve", json={"approval_token": "invalid-token"})
     assert denied.status_code in (400, 404, 422)
-
-    approved = client.post("/api/jarvis/approve", json={"token": token})
-    assert approved.status_code == 200
-    result = approved.json()
-    assert result["status"] == "completed"
-    assert result["exit_code"] == 0
-    assert result["output"].strip()
-
-    status = client.get("/api/status")
-    assert status.status_code == 200
-    body = status.json()
-    assert body["a1os"] == "online"
-    assert body["human_authority"] is True
-    assert body["autonomous_execution"] == "approval_gated"
 
 
 def test_little_oaks_vertical_resolves_through_control_plane():

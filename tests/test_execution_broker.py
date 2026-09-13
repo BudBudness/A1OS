@@ -14,16 +14,13 @@ def test_execution_requires_human_approval():
     assert broker.audit[-1]["event"] == "execution_denied"
 
 
-def test_approved_execution_runs_through_broker():
+def test_approved_execution_requires_capability_bound_authorization():
     broker = ExecutionBroker()
 
-    result = asyncio.run(
-        broker.execute("printf 'A1OS_BROKER_OK'", approved=True)
-    )
-
-    assert result["exit_code"] == 0
-    assert result["output"] == "A1OS_BROKER_OK"
-    assert broker.audit[-1]["event"] == "execution_result"
+    with pytest.raises(Exception, match="Capability-bound authorization is required"):
+        asyncio.run(
+            broker.execute("printf 'A1OS_BROKER_OK'", approved=True)
+        )
 
 
 def test_empty_command_rejected():

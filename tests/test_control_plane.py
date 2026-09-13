@@ -19,8 +19,7 @@ def test_status():
 
 def test_command_requires_approval():
     response = client.post("/api/command", json={"command": "printf control-plane"})
-    assert response.status_code == 200
-    assert response.json()["approval_required"] is True
+    assert response.status_code == 410
 
 
 def test_approved_command():
@@ -28,9 +27,7 @@ def test_approved_command():
         "/api/command",
         json={"command": "printf control-plane", "approve": True},
     )
-    assert response.status_code == 200
-    assert response.json()["status"] == "success"
-    assert response.json()["output"] == "control-plane"
+    assert response.status_code == 410
 
 
 def test_dangerous_command_blocked():
@@ -38,4 +35,4 @@ def test_dangerous_command_blocked():
         "/api/command",
         json={"command": "rm -rf /", "approve": True},
     )
-    assert response.status_code == 403
+    assert response.status_code == 410

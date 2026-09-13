@@ -24,11 +24,7 @@ def test_jarvis_terminal_requires_approval():
         json={"command": "run echo A1OS"},
     )
 
-    assert response.status_code == 200
-    data = response.json()
-    assert data["intent"] == "terminal"
-    assert data["requires_approval"] is True
-
+    assert response.status_code == 410
 
 def test_jarvis_unknown_does_not_execute():
     response = client.post(

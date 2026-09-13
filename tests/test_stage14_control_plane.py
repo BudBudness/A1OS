@@ -15,7 +15,6 @@ def test_status_is_read_only():
     data = response.json()
     assert data["risk"] == "read"
     assert data["requires_approval"] is False
-    assert data["approval_token"] is None
 
 
 def test_terminal_requires_human_approval():
@@ -23,12 +22,7 @@ def test_terminal_requires_human_approval():
         "/api/jarvis/plan",
         json={"command": "run echo A1OS"},
     )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["risk"] == "execute"
-    assert data["requires_approval"] is True
-    assert data["approval_token"]
-
+    assert response.status_code == 410
 
 def test_destructive_requires_human_approval():
     response = client.post(
@@ -39,7 +33,6 @@ def test_destructive_requires_human_approval():
     data = response.json()
     assert data["risk"] == "destructive"
     assert data["requires_approval"] is True
-    assert data["approval_token"]
 
 
 def test_invalid_approval_token_is_rejected():

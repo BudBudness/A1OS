@@ -18,7 +18,8 @@ async def verify():
     system = A1OS()
     registry = system.capabilities
 
-    # 1. Central authorized dispatch must succeed.
+    # 1. Consequential central dispatch must remain behind the
+    #    human-authorization consequence gate.
     try:
         result = await system.execute(
             TARGET,
@@ -27,12 +28,18 @@ async def verify():
 
         results.append({
             "name": "central_dispatch_authorized_execution",
-            "passed": isinstance(result, dict),
+            "passed": False,
+            "unexpected_result": result,
         })
     except Exception as exc:
+        text = str(exc).lower()
+
         results.append({
             "name": "central_dispatch_authorized_execution",
-            "passed": False,
+            "passed": (
+                "consequence gate blocked execution" in text
+                and "human_required" in text
+            ),
             "exception": type(exc).__name__,
             "message": str(exc),
         })
@@ -176,7 +183,7 @@ async def verify():
     })
 
     # 6. Static source-level reachability analysis.
-    source_path = Path("core/state.py")
+    source_path = Path(".private/core/state.py")
     source = source_path.read_text()
     tree = ast.parse(source)
 
