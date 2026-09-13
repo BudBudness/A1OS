@@ -284,19 +284,19 @@ class A1OS:
         if not executor.exists():
             raise RuntimeError("Build executor not found")
 
-        result = subprocess.run(
+        result = await Sandbox().execute(
             [sys.executable, str(executor), request],
-            cwd=executor.parents[3],
-            capture_output=True,
-            text=True,
-            check=False,
         )
 
+        output = result.result or {}
+        exit_code = output.get("returncode", 1) if isinstance(output, dict) else 1
+        stdout = output.get("stdout", "") if isinstance(output, dict) else str(output)
+
         return {
-            "status": "completed" if result.returncode == 0 else "failed",
+            "status": "completed" if result.state.name == "COMPLETED" else "failed",
             "capability": "build_change",
-            "exit_code": result.returncode,
-            "output": result.stdout,
+            "exit_code": exit_code,
+            "output": stdout,
             "error": result.stderr,
         }
 
@@ -331,7 +331,7 @@ class A1OS:
         if not factory.exists():
             raise RuntimeError("Deployment factory not found")
 
-        result = subprocess.run(
+        result = await Sandbox().execute(
             [
                 sys.executable,
                 str(factory),
@@ -339,10 +339,6 @@ class A1OS:
                 template_slug,
                 product,
             ],
-            cwd=factory.parents[2],
-            capture_output=True,
-            text=True,
-            check=False,
         )
 
         return {
@@ -1194,19 +1190,14 @@ class A1OS:
         }
 
     async def _capability_service_management(self, operation="list", **kwargs):
-        import subprocess
-
         if operation == "list":
-            result = subprocess.run(
+            result = await Sandbox().execute(
                 ["ps", "-ef"],
-                capture_output=True,
-                text=True,
-                check=False,
             )
 
             services = [
                 line
-                for line in stdout.splitlines()
+                for line in ((result.result or {}).get("stdout", "") if isinstance(result.result, dict) else str(result.result or "")).splitlines()
                 if line.strip()
             ]
 
@@ -1217,16 +1208,13 @@ class A1OS:
             }
 
         if operation == "health":
-            result = subprocess.run(
+            result = await Sandbox().execute(
                 ["ps", "-ef"],
-                capture_output=True,
-                text=True,
-                check=False,
             )
 
             services = [
                 line
-                for line in result.stdout.splitlines()
+                for line in ((result.result or {}).get("stdout", "") if isinstance(result.result, dict) else str(result.result or "")).splitlines()
                 if line.strip()
             ]
 
@@ -1242,19 +1230,14 @@ class A1OS:
 
     async def _capability_process_management(self, operation="list", **kwargs):
         action = operation
-        import subprocess
-
         if action == "list":
-            result = subprocess.run(
+            result = await Sandbox().execute(
                 ["ps", "-ef"],
-                capture_output=True,
-                text=True,
-                check=False,
             )
 
             processes = [
                 line
-                for line in result.stdout.splitlines()
+                for line in ((result.result or {}).get("stdout", "") if isinstance(result.result, dict) else str(result.result or "")).splitlines()
                 if line.strip()
             ]
 
@@ -1265,16 +1248,13 @@ class A1OS:
             }
 
         if action == "health":
-            result = subprocess.run(
+            result = await Sandbox().execute(
                 ["ps", "-ef"],
-                capture_output=True,
-                text=True,
-                check=False,
             )
 
             processes = [
                 line
-                for line in result.stdout.splitlines()
+                for line in ((result.result or {}).get("stdout", "") if isinstance(result.result, dict) else str(result.result or "")).splitlines()
                 if line.strip()
             ]
 
@@ -1374,7 +1354,7 @@ class A1OS:
             "return_code": return_code,
             "findings": [
                 line
-                for line in result.stdout.splitlines()
+                for line in ((result.result or {}).get("stdout", "") if isinstance(result.result, dict) else str(result.result or "")).splitlines()
                 if line.strip()
             ],
         }
@@ -2490,15 +2470,18 @@ class A1OS:
             )
 
         elif action == "database_recovery":
-            check = subprocess.run(
+            check = await Sandbox().execute(
                 ["python3", "-c", "print('database recovery check')"],
-                capture_output=True,
-                text=True,
-                check=False,
+            )
+
+            check_output = (
+                check.result.get("stdout", "")
+                if isinstance(check.result, dict)
+                else str(check.result or "")
             )
 
             action_result["result"] = (
-                check.stdout.strip()
+                check_output.strip()
                 or "database recovery check completed"
             )
 

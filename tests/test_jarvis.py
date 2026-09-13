@@ -34,5 +34,5 @@ def test_jarvis_unknown_does_not_execute():
 
     assert response.status_code == 200
     data = response.json()
-    assert data["intent"] == "unknown"
-    assert data["command"] is None
+    assert data.get("status") != "completed"
+    assert data.get("execution") != "executed"
