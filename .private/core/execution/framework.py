@@ -2,6 +2,7 @@ import json, os, uuid, hashlib, shutil
 from datetime import datetime
 from governance.core import GovernanceCore
 from core.execution.dispatcher import route_task
+from core.lifecycle import ExecutionBroker, ExecutionRequest
 
 BASE = "/data/data/com.termux/files/home/A1OS"
 
@@ -19,7 +20,17 @@ class ExecutionEngine:
             
             try:
                 if self.governance.check_task(task):
-                    if route_task(task):
+                    request = ExecutionRequest(
+                        command=f"route_task:{task.get("id", "unknown")}",
+                        payload=task,
+                        approval_token=task.get("approval_token"),
+                        request_id=task.get("id"),
+                    )
+                    broker = ExecutionBroker(
+                        executor=lambda _request: route_task(task)
+                    )
+                    result = broker.execute(request)
+                    if result.state.value == "completed" and result.result:
                         self.log_exec(task, "SUCCESS")
                         shutil.move(path, f"{BASE}/data/tasks/archive/{task['id']}.json")
                     else:
