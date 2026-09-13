@@ -2286,7 +2286,6 @@ class A1OS:
     ):
         import json
         import sqlite3
-        import subprocess
         import time
         import uuid
 
