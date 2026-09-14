@@ -1,17 +1,8 @@
 {
   "vertical": "events",
+  "state_owner": "frontend",
+  "server_state_owner": "A1OS Core/Platform",
   "tenant_scoped": true,
-  "platform_authority": true,
-  "capabilities": [
-    "events",
-    "venues",
-    "tickets",
-    "attendees",
-    "vendors",
-    "payments",
-    "notifications",
-    "reports"
-  ],
-  "server_authority": "A1OS Core/Platform",
-  "client_authority": "presentation_and_workflow_state_only"
+  "optimistic_state_allowed": true,
+  "local_persistence": false
 }

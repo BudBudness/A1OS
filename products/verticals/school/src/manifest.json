@@ -1,0 +1,78 @@
+{
+  "slug": "school",
+  "name": "School Management",
+  "platform": "A1OS Core/Platform",
+  "backend_owner": "A1OS Core/Platform",
+  "database_owner": "A1OS Core/Platform",
+  "infrastructure_owner": "A1OS Core/Platform",
+  "frontend_only": true,
+  "status": "implementation-ready",
+  "capabilities": [
+    "organizations",
+    "users",
+    "roles",
+    "parties",
+    "students",
+    "parents",
+    "admissions",
+    "attendance",
+    "fees",
+    "notifications",
+    "audit",
+    "site_content"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "Dashboard"
+    },
+    {
+      "path": "/organizations",
+      "page": "Organizations"
+    },
+    {
+      "path": "/users",
+      "page": "Users"
+    },
+    {
+      "path": "/roles",
+      "page": "Roles"
+    },
+    {
+      "path": "/parties",
+      "page": "Parties"
+    },
+    {
+      "path": "/students",
+      "page": "Students"
+    },
+    {
+      "path": "/parents",
+      "page": "Parents"
+    },
+    {
+      "path": "/admissions",
+      "page": "Admissions"
+    },
+    {
+      "path": "/attendance",
+      "page": "Attendance"
+    },
+    {
+      "path": "/fees",
+      "page": "Fees"
+    },
+    {
+      "path": "/notifications",
+      "page": "Notifications"
+    },
+    {
+      "path": "/audit",
+      "page": "Audit"
+    },
+    {
+      "path": "/site-content",
+      "page": "Site Content"
+    }
+  ]
+}

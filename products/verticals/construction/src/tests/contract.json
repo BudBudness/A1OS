@@ -1,11 +1,13 @@
 {
   "vertical": "construction",
-  "required": [
-    "tenant isolation",
-    "authenticated access",
-    "capability visibility",
-    "platform API usage",
-    "no local persistence authority",
-    "no direct execution authority"
+  "required": true,
+  "checks": [
+    "frontend-only",
+    "platform-owned-authentication",
+    "platform-owned-tenancy",
+    "platform-owned-authorization",
+    "platform-owned-persistence",
+    "platform-owned-audit",
+    "capability-routes-present"
   ]
 }

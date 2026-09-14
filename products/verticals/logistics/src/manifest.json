@@ -1,0 +1,58 @@
+{
+  "slug": "logistics",
+  "name": "Logistics",
+  "platform": "A1OS Core/Platform",
+  "backend_owner": "A1OS Core/Platform",
+  "database_owner": "A1OS Core/Platform",
+  "infrastructure_owner": "A1OS Core/Platform",
+  "frontend_only": true,
+  "status": "implementation-ready",
+  "capabilities": [
+    "customers",
+    "shipments",
+    "vehicles",
+    "drivers",
+    "tracking",
+    "billing",
+    "inventory",
+    "reports"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "Dashboard"
+    },
+    {
+      "path": "/customers",
+      "page": "Customers"
+    },
+    {
+      "path": "/shipments",
+      "page": "Shipments"
+    },
+    {
+      "path": "/vehicles",
+      "page": "Vehicles"
+    },
+    {
+      "path": "/drivers",
+      "page": "Drivers"
+    },
+    {
+      "path": "/tracking",
+      "page": "Tracking"
+    },
+    {
+      "path": "/billing",
+      "page": "Billing"
+    },
+    {
+      "path": "/inventory",
+      "page": "Inventory"
+    },
+    {
+      "path": "/reports",
+      "page": "Reports"
+    }
+  ]
+}

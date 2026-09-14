@@ -1,0 +1,58 @@
+{
+  "slug": "salon",
+  "name": "Salon / Barber",
+  "platform": "A1OS Core/Platform",
+  "backend_owner": "A1OS Core/Platform",
+  "database_owner": "A1OS Core/Platform",
+  "infrastructure_owner": "A1OS Core/Platform",
+  "frontend_only": true,
+  "status": "implementation-ready",
+  "capabilities": [
+    "customers",
+    "staff",
+    "services",
+    "appointments",
+    "products",
+    "payments",
+    "inventory",
+    "reports"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "Dashboard"
+    },
+    {
+      "path": "/customers",
+      "page": "Customers"
+    },
+    {
+      "path": "/staff",
+      "page": "Staff"
+    },
+    {
+      "path": "/services",
+      "page": "Services"
+    },
+    {
+      "path": "/appointments",
+      "page": "Appointments"
+    },
+    {
+      "path": "/products",
+      "page": "Products"
+    },
+    {
+      "path": "/payments",
+      "page": "Payments"
+    },
+    {
+      "path": "/inventory",
+      "page": "Inventory"
+    },
+    {
+      "path": "/reports",
+      "page": "Reports"
+    }
+  ]
+}

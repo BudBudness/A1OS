@@ -1,0 +1,58 @@
+{
+  "slug": "events",
+  "name": "Events",
+  "platform": "A1OS Core/Platform",
+  "backend_owner": "A1OS Core/Platform",
+  "database_owner": "A1OS Core/Platform",
+  "infrastructure_owner": "A1OS Core/Platform",
+  "frontend_only": true,
+  "status": "implementation-ready",
+  "capabilities": [
+    "events",
+    "venues",
+    "tickets",
+    "attendees",
+    "vendors",
+    "payments",
+    "notifications",
+    "reports"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "Dashboard"
+    },
+    {
+      "path": "/events",
+      "page": "Events"
+    },
+    {
+      "path": "/venues",
+      "page": "Venues"
+    },
+    {
+      "path": "/tickets",
+      "page": "Tickets"
+    },
+    {
+      "path": "/attendees",
+      "page": "Attendees"
+    },
+    {
+      "path": "/vendors",
+      "page": "Vendors"
+    },
+    {
+      "path": "/payments",
+      "page": "Payments"
+    },
+    {
+      "path": "/notifications",
+      "page": "Notifications"
+    },
+    {
+      "path": "/reports",
+      "page": "Reports"
+    }
+  ]
+}

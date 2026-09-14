@@ -1,0 +1,58 @@
+{
+  "slug": "music",
+  "name": "Music / Artist",
+  "platform": "A1OS Core/Platform",
+  "backend_owner": "A1OS Core/Platform",
+  "database_owner": "A1OS Core/Platform",
+  "infrastructure_owner": "A1OS Core/Platform",
+  "frontend_only": true,
+  "status": "implementation-ready",
+  "capabilities": [
+    "artists",
+    "releases",
+    "catalog",
+    "events",
+    "fans",
+    "media",
+    "revenue",
+    "analytics"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "Dashboard"
+    },
+    {
+      "path": "/artists",
+      "page": "Artists"
+    },
+    {
+      "path": "/releases",
+      "page": "Releases"
+    },
+    {
+      "path": "/catalog",
+      "page": "Catalog"
+    },
+    {
+      "path": "/events",
+      "page": "Events"
+    },
+    {
+      "path": "/fans",
+      "page": "Fans"
+    },
+    {
+      "path": "/media",
+      "page": "Media"
+    },
+    {
+      "path": "/revenue",
+      "page": "Revenue"
+    },
+    {
+      "path": "/analytics",
+      "page": "Analytics"
+    }
+  ]
+}

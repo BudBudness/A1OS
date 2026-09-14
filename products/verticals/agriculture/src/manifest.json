@@ -1,0 +1,58 @@
+{
+  "slug": "agriculture",
+  "name": "Agriculture",
+  "platform": "A1OS Core/Platform",
+  "backend_owner": "A1OS Core/Platform",
+  "database_owner": "A1OS Core/Platform",
+  "infrastructure_owner": "A1OS Core/Platform",
+  "frontend_only": true,
+  "status": "implementation-ready",
+  "capabilities": [
+    "farms",
+    "crops",
+    "livestock",
+    "inputs",
+    "production",
+    "inventory",
+    "sales",
+    "reports"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "Dashboard"
+    },
+    {
+      "path": "/farms",
+      "page": "Farms"
+    },
+    {
+      "path": "/crops",
+      "page": "Crops"
+    },
+    {
+      "path": "/livestock",
+      "page": "Livestock"
+    },
+    {
+      "path": "/inputs",
+      "page": "Inputs"
+    },
+    {
+      "path": "/production",
+      "page": "Production"
+    },
+    {
+      "path": "/inventory",
+      "page": "Inventory"
+    },
+    {
+      "path": "/sales",
+      "page": "Sales"
+    },
+    {
+      "path": "/reports",
+      "page": "Reports"
+    }
+  ]
+}

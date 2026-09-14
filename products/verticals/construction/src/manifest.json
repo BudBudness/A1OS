@@ -1,0 +1,63 @@
+{
+  "slug": "construction",
+  "name": "Construction",
+  "platform": "A1OS Core/Platform",
+  "backend_owner": "A1OS Core/Platform",
+  "database_owner": "A1OS Core/Platform",
+  "infrastructure_owner": "A1OS Core/Platform",
+  "frontend_only": true,
+  "status": "implementation-ready",
+  "capabilities": [
+    "projects",
+    "sites",
+    "contractors",
+    "materials",
+    "procurement",
+    "inventory",
+    "budgets",
+    "ledger",
+    "reports"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "Dashboard"
+    },
+    {
+      "path": "/projects",
+      "page": "Projects"
+    },
+    {
+      "path": "/sites",
+      "page": "Sites"
+    },
+    {
+      "path": "/contractors",
+      "page": "Contractors"
+    },
+    {
+      "path": "/materials",
+      "page": "Materials"
+    },
+    {
+      "path": "/procurement",
+      "page": "Procurement"
+    },
+    {
+      "path": "/inventory",
+      "page": "Inventory"
+    },
+    {
+      "path": "/budgets",
+      "page": "Budgets"
+    },
+    {
+      "path": "/ledger",
+      "page": "Ledger"
+    },
+    {
+      "path": "/reports",
+      "page": "Reports"
+    }
+  ]
+}

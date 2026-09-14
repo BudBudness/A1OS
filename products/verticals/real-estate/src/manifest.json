@@ -1,0 +1,58 @@
+{
+  "slug": "real-estate",
+  "name": "Real Estate",
+  "platform": "A1OS Core/Platform",
+  "backend_owner": "A1OS Core/Platform",
+  "database_owner": "A1OS Core/Platform",
+  "infrastructure_owner": "A1OS Core/Platform",
+  "frontend_only": true,
+  "status": "implementation-ready",
+  "capabilities": [
+    "properties",
+    "listings",
+    "clients",
+    "leases",
+    "payments",
+    "maintenance",
+    "reports",
+    "notifications"
+  ],
+  "routes": [
+    {
+      "path": "/",
+      "page": "Dashboard"
+    },
+    {
+      "path": "/properties",
+      "page": "Properties"
+    },
+    {
+      "path": "/listings",
+      "page": "Listings"
+    },
+    {
+      "path": "/clients",
+      "page": "Clients"
+    },
+    {
+      "path": "/leases",
+      "page": "Leases"
+    },
+    {
+      "path": "/payments",
+      "page": "Payments"
+    },
+    {
+      "path": "/maintenance",
+      "page": "Maintenance"
+    },
+    {
+      "path": "/reports",
+      "page": "Reports"
+    },
+    {
+      "path": "/notifications",
+      "page": "Notifications"
+    }
+  ]
+}
