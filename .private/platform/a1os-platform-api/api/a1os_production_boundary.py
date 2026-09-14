@@ -9,7 +9,7 @@ from decimal import Decimal, InvalidOperation
 from fastapi import Header, HTTPException
 
 ROOT = Path(__file__).resolve().parents[3]
-DB = ROOT / "data" / "professional_services.db"
+DB = ROOT / "runtime" / "a1os-platform-api" / "deployments" / "a1os-platform" / "data" / "a1os-platform.db"
 
 ROLE_PERMISSIONS = {
     "owner": {"read", "write", "delete", "admin"},
@@ -50,6 +50,16 @@ def migrate():
         tenant_id TEXT NOT NULL,
         expires_at TEXT NOT NULL,
         active INTEGER NOT NULL DEFAULT 1
+    );
+
+    CREATE TABLE IF NOT EXISTS a1os_audit_log(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id TEXT NOT NULL,
+        actor TEXT NOT NULL,
+        action TEXT NOT NULL,
+        resource TEXT NOT NULL,
+        resource_id TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     """)
     migration = "production-boundary-v1"
@@ -145,7 +155,7 @@ def money(value):
 
 def audit(c, p, action, resource, resource_id=None):
     c.execute("""
-        INSERT INTO professional_services_audit_log
+        INSERT INTO a1os_audit_log
         (tenant_id,actor,action,resource,resource_id)
         VALUES(?,?,?,?,?)
     """, (

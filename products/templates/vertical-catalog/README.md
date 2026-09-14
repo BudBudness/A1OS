@@ -27,7 +27,6 @@ Template
 - salon
 - real-estate
 - logistics
-- professional-services
 - music
 - events
 - agriculture

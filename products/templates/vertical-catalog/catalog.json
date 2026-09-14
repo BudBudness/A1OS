@@ -262,30 +262,6 @@
         "audit"
       ]
     },
-    "professional-services": {
-      "name": "Professional Services",
-      "slug": "professional-services",
-      "description": "Clients, projects, tasks, time, billing and documents.",
-      "capabilities": [
-        "clients",
-        "projects",
-        "tasks",
-        "time_tracking",
-        "billing",
-        "documents",
-        "reports",
-        "notifications"
-      ],
-      "platform_domains": [
-        "auth",
-        "tenancy",
-        "rbac",
-        "parties",
-        "ledger",
-        "notifications",
-        "audit"
-      ]
-    },
     "music": {
       "name": "Music / Artist",
       "slug": "music",

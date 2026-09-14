@@ -303,7 +303,6 @@ class A1OS:
     async def _capability_deploy_application(
         self,
         product: str = "platform",
-        template_slug: str = "professional-services",
         environment: str = "production",
         **kwargs,
     ):

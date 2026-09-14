@@ -106,8 +106,6 @@ IMPORTANT SEMANTIC MAPPINGS:
                 deployment_text = lowered_command
 
                 template_map = {
-                    "professional services": "professional-services",
-                    "professional-services": "professional-services",
                     "construction": "construction",
                     "agriculture": "agriculture",
                     "car wash": "car-wash",
@@ -126,7 +124,6 @@ IMPORTANT SEMANTIC MAPPINGS:
                     "school": "school",
                 }
 
-                template_slug = "professional-services"
 
                 for phrase, slug in template_map.items():
                     if phrase in deployment_text:
