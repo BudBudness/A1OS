@@ -1,0 +1,30 @@
+{
+  "name": "School Management",
+  "slug": "school",
+  "description": "School operations, students, parents, admissions, attendance, fees and communications.",
+  "capabilities": [
+    "organizations",
+    "users",
+    "roles",
+    "parties",
+    "students",
+    "parents",
+    "admissions",
+    "attendance",
+    "fees",
+    "notifications",
+    "audit",
+    "site_content"
+  ],
+  "platform_domains": [
+    "auth",
+    "tenancy",
+    "rbac",
+    "education",
+    "notifications",
+    "audit"
+  ],
+  "status": "scaffolded",
+  "implementation": "frontend-pending",
+  "platform": "A1OS Core/Platform"
+}

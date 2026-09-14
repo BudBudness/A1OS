@@ -1,0 +1,28 @@
+{
+  "name": "Events",
+  "slug": "events",
+  "description": "Events, venues, tickets, attendees, vendors and payments.",
+  "capabilities": [
+    "events",
+    "venues",
+    "tickets",
+    "attendees",
+    "vendors",
+    "payments",
+    "notifications",
+    "reports"
+  ],
+  "platform_domains": [
+    "auth",
+    "tenancy",
+    "rbac",
+    "parties",
+    "products",
+    "ledger",
+    "notifications",
+    "audit"
+  ],
+  "status": "scaffolded",
+  "implementation": "frontend-pending",
+  "platform": "A1OS Core/Platform"
+}

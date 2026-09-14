@@ -1,0 +1,28 @@
+{
+  "name": "Logistics",
+  "slug": "logistics",
+  "description": "Customers, shipments, vehicles, drivers, tracking and financial operations.",
+  "capabilities": [
+    "customers",
+    "shipments",
+    "vehicles",
+    "drivers",
+    "tracking",
+    "billing",
+    "inventory",
+    "reports"
+  ],
+  "platform_domains": [
+    "auth",
+    "tenancy",
+    "rbac",
+    "parties",
+    "inventory",
+    "ledger",
+    "notifications",
+    "audit"
+  ],
+  "status": "scaffolded",
+  "implementation": "frontend-pending",
+  "platform": "A1OS Core/Platform"
+}

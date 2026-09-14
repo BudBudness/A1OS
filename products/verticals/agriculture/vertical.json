@@ -1,0 +1,28 @@
+{
+  "name": "Agriculture",
+  "slug": "agriculture",
+  "description": "Farms, crops, livestock, inputs, production, inventory and sales.",
+  "capabilities": [
+    "farms",
+    "crops",
+    "livestock",
+    "inputs",
+    "production",
+    "inventory",
+    "sales",
+    "reports"
+  ],
+  "platform_domains": [
+    "auth",
+    "tenancy",
+    "rbac",
+    "parties",
+    "products",
+    "inventory",
+    "ledger",
+    "audit"
+  ],
+  "status": "scaffolded",
+  "implementation": "frontend-pending",
+  "platform": "A1OS Core/Platform"
+}

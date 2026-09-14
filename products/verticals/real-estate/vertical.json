@@ -1,0 +1,28 @@
+{
+  "name": "Real Estate",
+  "slug": "real-estate",
+  "description": "Properties, listings, clients, leases, payments and property operations.",
+  "capabilities": [
+    "properties",
+    "listings",
+    "clients",
+    "leases",
+    "payments",
+    "maintenance",
+    "reports",
+    "notifications"
+  ],
+  "platform_domains": [
+    "auth",
+    "tenancy",
+    "rbac",
+    "parties",
+    "products",
+    "ledger",
+    "notifications",
+    "audit"
+  ],
+  "status": "scaffolded",
+  "implementation": "frontend-pending",
+  "platform": "A1OS Core/Platform"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Music / Artist",
+  "slug": "music",
+  "description": "Artists, releases, catalog, events, fans, revenue and media operations.",
+  "capabilities": [
+    "artists",
+    "releases",
+    "catalog",
+    "events",
+    "fans",
+    "media",
+    "revenue",
+    "analytics"
+  ],
+  "platform_domains": [
+    "auth",
+    "tenancy",
+    "rbac",
+    "parties",
+    "products",
+    "ledger",
+    "notifications",
+    "audit"
+  ],
+  "status": "scaffolded",
+  "implementation": "frontend-pending",
+  "platform": "A1OS Core/Platform"
+}

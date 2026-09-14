@@ -1,0 +1,29 @@
+{
+  "name": "Construction",
+  "slug": "construction",
+  "description": "Projects, sites, contractors, materials, procurement and financial control.",
+  "capabilities": [
+    "projects",
+    "sites",
+    "contractors",
+    "materials",
+    "procurement",
+    "inventory",
+    "budgets",
+    "ledger",
+    "reports"
+  ],
+  "platform_domains": [
+    "auth",
+    "tenancy",
+    "rbac",
+    "parties",
+    "products",
+    "inventory",
+    "ledger",
+    "audit"
+  ],
+  "status": "scaffolded",
+  "implementation": "frontend-pending",
+  "platform": "A1OS Core/Platform"
+}
