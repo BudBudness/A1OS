@@ -1,0 +1,17 @@
+{
+  "vertical": "real-estate",
+  "tenant_scoped": true,
+  "platform_authority": true,
+  "capabilities": [
+    "properties",
+    "listings",
+    "clients",
+    "leases",
+    "payments",
+    "maintenance",
+    "reports",
+    "notifications"
+  ],
+  "server_authority": "A1OS Core/Platform",
+  "client_authority": "presentation_and_workflow_state_only"
+}

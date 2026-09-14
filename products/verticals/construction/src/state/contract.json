@@ -1,0 +1,18 @@
+{
+  "vertical": "construction",
+  "tenant_scoped": true,
+  "platform_authority": true,
+  "capabilities": [
+    "projects",
+    "sites",
+    "contractors",
+    "materials",
+    "procurement",
+    "inventory",
+    "budgets",
+    "ledger",
+    "reports"
+  ],
+  "server_authority": "A1OS Core/Platform",
+  "client_authority": "presentation_and_workflow_state_only"
+}

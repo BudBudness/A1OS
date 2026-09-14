@@ -1,0 +1,17 @@
+{
+  "vertical": "agriculture",
+  "tenant_scoped": true,
+  "platform_authority": true,
+  "capabilities": [
+    "farms",
+    "crops",
+    "livestock",
+    "inputs",
+    "production",
+    "inventory",
+    "sales",
+    "reports"
+  ],
+  "server_authority": "A1OS Core/Platform",
+  "client_authority": "presentation_and_workflow_state_only"
+}

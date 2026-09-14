@@ -1,0 +1,17 @@
+{
+  "vertical": "events",
+  "tenant_scoped": true,
+  "platform_authority": true,
+  "capabilities": [
+    "events",
+    "venues",
+    "tickets",
+    "attendees",
+    "vendors",
+    "payments",
+    "notifications",
+    "reports"
+  ],
+  "server_authority": "A1OS Core/Platform",
+  "client_authority": "presentation_and_workflow_state_only"
+}

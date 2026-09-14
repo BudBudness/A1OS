@@ -1,0 +1,21 @@
+{
+  "vertical": "school",
+  "tenant_scoped": true,
+  "platform_authority": true,
+  "capabilities": [
+    "organizations",
+    "users",
+    "roles",
+    "parties",
+    "students",
+    "parents",
+    "admissions",
+    "attendance",
+    "fees",
+    "notifications",
+    "audit",
+    "site_content"
+  ],
+  "server_authority": "A1OS Core/Platform",
+  "client_authority": "presentation_and_workflow_state_only"
+}

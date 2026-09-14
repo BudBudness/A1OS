@@ -1,56 +1,56 @@
 {
   "version": "1.0.0",
-  "status": "catalog-backed",
+  "status": "implementation-ready",
   "implementation_contract": "frontend-only",
   "platform": "A1OS Core/Platform",
   "verticals": [
     {
       "slug": "school",
       "name": "School Management",
-      "status": "scaffolded",
-      "implementation": "frontend-pending"
+      "status": "implementation-ready",
+      "implementation": "frontend-contract"
     },
     {
       "slug": "salon",
       "name": "Salon / Barber",
-      "status": "scaffolded",
-      "implementation": "frontend-pending"
+      "status": "implementation-ready",
+      "implementation": "frontend-contract"
     },
     {
       "slug": "real-estate",
       "name": "Real Estate",
-      "status": "scaffolded",
-      "implementation": "frontend-pending"
+      "status": "implementation-ready",
+      "implementation": "frontend-contract"
     },
     {
       "slug": "logistics",
       "name": "Logistics",
-      "status": "scaffolded",
-      "implementation": "frontend-pending"
+      "status": "implementation-ready",
+      "implementation": "frontend-contract"
     },
     {
       "slug": "music",
       "name": "Music / Artist",
-      "status": "scaffolded",
-      "implementation": "frontend-pending"
+      "status": "implementation-ready",
+      "implementation": "frontend-contract"
     },
     {
       "slug": "events",
       "name": "Events",
-      "status": "scaffolded",
-      "implementation": "frontend-pending"
+      "status": "implementation-ready",
+      "implementation": "frontend-contract"
     },
     {
       "slug": "agriculture",
       "name": "Agriculture",
-      "status": "scaffolded",
-      "implementation": "frontend-pending"
+      "status": "implementation-ready",
+      "implementation": "frontend-contract"
     },
     {
       "slug": "construction",
       "name": "Construction",
-      "status": "scaffolded",
-      "implementation": "frontend-pending"
+      "status": "implementation-ready",
+      "implementation": "frontend-contract"
     }
   ]
 }

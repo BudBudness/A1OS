@@ -1,0 +1,11 @@
+{
+  "vertical": "school",
+  "required": [
+    "tenant isolation",
+    "authenticated access",
+    "capability visibility",
+    "platform API usage",
+    "no local persistence authority",
+    "no direct execution authority"
+  ]
+}
