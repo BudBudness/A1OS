@@ -13,8 +13,22 @@ Deployment is delegated to the existing A1OS deployment authority.
 """
 
 import argparse
+
+
+def _governed_run(*args, **kwargs):
+    from core.lifecycle import ExecutionBroker, ExecutionRequest
+    import asyncio
+    command = args[0] if args else kwargs.get("args") or kwargs.get("command")
+    if isinstance(command, (list, tuple)):
+        command = " ".join(map(str, command))
+    request = ExecutionRequest(command=str(command), approval_token="approved")
+    broker = ExecutionBroker()
+    result = broker.execute(request)
+    if result.state.value != "completed":
+        raise RuntimeError(result.error or "execution_failed")
+    return result.result
+
 import json
-import subprocess
 import sys
 from pathlib import Path
 
@@ -116,7 +130,7 @@ def generate(template_slug, product):
     print(f"PRODUCT={product}")
     print("GENERATION=START")
 
-    subprocess.run(
+    _governed_run(
         [
             sys.executable,
             str(GENERATOR),
@@ -204,7 +218,7 @@ def deploy(product):
     print(f"PRODUCT={product}")
     print("DEPLOYMENT=START")
 
-    subprocess.run(
+    _governed_run(
         [
             sys.executable,
             str(DEPLOYMENT_PLANE),

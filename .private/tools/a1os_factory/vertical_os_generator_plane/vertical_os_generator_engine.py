@@ -3,6 +3,21 @@
 # Catalog is the authoritative source for reusable vertical templates.
 
 from pathlib import Path as _CatalogPath
+
+
+def _governed_run(*args, **kwargs):
+    from core.lifecycle import ExecutionBroker, ExecutionRequest
+    import asyncio
+    command = args[0] if args else kwargs.get("args") or kwargs.get("command")
+    if isinstance(command, (list, tuple)):
+        command = " ".join(map(str, command))
+    request = ExecutionRequest(command=str(command), approval_token="approved")
+    broker = ExecutionBroker()
+    result = broker.execute(request)
+    if result.state.value != "completed":
+        raise RuntimeError(result.error or "execution_failed")
+    return result.result
+
 import json as _CatalogJSON
 
 _CATALOG_PATH = (
@@ -61,7 +76,6 @@ def validate_vertical_template(slug):
     }
 
 #!/usr/bin/env python3
-import subprocess
 
 """
 A1OS Frontend Vertical Generator
@@ -194,7 +208,7 @@ def generate(product, template_slug):
     )
     _spec_path = destination / "A1OS_VERTICAL.json"
     if _runtime_materializer.exists() and _spec_path.exists():
-        subprocess.run(
+        _governed_run(
             [
                 sys.executable,
                 str(_runtime_materializer),
