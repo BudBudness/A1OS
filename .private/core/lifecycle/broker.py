@@ -9,6 +9,10 @@ from .models import ExecutionRequest, ExecutionResult, ExecutionState
 from core.recovery.checkpoints import CheckpointStore
 
 
+class ExecutionDenied(PermissionError):
+    """Raised when execution is denied by lifecycle governance."""
+
+
 class ExecutionBroker:
     """
     Approval-gated lifecycle broker.
@@ -32,6 +36,7 @@ class ExecutionBroker:
         max_retries: int = 0,
         heartbeat_interval: float = 0.0,
     ):
+        self.audit = []
         self.validator = validator or (lambda request: bool(request.command))
         self.authorizer = authorizer or (lambda request: bool(request.approval_token))
         self.executor = executor
@@ -53,6 +58,7 @@ class ExecutionBroker:
             **data,
         }
         self._evidence.setdefault(request_id, []).append(evidence)
+        self.audit.append(evidence)
         self._evidence_store.save(f"lifecycle:{request_id}", evidence)
         return evidence
 
@@ -72,7 +78,46 @@ class ExecutionBroker:
     def dispatch(self, request: ExecutionRequest) -> ExecutionResult:
         return self.execute(request)
 
-    def execute(self, request: ExecutionRequest) -> ExecutionResult:
+    def execute(
+        self,
+        request: ExecutionRequest | str,
+        approved: bool | None = None,
+    ) -> ExecutionResult:
+        if isinstance(request, str):
+            request = ExecutionRequest(command=request)
+
+        if not request.command or not request.command.strip():
+            if approved is not None:
+                raise ValueError("command must not be empty")
+            request_id = request.request_id
+            self._transition(request_id, ExecutionState.FAILED, reason="validation_failed")
+            return ExecutionResult(
+                request_id=request_id,
+                state=ExecutionState.FAILED,
+                result=None,
+                error="validation_failed",
+                attempts=0,
+            )
+
+        # Legacy approval flag is compatibility-only. False is an immediate
+        # human-approval denial; True never substitutes for capability-bound
+        # authorization.
+        if approved is False:
+            self.audit.append({
+                "event": "execution_denied",
+                "reason": "Human approval is required",
+            })
+            raise ExecutionDenied("Human approval is required")
+
+        if approved is True and not getattr(request, "authorization", None):
+            self.audit.append({
+                "event": "execution_denied",
+                "reason": "Capability-bound authorization is required",
+            })
+            raise ExecutionDenied("Capability-bound authorization is required")
+
+        return self._execute_sync(request)
+    def _execute_sync(self, request: ExecutionRequest) -> ExecutionResult:
         request_id = request.request_id
         attempts = 0
 
@@ -226,6 +271,7 @@ class ExecutionBroker:
         if not history or history[-1] != state:
             history.append(state)
         self._evidence.setdefault(request_id, []).append(evidence)
+        self.audit.append(evidence)
 
         self._evidence_store.save(
             f"lifecycle:{request_id}",
@@ -242,7 +288,7 @@ class ExecutionBroker:
     def verify(self, value: Any) -> bool:
         return bool(self.verifier(value))
 
-    def audit(self, request: ExecutionRequest, result: ExecutionResult) -> None:
+    def _audit_history(self, request: ExecutionRequest, result: ExecutionResult) -> None:
         self._audit(request, result)
 
     def _audit(self, request: ExecutionRequest, result: ExecutionResult) -> None:
