@@ -175,6 +175,8 @@ class ExecutionBroker:
             self._audit(request, result)
             return result
 
+        if request_id is not None:
+            self._transition(request_id, ExecutionState.VALIDATED)
         if not self.authorize(request):
             result = ExecutionResult(
                 request_id,
@@ -184,6 +186,8 @@ class ExecutionBroker:
             self._audit(request, result)
             return result
 
+        if request_id is not None:
+            self._transition(request_id, ExecutionState.AUTHORIZED)
         if not self.approve(request):
             result = ExecutionResult(
                 request_id,
@@ -193,6 +197,8 @@ class ExecutionBroker:
             self._audit(request, result)
             return result
 
+        if request_id is not None:
+            self._transition(request_id, ExecutionState.APPROVED)
         if self.executor is None:
             result = ExecutionResult(
                 request_id,
