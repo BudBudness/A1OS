@@ -32,7 +32,6 @@ with sqlite3.connect(DB_PATH) as conn:
 
 # 2. Overwrite dashboard_ui.py with the dynamic loop architecture
 dashboard_code = """import sqlite3
-import os
 
 DB_PATH = "a1os_state.db"
 
@@ -40,7 +39,7 @@ def format_currency(val):
     return f"{val:,.2f} UGX"
 
 def run_dashboard():
-    os.system("clear")
+    print("\033[2J\033[H", end="")
     print("=================================================================")
     print("🛡️                 A1OS MULTI-MATRIX SYSTEM CORE                 🛡️")
     print("=================================================================")

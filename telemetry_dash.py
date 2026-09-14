@@ -1,5 +1,4 @@
 import time
-import os
 import sys
 import json
 try:
@@ -19,7 +18,7 @@ def get_status():
 
 def main():
     while True:
-        os.system('clear')
+        print("\033[2J\033[H", end="")
         status = get_status()
         
         print("=" * 60)
