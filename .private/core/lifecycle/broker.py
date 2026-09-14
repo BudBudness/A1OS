@@ -43,6 +43,19 @@ class ExecutionBroker:
         self.max_retries = max(0, int(max_retries))
         self.heartbeat_interval = max(0.0, float(heartbeat_interval))
 
+    def _transition(self, request_id: str, state: ExecutionState, **data):
+        history = self._transitions.setdefault(request_id, [])
+        if not history or history[-1] != state:
+            history.append(state)
+        evidence = {
+            "request_id": request_id,
+            "state": state.value,
+            **data,
+        }
+        self._evidence.setdefault(request_id, []).append(evidence)
+        self._evidence_store.save(f"lifecycle:{request_id}", evidence)
+        return evidence
+
     def plan(self, request: ExecutionRequest) -> ExecutionResult:
         request_id = request.request_id or str(uuid.uuid4())
         return ExecutionResult(request_id, ExecutionState.PLANNED)
@@ -61,6 +74,7 @@ class ExecutionBroker:
 
     def execute(self, request: ExecutionRequest) -> ExecutionResult:
         request_id = request.request_id or str(uuid.uuid4())
+        self._transition(request_id, ExecutionState.PLANNED)
 
         if not self.validate(request):
             result = ExecutionResult(
@@ -71,6 +85,8 @@ class ExecutionBroker:
             self._audit(request, result)
             return result
 
+        self._transition(request_id, ExecutionState.VALIDATED)
+
         if not self.authorize(request):
             result = ExecutionResult(
                 request_id,
@@ -80,6 +96,8 @@ class ExecutionBroker:
             self._audit(request, result)
             return result
 
+        self._transition(request_id, ExecutionState.AUTHORIZED)
+
         if not self.approve(request):
             result = ExecutionResult(
                 request_id,
@@ -88,6 +106,8 @@ class ExecutionBroker:
             )
             self._audit(request, result)
             return result
+
+        self._transition(request_id, ExecutionState.APPROVED)
 
         if self.executor is None:
             result = ExecutionResult(
@@ -105,7 +125,11 @@ class ExecutionBroker:
             heartbeat = True
 
             try:
+                self._transition(request_id, ExecutionState.DISPATCHED)
+                self._transition(request_id, ExecutionState.EXECUTING, attempt=attempts)
                 value = self.executor(request)
+
+                self._transition(request_id, ExecutionState.CHECKPOINTED, attempt=attempts)
 
                 checkpoint = {
                     "request_id": request_id,
