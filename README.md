@@ -62,7 +62,7 @@ Portable Computing Platform
       │       │        │
       └───────┼────────┘
               ▼
-       Business Applications
+       Frontend Products
 ```
 
 ## Capabilities
@@ -121,11 +121,11 @@ A1OS provides the common platform layer for applications requiring:
 - Audit
 - Verification
 
-Business-specific applications can therefore share the same underlying platform instead of implementing these capabilities independently.
+Business-specific frontend products therefore share the same underlying A1OS platform instead of implementing independent backend infrastructure.
 
-## Business Applications
+## Frontend Products
 
-The platform can host many different application types, including:
+A1OS can power many different frontend products, including:
 
 - School management
 - Retail
@@ -141,9 +141,9 @@ The platform can host many different application types, including:
 - Professional services
 - Internal business systems
 
-The objective is not to create one application.
+The objective is not to create independent applications with separate backends.
 
-The objective is to provide a **reusable platform capable of operating many applications**.
+The objective is to provide a **reusable platform powering multiple frontend products**.
 
 ## Edge Computing
 
@@ -205,7 +205,7 @@ Server Runtime
         +
 Application Platform
         +
-Business Applications
+Frontend Products
         +
 Operational Tooling
 ```
@@ -240,7 +240,7 @@ The fundamental principle is:
 
 ## Current Platform
 
-The repository currently contains the A1OS core/platform runtime and catalog-backed executable frontend verticals, including:
+The repository currently contains the A1OS core/platform runtime and catalog-backed executable frontend products, including:
 
 - School
 - Salon
@@ -251,15 +251,15 @@ The repository currently contains the A1OS core/platform runtime and catalog-bac
 - Agriculture
 - Construction
 
-These verticals share the A1OS platform contracts rather than implementing independent backend infrastructure.
+These vertical products share A1OS platform contracts and consume the common A1OS backend/platform rather than implementing independent backend infrastructure.
 
 ## What This Enables
 
 The platform can be used to create and operate:
 
 - Personal development infrastructure
-- Business application platforms
-- Local business servers
+- Frontend product platforms
+- Local business services
 - Edge computing nodes
 - Automation systems
 - API platforms
