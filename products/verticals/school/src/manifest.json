@@ -6,7 +6,7 @@
   "database_owner": "A1OS Core/Platform",
   "infrastructure_owner": "A1OS Core/Platform",
   "frontend_only": true,
-  "status": "implementation-ready",
+  "status": "executable-frontend",
   "capabilities": [
     "organizations",
     "users",
@@ -74,5 +74,8 @@
       "path": "/site-content",
       "page": "Site Content"
     }
-  ]
+  ],
+  "implementation": "react-vite",
+  "frontend_runtime": "React 19 + Vite",
+  "platform_contract": "A1OS Core/Platform"
 }

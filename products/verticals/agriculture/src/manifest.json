@@ -6,7 +6,7 @@
   "database_owner": "A1OS Core/Platform",
   "infrastructure_owner": "A1OS Core/Platform",
   "frontend_only": true,
-  "status": "implementation-ready",
+  "status": "executable-frontend",
   "capabilities": [
     "farms",
     "crops",
@@ -54,5 +54,8 @@
       "path": "/reports",
       "page": "Reports"
     }
-  ]
+  ],
+  "implementation": "react-vite",
+  "frontend_runtime": "React 19 + Vite",
+  "platform_contract": "A1OS Core/Platform"
 }
