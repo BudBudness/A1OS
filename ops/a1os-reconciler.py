@@ -53,30 +53,64 @@ def probe(url: str):
 
 def run_adapter(service):
     adapter = service.get("adapter", [])
-    
+
     if service.get("type") == "observer":
         return "observer-only"
 
     if not adapter:
         return "no-adapter"
 
-    import subprocess
+    import asyncio
+    from core.lifecycle import ExecutionBroker, ExecutionRequest
+
+    async def executor(request):
+        proc = await asyncio.create_subprocess_exec(
+            *adapter,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                proc.communicate(), timeout=ADAPTER_TIMEOUT
+            )
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+            raise TimeoutError("adapter-timeout")
+
+        if proc.returncode != 0:
+            raise RuntimeError(
+                stderr.decode(errors="replace").strip() or
+                f"adapter exited {proc.returncode}"
+            )
+        return stdout.decode(errors="replace")
+
+    token = os.environ.get("A1OS_RECONCILER_APPROVAL_TOKEN")
+    if not token:
+        return "adapter-blocked"
 
     try:
-        subprocess.run(
-            adapter,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=ADAPTER_TIMEOUT,
-            close_fds=True
+        result = asyncio.run(
+            ExecutionBroker(executor=executor).execute_async(
+                ExecutionRequest(
+                    command=" ".join(map(str, adapter)),
+                    payload={"service": service.get("name"), "adapter": adapter},
+                    approval_token=token,
+                    request_id=f"reconciler-{service.get('name', 'unknown')}",
+                )
+            )
         )
-        return "adapter-ok"
-    except subprocess.TimeoutExpired:
-        return "adapter-timeout"
-    except subprocess.CalledProcessError:
+        if result.state.value == "completed":
+            return "adapter-ok"
+        if result.error and "adapter-timeout" in result.error:
+            return "adapter-timeout"
+        if result.error and "human_approval_required" in result.error:
+            return "adapter-blocked"
         return "adapter-failed"
-
+    except TimeoutError:
+        return "adapter-timeout"
+    except Exception:
+        return "adapter-failed"
 
 def external_status(observer_url: str) -> dict:
     if not observer_url:
