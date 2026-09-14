@@ -61,28 +61,15 @@ def run_adapter(service):
         return "no-adapter"
 
     import asyncio
+from core.execution.v2.security.sandbox import Sandbox
     from core.lifecycle import ExecutionBroker, ExecutionRequest
 
     async def executor(request):
-        proc = await asyncio.create_subprocess_exec(
-            *adapter,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+        result = await Sandbox().execute(
+            command if isinstance(command, str) else " ".join(map(str, command))
         )
-        try:
-            stdout, stderr = await asyncio.wait_for(
-                proc.communicate(), timeout=ADAPTER_TIMEOUT
-            )
-        except asyncio.TimeoutError:
-            proc.kill()
-            await proc.wait()
-            raise TimeoutError("adapter-timeout")
-
-        if proc.returncode != 0:
-            raise RuntimeError(
-                stderr.decode(errors="replace").strip() or
-                f"adapter exited {proc.returncode}"
-            )
+        if result.state.value != "completed":
+            raise RuntimeError(result.error or "execution_failed")
         return stdout.decode(errors="replace")
 
     token = os.environ.get("A1OS_RECONCILER_APPROVAL_TOKEN")
