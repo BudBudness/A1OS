@@ -54,3 +54,45 @@ def test_lifecycle_transition_order():
         "planned", "validated", "authorized", "approved",
         "dispatched", "executing", "checkpointed", "completed",
     ]
+
+import asyncio
+
+def test_async_lifecycle_transition_order():
+    async def run():
+        broker = ExecutionBroker(
+            authorizer=lambda request: True,
+            executor=lambda request: {"ok": True},
+        )
+        request = ExecutionRequest(
+            command="async-transition-test",
+            approval_token="approved",
+            request_id="async-transition-001",
+        )
+        result = await broker.execute_async(request)
+        assert result.state == ExecutionState.COMPLETED
+        assert [state.value for state in broker.transition_history(request.request_id)] == [
+            "planned", "validated", "authorized", "approved",
+            "dispatched", "executing", "completed",
+        ]
+    asyncio.run(run())
+
+def test_retry_records_retrying_state():
+    attempts = {"n": 0}
+    def executor(request):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise RuntimeError("transient")
+        return {"ok": True}
+    broker = ExecutionBroker(
+        authorizer=lambda request: True,
+        executor=executor,
+        max_retries=1,
+    )
+    request = ExecutionRequest(
+        command="retry-evidence-test",
+        approval_token="approved",
+        request_id="retry-evidence-001",
+    )
+    result = broker.execute(request)
+    assert result.state == ExecutionState.COMPLETED
+    assert "retrying" in [state.value for state in broker.transition_history(request.request_id)]

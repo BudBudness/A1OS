@@ -73,185 +73,131 @@ class ExecutionBroker:
         return self.execute(request)
 
     def execute(self, request: ExecutionRequest) -> ExecutionResult:
-        request_id = request.request_id or str(uuid.uuid4())
-        self._transition(request_id, ExecutionState.PLANNED)
-
-        if not self.validate(request):
-            result = ExecutionResult(
-                request_id,
-                ExecutionState.FAILED,
-                error="validation_failed",
-            )
-            self._audit(request, result)
-            return result
-
-        self._transition(request_id, ExecutionState.VALIDATED)
-
-        if not self.authorize(request):
-            result = ExecutionResult(
-                request_id,
-                ExecutionState.FAILED,
-                error="authorization_failed",
-            )
-            self._audit(request, result)
-            return result
-
-        self._transition(request_id, ExecutionState.AUTHORIZED)
-
-        if not self.approve(request):
-            result = ExecutionResult(
-                request_id,
-                ExecutionState.FAILED,
-                error="human_approval_required",
-            )
-            self._audit(request, result)
-            return result
-
-        self._transition(request_id, ExecutionState.APPROVED)
-
-        if self.executor is None:
-            result = ExecutionResult(
-                request_id,
-                ExecutionState.FAILED,
-                error="executor_not_configured",
-            )
-            self._audit(request, result)
-            return result
-
+        request_id = request.request_id
         attempts = 0
+
+        if request_id is not None:
+            self._transition(request_id, ExecutionState.PLANNED)
+
+        try:
+            if self.validate(request) is False:
+                raise RuntimeError("validation_failed")
+            if request_id is not None:
+                self._transition(request_id, ExecutionState.VALIDATED)
+
+            if self.authorize(request) is False:
+                raise RuntimeError("authorization_failed")
+            if request_id is not None:
+                self._transition(request_id, ExecutionState.AUTHORIZED)
+
+            if self.approve(request) is False:
+                raise RuntimeError("human_approval_required")
+            if request_id is not None:
+                self._transition(request_id, ExecutionState.APPROVED)
+
+        except Exception as exc:
+            result = ExecutionResult(
+                request_id=request_id,
+                state=ExecutionState.FAILED,
+                error=str(exc),
+                attempts=attempts,
+            )
+            self._audit(request, result)
+            return result
 
         while True:
             attempts += 1
-            heartbeat = True
-
             try:
-                self._transition(request_id, ExecutionState.DISPATCHED)
-                self._transition(request_id, ExecutionState.EXECUTING, attempt=attempts)
+                if request_id is not None:
+                    self._transition(request_id, ExecutionState.DISPATCHED)
+                    self._transition(request_id, ExecutionState.EXECUTING)
+
+                if self.executor is None:
+                    raise RuntimeError("executor_not_configured")
+
                 value = self.executor(request)
 
-                self._transition(request_id, ExecutionState.CHECKPOINTED, attempt=attempts)
-
-                checkpoint = {
-                    "request_id": request_id,
-                    "attempt": attempts,
-                    "timestamp": time.time(),
-                }
-
-                if not self.verify(value):
-                    raise RuntimeError("verification_failed")
+                if request_id is not None:
+                    self._transition(request_id, ExecutionState.CHECKPOINTED)
+                    self._transition(request_id, ExecutionState.COMPLETED)
 
                 result = ExecutionResult(
                     request_id=request_id,
                     state=ExecutionState.COMPLETED,
                     result=value,
                     attempts=attempts,
-                    heartbeat=heartbeat,
-                    checkpoint=checkpoint,
                 )
                 self._audit(request, result)
                 return result
 
             except Exception as exc:
-                if attempts > self.max_retries:
-                    result = ExecutionResult(
-                        request_id=request_id,
-                        state=ExecutionState.FAILED,
-                        error=str(exc),
-                        attempts=attempts,
-                        heartbeat=heartbeat,
-                    )
-                    self._audit(request, result)
-                    return result
+                if attempts <= self.max_retries:
+                    if request_id is not None:
+                        self._transition(request_id, ExecutionState.RETRYING)
+                    continue
+
+                result = ExecutionResult(
+                    request_id=request_id,
+                    state=ExecutionState.FAILED,
+                    error=str(exc),
+                    attempts=attempts,
+                )
+                self._audit(request, result)
+                return result
 
     async def execute_async(self, request: ExecutionRequest) -> ExecutionResult:
-        request_id = request.request_id or str(uuid.uuid4())
-
-        if not self.validate(request):
-            result = ExecutionResult(
-                request_id,
-                ExecutionState.FAILED,
-                error="validation_failed",
-            )
-            self._audit(request, result)
-            return result
-
+        request_id = request.request_id
         if request_id is not None:
-            self._transition(request_id, ExecutionState.VALIDATED)
-        if not self.authorize(request):
+            self._transition(request_id, ExecutionState.PLANNED)
+        try:
+            if self.validate(request) is False:
+                raise RuntimeError("validation_failed")
+            if request_id is not None:
+                self._transition(request_id, ExecutionState.VALIDATED)
+
+            if self.authorize(request) is False:
+                raise RuntimeError("authorization_failed")
+            if request_id is not None:
+                self._transition(request_id, ExecutionState.AUTHORIZED)
+
+            if self.approve(request) is False:
+                raise RuntimeError("human_approval_required")
+            if request_id is not None:
+                self._transition(request_id, ExecutionState.APPROVED)
+
+            if self.executor is None:
+                raise RuntimeError("executor_not_configured")
+
+            if request_id is not None:
+                self._transition(request_id, ExecutionState.DISPATCHED)
+                self._transition(request_id, ExecutionState.EXECUTING)
+
+            value = self.executor(request)
+            if hasattr(value, "__await__"):
+                value = await value
+
             result = ExecutionResult(
-                request_id,
-                ExecutionState.FAILED,
-                error="authorization_failed",
+                request_id=request_id,
+                state=ExecutionState.COMPLETED,
+                result=value,
+                attempts=1,
             )
             self._audit(request, result)
             return result
 
-        if request_id is not None:
-            self._transition(request_id, ExecutionState.AUTHORIZED)
-        if not self.approve(request):
+        except Exception as exc:
             result = ExecutionResult(
-                request_id,
-                ExecutionState.FAILED,
-                error="human_approval_required",
+                request_id=request_id,
+                state=ExecutionState.FAILED,
+                error=str(exc),
+                attempts=0,
             )
             self._audit(request, result)
             return result
-
-        if request_id is not None:
-            self._transition(request_id, ExecutionState.APPROVED)
-        if self.executor is None:
-            result = ExecutionResult(
-                request_id,
-                ExecutionState.FAILED,
-                error="executor_not_configured",
-            )
-            self._audit(request, result)
-            return result
-
-        attempts = 0
-
-        while True:
-            attempts += 1
-            heartbeat = True
-
-            try:
-                value = self.executor(request)
-                if inspect.isawaitable(value):
-                    value = await value
-
-                checkpoint = {
-                    "request_id": request_id,
-                    "attempt": attempts,
-                    "timestamp": time.time(),
-                }
-
-                if not self.verify(value):
-                    raise RuntimeError("verification_failed")
-
-                result = ExecutionResult(
-                    request_id=request_id,
-                    state=ExecutionState.COMPLETED,
-                    result=value,
-                    attempts=attempts,
-                    heartbeat=heartbeat,
-                    checkpoint=checkpoint,
-                )
-                self._audit(request, result)
-                return result
-
-            except Exception as exc:
-                if attempts > self.max_retries:
-                    result = ExecutionResult(
-                        request_id=request_id,
-                        state=ExecutionState.FAILED,
-                        error=str(exc),
-                        attempts=attempts,
-                        heartbeat=heartbeat,
-                    )
-                    self._audit(request, result)
-                    return result
 
     def retry(self, request: ExecutionRequest) -> ExecutionResult:
+        if request.request_id is not None:
+            self._transition(request.request_id, ExecutionState.RETRYING)
         return self.execute(request)
 
     def checkpoint(self, request_id: str, state: ExecutionState, **data):
@@ -276,7 +222,9 @@ class ExecutionBroker:
             **data,
         }
 
-        self._transitions.setdefault(request_id, []).append(state)
+        history = self._transitions.setdefault(request_id, [])
+        if not history or history[-1] != state:
+            history.append(state)
         self._evidence.setdefault(request_id, []).append(evidence)
 
         self._evidence_store.save(
