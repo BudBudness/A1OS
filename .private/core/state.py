@@ -32,7 +32,7 @@ from datetime import datetime, timezone
 
 
 class HumanApprovalMarker:
-    """Trusted in-process marker created only after JARVIS approval."""
+    """Trusted in-process marker created only after explicit approval."""
 
     __slots__ = (
         "token",
@@ -641,7 +641,7 @@ class A1OS:
                 "reason": "Unknown capability - fail closed"
             }
         # Consequential authority may only arrive from an
-        # in-process HumanApprovalMarker created after JARVIS
+        # in-process HumanApprovalMarker created after explicit approval
         # explicitly consumes a pending human approval.
         approval = kwargs.get("_human_approval")
 

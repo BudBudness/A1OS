@@ -34,8 +34,6 @@ app = FastAPI(title="A1OS Control Plane", version="1.0.0")
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-from core.control_plane.jarvis import router as jarvis_router
-app.include_router(jarvis_router)
 
 
 class CommandRequest(BaseModel):
@@ -116,7 +114,7 @@ async def status():
 
 
 # SECURITY HARDENING: raw shell execution endpoint retired.
-# Execution must use JARVIS/A1OS capability authorization and the
+# Execution must use A1OS capability authorization and the
 # universal consequence gate. This endpoint intentionally fails closed.
 @app.post("/api/command", response_model=CommandResponse)
 async def command(request: CommandRequest):
