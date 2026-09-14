@@ -6,6 +6,7 @@ import uuid
 from typing import Any, Callable
 
 from .models import ExecutionRequest, ExecutionResult, ExecutionState
+from core.recovery.checkpoints import CheckpointStore
 
 
 class ExecutionBroker:
@@ -38,6 +39,7 @@ class ExecutionBroker:
         self.auditor = auditor
         self._transitions = {}
         self._evidence = {}
+        self._evidence_store = CheckpointStore()
         self.max_retries = max(0, int(max_retries))
         self.heartbeat_interval = max(0.0, float(heartbeat_interval))
 
@@ -238,12 +240,19 @@ class ExecutionBroker:
         return list(self._evidence.get(request_id, []))
 
     def _record_state(self, request_id: str, state: ExecutionState, **data):
-        self._transitions.setdefault(request_id, []).append(state)
-        self._evidence.setdefault(request_id, []).append({
+        evidence = {
             "request_id": request_id,
             "state": state.value,
             **data,
-        })
+        }
+
+        self._transitions.setdefault(request_id, []).append(state)
+        self._evidence.setdefault(request_id, []).append(evidence)
+
+        self._evidence_store.save(
+            f"lifecycle:{request_id}",
+            evidence,
+        )
 
     def heartbeat(self, request_id: str) -> dict:
         return {
@@ -261,16 +270,13 @@ class ExecutionBroker:
     def _audit(self, request: ExecutionRequest, result: ExecutionResult) -> None:
         request_id = result.request_id
         if request_id is not None:
-            history = self._transitions.setdefault(request_id, [])
-            self._evidence.setdefault(request_id, []).append({
-                "request_id": request_id,
-                "state": result.state.value,
-                "result": result.result,
-                "error": result.error,
-                "attempts": result.attempts,
-            })
-            if not history or history[-1] != result.state:
-                history.append(result.state)
+            self._record_state(
+                request_id,
+                result.state,
+                result=result.result,
+                error=result.error,
+                attempts=result.attempts,
+            )
 
         if self.auditor is None:
             return
