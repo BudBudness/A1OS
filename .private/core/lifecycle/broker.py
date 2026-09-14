@@ -36,6 +36,8 @@ class ExecutionBroker:
         self.executor = executor
         self.verifier = verifier or (lambda result: True)
         self.auditor = auditor
+        self._transitions = {}
+        self._evidence = {}
         self.max_retries = max(0, int(max_retries))
         self.heartbeat_interval = max(0.0, float(heartbeat_interval))
 
@@ -228,6 +230,21 @@ class ExecutionBroker:
             **data,
         }
 
+
+    def transition_history(self, request_id: str) -> list[ExecutionState]:
+        return list(self._transitions.get(request_id, []))
+
+    def evidence(self, request_id: str) -> list[dict]:
+        return list(self._evidence.get(request_id, []))
+
+    def _record_state(self, request_id: str, state: ExecutionState, **data):
+        self._transitions.setdefault(request_id, []).append(state)
+        self._evidence.setdefault(request_id, []).append({
+            "request_id": request_id,
+            "state": state.value,
+            **data,
+        })
+
     def heartbeat(self, request_id: str) -> dict:
         return {
             "request_id": request_id,
@@ -242,6 +259,19 @@ class ExecutionBroker:
         self._audit(request, result)
 
     def _audit(self, request: ExecutionRequest, result: ExecutionResult) -> None:
+        request_id = result.request_id
+        if request_id is not None:
+            history = self._transitions.setdefault(request_id, [])
+            self._evidence.setdefault(request_id, []).append({
+                "request_id": request_id,
+                "state": result.state.value,
+                "result": result.result,
+                "error": result.error,
+                "attempts": result.attempts,
+            })
+            if not history or history[-1] != result.state:
+                history.append(result.state)
+
         if self.auditor is None:
             return
 
