@@ -1,11 +1,11 @@
-import subprocess
+from pathlib import Path
 from core.worker import BaseWorker
 from typing import Any, Dict
 
 class OpsWorker(BaseWorker):
     async def execute(self, event: Dict[str, Any]) -> Any:
         try:
-            uptime = subprocess.check_output(['uptime']).decode('utf-8')
+            uptime = f"up {float(Path('/proc/uptime').read_text().split()[0]):.0f} seconds"
             metrics = {"load": float(uptime.split('load average:')[1].split(',')[0].strip())}
         except:
             metrics = {"load": 0.0}

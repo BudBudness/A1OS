@@ -1,4 +1,4 @@
-import asyncio, json, subprocess
+import asyncio, json
 class A1OSWorker:
     def __init__(self, node_id): self.node_id = node_id
     async def run(self):
