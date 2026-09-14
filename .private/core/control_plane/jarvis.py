@@ -181,6 +181,46 @@ def _natural_language_plan(command: str) -> dict[str, Any] | None:
         "is everything working", "anything wrong", "system status"
     )
 
+    # Ambiguous commands must never resolve to an executable/read-only
+    # capability merely because a broad semantic term appears elsewhere.
+    if text in {
+        "do something",
+        "do anything",
+        "something",
+        "anything",
+        "help me",
+        "make it work",
+        "fix it",
+        "handle it",
+    }:
+        return {
+            "intent": "unknown",
+            "command": command,
+            "risk": RiskLevel.READ,
+            "requires_approval": False,
+            "approval_token": None,
+            "execution": None,
+            "message": "Command understood only as a plan. No execution performed.",
+        }
+
+    # Generic/ambiguous requests must never be promoted to an executable
+    # diagnostic capability merely because they contain an implementation
+    # or system-related word.
+    ambiguous_terms = (
+        "do something", "do anything", "something", "anything",
+        "help me", "make it work", "fix it", "handle it",
+    )
+    if text in ambiguous_terms:
+        return {
+            "intent": "unknown",
+            "command": command,
+            "risk": "read_only",
+            "requires_approval": False,
+            "execution": None,
+            "approval_token": None,
+            "message": "Command understood only as a plan. No execution performed.",
+        }
+
     if any(term in text for term in health_terms):
         return {
             "intent": "platform_health_check",
