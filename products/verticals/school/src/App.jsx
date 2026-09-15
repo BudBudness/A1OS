@@ -15,7 +15,14 @@ import SiteContent from "./pages/SiteContent.jsx";
 
 export default function App() {
   return <HashRouter><main className="app">
-    <header><h1>School Management</h1><p>A1OS frontend vertical</p></header>
+    <header className="brand-header">
+      <div className="brand-mark" aria-hidden="true">LO</div>
+      <div>
+        <h1>Little Oaks</h1>
+        <p>Montessori Kindergarten &amp; Daycare</p>
+        <small>Nurture. Explore. Grow.</small>
+      </div>
+    </header>
     <nav><Link to="/">Dashboard</Link><Link to="/organizations">Organizations</Link>
 <Link to="/users">Users</Link>
 <Link to="/roles">Roles</Link>
