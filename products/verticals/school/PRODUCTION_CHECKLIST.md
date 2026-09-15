@@ -1,0 +1,23 @@
+# Little Oaks Production Scope
+
+- A1OS authenticated tenant
+- Owner
+- Leticia
+- Headmistress
+- Staff
+- Driver
+- Students
+- Parents
+- Admissions
+- Attendance
+- Fees
+- Finance
+- Transport
+- Notifications
+- Audit
+- Site Content
+- School Identity
+- Permission enforcement
+- Individual accounts
+- Production API
+- Production frontend

@@ -12,17 +12,20 @@ import Fees from "./pages/Fees.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Audit from "./pages/Audit.jsx";
 import SiteContent from "./pages/SiteContent.jsx";
+import Finance from "./pages/Finance.jsx";
+import Transport from "./pages/Transport.jsx";
+import SchoolIdentity from "./pages/SchoolIdentity.jsx";
 import Login from "./pages/Login.jsx";
 import {loadSession,logout,currentRole,isAuthenticated} from "./core/auth.js";
 
 const roles={
   Owner:{
     description:"Full school governance and oversight",
-    sections:["Dashboard","Students","Parents","Admissions","Attendance","Fees","Finance","Transport","Users","Roles","Organizations","Audit","Site Content"]
+    sections:["Dashboard","Students","Parents","Admissions","Attendance","Fees","Finance","Transport","Users","Roles","Organizations","Audit","Site Content","School Identity"]
   },
   Leticia:{
     description:"School operations and administration",
-    sections:["Dashboard","Students","Parents","Admissions","Attendance","Fees","Finance","Transport","Notifications"]
+    sections:["Dashboard","Students","Parents","Admissions","Attendance","Fees","Finance","Transport","Notifications","School Identity"]
   },
   Headmistress:{
     description:"Academic and staff operations",
@@ -50,7 +53,10 @@ const routes={
   Organizations:"/organizations",
   Audit:"/audit",
   "Site Content":"/site-content",
-  Notifications:"/notifications"
+  Notifications:"/notifications",
+  Finance:"/finance",
+  Transport:"/transport",
+  "School Identity":"/school-identity"
 };
 
 function Dashboard({role}){
@@ -122,6 +128,9 @@ function Shell(){
       <Route path="/fees" element={<Fees/>}/>
       <Route path="/notifications" element={<Notifications/>}/>
       <Route path="/audit" element={<Audit/>}/>
+      <Route path="/finance" element={<Finance/>}/>
+      <Route path="/transport" element={<Transport/>}/>
+      <Route path="/school-identity" element={<SchoolIdentity/>}/>
       <Route path="/site-content" element={<SiteContent/>}/>
       <Route path="*" element={<Navigate to="/" replace/>}/>
     </Routes>

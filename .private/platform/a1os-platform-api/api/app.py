@@ -2627,6 +2627,32 @@ def education_update_site_content(
         conn.close()
 
 
+@app.get("/v1/education/transport")
+def education_transport(request: Request):
+    actor = _require_permission(request, "education:read")
+    conn = db()
+    try:
+        rows = conn.execute(
+            """SELECT id, first_name, last_name, admission_no, class_name, status
+               FROM students WHERE organization_id=? ORDER BY id DESC""",
+            (actor["organization_id"],),
+        ).fetchall()
+        return {"items":[dict(r, transport_status="not_assigned", route=None) for r in rows]}
+    finally:
+        conn.close()
+
+@app.post("/v1/education/transport", status_code=201)
+def education_transport_create(payload: dict, request: Request):
+    actor = _require_permission(request, "education:write")
+    student_id = payload.get("student_id")
+    if student_id is None:
+        raise HTTPException(status_code=422, detail="student_id is required")
+    audit(actor, "education.transport.assign", "student", student_id)
+    return {"status":"accepted","student_id":student_id,
+            "transport_status":payload.get("transport_status","assigned"),
+            "route":payload.get("route")}
+
+
 @app.get("/v1/notifications")
 def list_notifications(request: Request):
     actor = _require_permission(request, "notifications:read")
