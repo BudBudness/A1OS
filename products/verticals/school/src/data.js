@@ -11,10 +11,10 @@ export function resource(path) {
 }
 
 export const schoolResources = {
-  students: resource("/students"),
-  parents: resource("/parties"),
-  admissions: resource("/admissions"),
-  attendance: resource("/attendance"),
-  fees: resource("/fees"),
+  students: resource("/education/students"),
+  parents: resource("/education/parents"),
+  admissions: resource("/education/admissions"),
+  attendance: resource("/education/attendance"),
+  fees: resource("/education/fees"),
   notifications: resource("/notifications")
 };

@@ -1,5 +1,3 @@
-import React from "react";
-
-export default function Attendance() {
-  return <section><h2>Attendance</h2><p>School Management capability: <code>attendance</code>.</p><p>Data, validation, authorization and audit are provided by A1OS Core/Platform.</p></section>;
-}
+import React,{useEffect,useState} from "react";
+import {schoolResources} from "../data.js";
+export default function Attendance(){const[r,setR]=useState([]),[e,setE]=useState("");useEffect(()=>{schoolResources.attendance.list().then(x=>setR(x.attendance||x||[])).catch(x=>setE(x.message))},[]);return <section><h2>Attendance</h2>{e&&<p role="alert">{e}</p>}<div className="panel"><table><thead><tr><th>ID</th><th>Student</th><th>Date</th><th>Status</th></tr></thead><tbody>{r.map(x=><tr key={x.id}><td>{x.id}</td><td>{x.student_id||"—"}</td><td>{x.attendance_date||"—"}</td><td>{x.status||"—"}</td></tr>)}</tbody></table></div></section>}

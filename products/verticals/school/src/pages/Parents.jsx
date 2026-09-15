@@ -1,5 +1,3 @@
-import React from "react";
-
-export default function Parents() {
-  return <section><h2>Parents</h2><p>School Management capability: <code>parents</code>.</p><p>Data, validation, authorization and audit are provided by A1OS Core/Platform.</p></section>;
-}
+import React,{useEffect,useState} from "react";
+import {schoolResources} from "../data.js";
+export default function Parents(){const[r,setR]=useState([]),[e,setE]=useState("");useEffect(()=>{schoolResources.parents.list().then(x=>setR(x.parents||x||[])).catch(x=>setE(x.message))},[]);return <section><h2>Parents</h2>{e&&<p role="alert">{e}</p>}<div className="panel"><table><thead><tr><th>ID</th><th>Name</th><th>Phone</th></tr></thead><tbody>{r.map(x=><tr key={x.id}><td>{x.id}</td><td>{x.name||[x.first_name,x.last_name].filter(Boolean).join(" ")||"—"}</td><td>{x.phone||"—"}</td></tr>)}</tbody></table></div></section>}
