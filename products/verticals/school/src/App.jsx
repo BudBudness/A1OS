@@ -1,5 +1,5 @@
-import React,{useMemo,useState} from "react";
-import {HashRouter,Routes,Route,Link,useLocation} from "react-router-dom";
+import React,{useEffect,useMemo,useState} from "react";
+import {HashRouter,Routes,Route,Link,useLocation,Navigate} from "react-router-dom";
 import Organizations from "./pages/Organizations.jsx";
 import Users from "./pages/Users.jsx";
 import Roles from "./pages/Roles.jsx";
@@ -12,6 +12,8 @@ import Fees from "./pages/Fees.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Audit from "./pages/Audit.jsx";
 import SiteContent from "./pages/SiteContent.jsx";
+import Login from "./pages/Login.jsx";
+import {loadSession,logout,currentRole,isAuthenticated} from "./core/auth.js";
 
 const roles={
   Owner:{
@@ -74,9 +76,23 @@ function Dashboard({role}){
 
 function Shell(){
   const location=useLocation();
-  const [role,setRole]=useState("Owner");
-  const allowed=roles[role].sections;
-  const nav=useMemo(()=>allowed.map(label=>({label,path:routes[label]})).filter(x=>x.path),[allowed]);
+  const [ready,setReady]=useState(false);
+  const [authenticated,setAuthenticated]=useState(isAuthenticated());
+
+  useEffect(()=>{
+    loadSession().finally(()=>setReady(true));
+  },[]);
+
+  if(!ready) return <main className="app"><section className="panel"><h2>Little Oaks</h2><p>Loading secure session…</p></section></main>;
+  if(!authenticated) return <Login onAuthenticated={()=>setAuthenticated(true)}/>;
+
+  const role=currentRole() || "Owner";
+  const allowed=roles[role]?.sections || ["Dashboard"];
+  const nav=useMemo(
+    ()=>allowed.map(label=>({label,path:routes[label]})).filter(x=>x.path),
+    [allowed]
+  );
+
   return <main className="app">
     <header className="brand-header">
       <div className="brand-mark">LO</div>
@@ -86,10 +102,8 @@ function Shell(){
         <small>Nurture. Explore. Grow.</small>
       </div>
       <div className="role-control">
-        <label htmlFor="role">Role</label>
-        <select id="role" value={role} onChange={e=>setRole(e.target.value)}>
-          {Object.keys(roles).map(r=><option key={r}>{r}</option>)}
-        </select>
+        <span className="role-badge">{role}</span>
+        <button type="button" onClick={async()=>{await logout();setAuthenticated(false)}}>Sign out</button>
       </div>
     </header>
     <nav className="main-nav" aria-label="School navigation">
@@ -109,6 +123,7 @@ function Shell(){
       <Route path="/notifications" element={<Notifications/>}/>
       <Route path="/audit" element={<Audit/>}/>
       <Route path="/site-content" element={<SiteContent/>}/>
+      <Route path="*" element={<Navigate to="/" replace/>}/>
     </Routes>
   </main>
 }

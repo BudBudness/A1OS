@@ -4,8 +4,8 @@ export function resource(path) {
   return {
     list: () => api.get(path),
     get: id => api.get(`${path}/${id}`),
-    create: data => api.post(path, data),
-    update: (id, data) => api.patch(`${path}/${id}`, data),
+    create: data => api.post(path,data),
+    update: (id,data) => api.patch(`${path}/${id}`,data),
     remove: id => api.delete(`${path}/${id}`)
   };
 }
@@ -16,5 +16,6 @@ export const schoolResources = {
   admissions: resource("/education/admissions"),
   attendance: resource("/education/attendance"),
   fees: resource("/education/fees"),
+  siteContent: resource("/education/site-content"),
   notifications: resource("/notifications")
 };
