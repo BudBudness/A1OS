@@ -920,6 +920,10 @@ def create_user(payload: dict, request: Request):
     password = str(payload.get("password", "")).strip()
 
     allowed_roles = set(DEFAULT_ROLE_PERMISSIONS.keys())
+    if actor["role"] == "director":
+        allowed_roles &= {"headmistress", "staff", "driver", "user"}
+    elif actor["role"] in {"headmistress", "staff", "driver"}:
+        raise HTTPException(status_code=403, detail="Insufficient authority to create users")
     if role not in allowed_roles:
         raise HTTPException(
             status_code=422,
