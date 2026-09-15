@@ -211,6 +211,18 @@ DEFAULT_ROLE_PERMISSIONS = {
     "director": {
         "education:read",
         "education:write",
+        "users:read",
+        "users:write",
+    },
+    "headmistress": {
+        "education:read",
+        "education:write",
+    },
+    "staff": {
+        "education:read",
+    },
+    "driver": {
+        "education:read",
     },
     "manager": {
         "organizations:read",
@@ -905,7 +917,7 @@ def create_user(payload: dict, request: Request):
     email = str(payload.get("email", "")).strip().lower()
     full_name = str(payload.get("full_name", "")).strip()
     role = str(payload.get("role", "member")).strip()
-    password = str(payload.get("password", ""))
+    password = str(payload.get("password", "")).strip()
 
     allowed_roles = set(DEFAULT_ROLE_PERMISSIONS.keys())
     if role not in allowed_roles:
