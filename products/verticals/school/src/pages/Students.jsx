@@ -1,8 +1,2 @@
-import React,{useEffect,useState} from "react";
-import {schoolResources} from "../data.js";
-
-export default function Students(){
-  const [rows,setRows]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState("");
-  useEffect(()=>{schoolResources.students.list().then(r=>setRows(r.students||r||[])).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
-  return <section><h2>Students</h2>{loading&&<p>Loading…</p>}{error&&<p role="alert">{error}</p>} {!loading&&!error&&<div className="panel"><table><thead><tr><th>ID</th><th>Name</th><th>Status</th></tr></thead><tbody>{rows.map(s=><tr key={s.id}><td>{s.id}</td><td>{s.name||[s.first_name,s.last_name].filter(Boolean).join(" ")||"—"}</td><td>{s.status||"—"}</td></tr>)}</tbody></table></div>}</section>;
-}
+import React,{useEffect,useState} from "react";import {schoolResources} from "../data.js";
+export default function Students(){const[r,setR]=useState({items:[]}),[e,setE]=useState(""),[f,setF]=useState({first_name:"",last_name:"",admission_no:"",class_name:"",gender:"",date_of_birth:""});const load=()=>schoolResources.students.list().then(setR).catch(x=>setE(x.message));useEffect(load,[]);const save=async x=>{x.preventDefault();await schoolResources.students.create(f);setF({first_name:"",last_name:"",admission_no:"",class_name:"",gender:"",date_of_birth:""});load()};return <section><h2>Students</h2>{e&&<p>{e}</p>}<form onSubmit={save} className="form-grid">{Object.keys(f).map(k=><input key={k} placeholder={k.replaceAll("_"," ")} value={f[k]} onChange={x=>setF({...f,[k]:x.target.value})}/>)}<button>Add Student</button></form><div className="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Admission</th><th>Class</th><th>Status</th></tr></thead><tbody>{(r.items||[]).map(x=><tr key={x.id}><td>{x.id}</td><td>{x.first_name} {x.last_name}</td><td>{x.admission_no}</td><td>{x.class_name}</td><td>{x.status}</td></tr>)}</tbody></table></div></section>}
