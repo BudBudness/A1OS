@@ -3,24 +3,14 @@
   "runtime": "A1OS",
   "services": [
     {
-      "name": "a1os-core",
+      "name": "a1os-platform-api",
       "type": "control-plane",
-      "database": "data/a1os.db",
-      "health_local": "http://127.0.0.1:3011/v1/health",
-      "adapter": [
-        "ops/adapters/restart-core.sh"
-      ],
-      "boot_order": 10
-    },
-    {
-      "name": "platform-api",
-      "type": "application",
-      "database": "runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
+      "database": ".private/platform/a1os-platform-api/api/a1os_state.db",
       "health_local": "http://127.0.0.1:3013/v1/health",
       "adapter": [
         "ops/adapters/restart-platform-api.sh"
       ],
-      "boot_order": 30
+      "boot_order": 10
     },
     {
       "name": "cloudflare-edge-observer",
