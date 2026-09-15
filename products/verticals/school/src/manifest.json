@@ -77,5 +77,9 @@
   ],
   "implementation": "react-vite",
   "frontend_runtime": "React 19 + Vite",
-  "platform_contract": "A1OS Core/Platform"
-}
+  "platform_contract": "A1OS Core/Platform",
+  "short_name": "Little Oaks",
+  "theme_color": "#285943",
+  "background_color": "#f8f4e9",
+  "display": "standalone"
+}\n
