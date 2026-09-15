@@ -9,7 +9,7 @@ RULE: ONE BACKEND, MANY INDUSTRY FRONTENDS — the A1OS Platform API is the shar
      multi-tenant backend; products are UI-only frontends consuming its APIs.
 
 PLATFORM LAYER:
-- platform/a1os-platform-api + runtime/a1os-platform-api — multi-tenant FastAPI platform runtime (:3013). Auth
+- .private/platform/a1os-platform-api — canonical multi-tenant FastAPI platform runtime (:3013). Authentication
   (SSO-style opaque tokens, PBKDF2), organizations, users/roles/permissions,
   parties, products, double-entry ledger, inventory, notifications, audit,
   realtime WebSocket. One codebase serves every industry frontend.
