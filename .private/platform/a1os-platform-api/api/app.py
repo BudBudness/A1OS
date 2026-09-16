@@ -2634,7 +2634,7 @@ def education_transport(request: Request):
     try:
         rows = conn.execute(
             """SELECT id, first_name, last_name, admission_no, class_name, status
-               FROM students WHERE organization_id=? ORDER BY id DESC""",
+               FROM education_students WHERE organization_id=? ORDER BY id DESC""",
             (actor["organization_id"],),
         ).fetchall()
         return {"items":[dict(r, transport_status="not_assigned", route=None) for r in rows]}
@@ -2647,7 +2647,12 @@ def education_transport_create(payload: dict, request: Request):
     student_id = payload.get("student_id")
     if student_id is None:
         raise HTTPException(status_code=422, detail="student_id is required")
-    audit(actor, "education.transport.assign", "student", student_id)
+    conn = db()
+    try:
+        _audit(conn, actor, "education_transport", student_id, "assigned", payload)
+        conn.commit()
+    finally:
+        conn.close()
     return {"status":"accepted","student_id":student_id,
             "transport_status":payload.get("transport_status","assigned"),
             "route":payload.get("route")}
