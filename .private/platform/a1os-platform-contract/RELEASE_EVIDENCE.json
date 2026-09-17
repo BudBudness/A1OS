@@ -1,0 +1,38 @@
+{
+  "release": "A1OS unified platform v1",
+  "architecture": "folders_over_agents",
+  "authority": "approval_gated",
+  "production_api": "/data/data/com.termux/files/home/A1OS_RESTORED/.private/platform/a1os-platform-api/api/app.py",
+  "database": "/data/data/com.termux/files/home/A1OS_RESTORED/runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
+  "phases": {
+    "1_platform_contract": "implemented",
+    "2_command_center": "implemented",
+    "3_organization_resource_capability": "implemented",
+    "4_product_vertical_configuration": "implemented",
+    "5_terminal_control": "implemented_restricted",
+    "6_workflow_automation": "implemented_schema_control_plane",
+    "7_approval_authority": "implemented_schema_control_plane",
+    "8_health_reconciliation": "implemented",
+    "9_billing_monetization": "implemented_schema_control_plane",
+    "10_provisioning_product_factory": "implemented_schema_control_plane",
+    "11_vertical_hardening": "production_boundary_preserved",
+    "12_production_certification": "pending_runtime_gate"
+  },
+  "certification": {
+    "status": "PASS",
+    "timestamp_utc": "2026-09-17T18:25:10.414053+00:00",
+    "database_integrity": "ok",
+    "production_service": "running",
+    "local_api": "pass",
+    "public_api": "pass",
+    "command_center": "pass",
+    "platform_schema": "12/12",
+    "architecture": "folders_over_agents",
+    "authority": "approval_gated",
+    "arbitrary_ai_shell": false,
+    "secrets_printed": false,
+    "cloudflare_routes_modified": false,
+    "legacy_services_revived": false,
+    "app_sha256": "60450da0d7c73bd378d3b5b78513c5c9a9c29d57e01d9e187790306033be4cc5"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "name": "A1OS",
+  "contract_version": "1.0.0",
+  "definition": "A1OS is a multi-organization business operating platform that provides the shared infrastructure, data, permissions, commerce, finance, workflows, and APIs used to operate different businesses and applications.",
+  "architecture_principle": "folders_over_agents",
+  "authority_model": "human_authority_with_policy_gated_autonomy",
+  "primary_primitives": [
+    "organizations",
+    "resources",
+    "capabilities",
+    "policies",
+    "workflows",
+    "identities"
+  ],
+  "identity_position": "identity_is_an_access_mechanism_not_the_central_business_primitive",
+  "ai_position": {
+    "role": [
+      "interpretation",
+      "classification",
+      "summarization",
+      "recommendation"
+    ],
+    "not_authoritative_for": [
+      "business_rules",
+      "permissions",
+      "financial_calculation",
+      "database_integrity",
+      "deployment_state",
+      "security_policy",
+      "destructive_execution"
+    ]
+  },
+  "owner_control": {
+    "command_center": true,
+    "platform_wide_visibility": true,
+    "platform_wide_authority": true,
+    "approval_control": true,
+    "terminal_control": true,
+    "billing_control": true,
+    "deployment_control": true
+  },
+  "autonomy": {
+    "enabled": true,
+    "policy_gated": true,
+    "approval_gated_consequences": true,
+    "mandatory_verification": true,
+    "mandatory_audit": true
+  },
+  "release_gate": [
+    "static_validation",
+    "compile",
+    "tests",
+    "migration_validation",
+    "backup",
+    "deployment",
+    "service_health",
+    "api_health",
+    "public_endpoint_health",
+    "audit"
+  ],
+  "platform_domains": [
+    "core",
+    "commerce",
+    "products",
+    "terminal",
+    "automation",
+    "authority",
+    "health",
+    "billing",
+    "factory",
+    "certification",
+    "ui"
+  ],
+  "phases": [
+    {"id":"01","name":"A1OS Platform Contract","status":"defined"},
+    {"id":"02","name":"Command Center","status":"defined"},
+    {"id":"03","name":"Organization/Resource/Capability model","status":"defined"},
+    {"id":"04","name":"Product & Vertical configuration","status":"defined"},
+    {"id":"05","name":"Terminal Control","status":"defined"},
+    {"id":"06","name":"Workflow/Automation Engine","status":"defined"},
+    {"id":"07","name":"Approval & Authority system","status":"defined"},
+    {"id":"08","name":"Platform health/reconciliation","status":"defined"},
+    {"id":"09","name":"Billing & monetization","status":"defined"},
+    {"id":"10","name":"Provisioning/Product Factory","status":"defined"},
+    {"id":"11","name":"Harden existing verticals","status":"defined"},
+    {"id":"12","name":"Production certification","status":"defined"}
+  ]
+}

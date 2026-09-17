@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A1OS Command Center</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#080b10;color:#e8edf5}
+header{height:72px;border-bottom:1px solid #202633;display:flex;align-items:center;
+justify-content:space-between;padding:0 28px;position:sticky;top:0;background:#080b10ee;backdrop-filter:blur(12px);z-index:5}
+.brand{font-weight:800;letter-spacing:.08em}.status{font-size:12px;color:#72e6a3}
+main{max-width:1500px;margin:auto;padding:28px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:#0e131b;border:1px solid #202633;border-radius:16px;padding:20px}
+.metric{font-size:32px;font-weight:800;margin-top:8px}.label{font-size:12px;color:#8994a6;text-transform:uppercase;letter-spacing:.08em}
+.layout{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0}
+button{border:1px solid #2a3342;background:#111824;color:#dce5f2;border-radius:10px;padding:10px 14px;cursor:pointer}
+button:hover{border-color:#65748b}pre{white-space:pre-wrap;overflow:auto;font-size:12px;color:#aeb9c9}
+.item{padding:12px 0;border-bottom:1px solid #202633}.sev{font-size:10px;text-transform:uppercase}
+.good{color:#72e6a3}.warn{color:#f0c674}.bad{color:#ff7777}
+@media(max-width:900px){.grid,.layout{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.grid,.layout{grid-template-columns:1fr}main{padding:16px}}
+</style>
+</head>
+<body>
+<header><div class="brand">A1OS / COMMAND CENTER</div><div id="state" class="status">CONNECTING</div></header>
+<main>
+<nav>
+<button onclick="loadAll()">Refresh</button>
+<button onclick="show('operations')">Operations</button>
+<button onclick="show('automation')">Automation</button>
+<button onclick="show('authority')">Authority</button>
+<button onclick="show('billing')">Billing</button>
+<button onclick="show('infrastructure')">Infrastructure</button>
+</nav>
+<section class="grid" id="metrics"></section>
+<section class="layout">
+<div class="card"><div class="label">Control plane</div><div id="panel"><pre>Loading…</pre></div></div>
+<div class="card"><div class="label">Attention</div><div id="attention">Loading…</div></div>
+</section>
+</main>
+<script>
+let data={};
+async function api(p){
+ const r=await fetch('/v1/platform/product/'+p,{credentials:'include'});
+ if(!r.ok) throw new Error(r.status+' '+await r.text());
+ return r.json();
+}
+function esc(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function loadAll(){
+ try{
+  const [s,a,w,e,t]=await Promise.all([api('snapshot'),api('attention'),api('workflows'),api('executions'),api('entitlements')]);
+  data={s,a,w,e,t};
+  document.getElementById('state').textContent='OPERATIONAL';
+  document.getElementById('state').className='status good';
+  const m=s.metrics;
+  document.getElementById('metrics').innerHTML=Object.entries(m).map(([k,v])=>
+   `<div class="card"><div class="label">${esc(k.replaceAll('_',' '))}</div><div class="metric">${esc(v)}</div></div>`).join('');
+  document.getElementById('attention').innerHTML=a.items.length?
+   a.items.map(x=>`<div class="item"><b class="sev ${x.severity==='critical'||x.severity==='high'?'bad':'warn'}">${esc(x.severity)}</b><br>${esc(x.title)}<br><small>${esc(x.detail||'')}</small></div>`).join('')
+   :'<span class="good">No open attention items.</span>';
+  show('operations');
+ }catch(err){
+  document.getElementById('state').textContent='AUTH / API ERROR';
+  document.getElementById('state').className='status bad';
+  document.getElementById('panel').innerHTML='<pre>'+esc(err)+'</pre>';
+ }
+}
+function show(section){
+ const p=document.getElementById('panel');
+ if(section==='automation') p.innerHTML='<pre>'+esc(JSON.stringify(data.w?.workflows||[],null,2))+'</pre>';
+ else if(section==='authority') p.innerHTML='<pre>'+esc(JSON.stringify({pending_approvals:data.s?.metrics?.pending_approvals,executions:data.e?.executions||[]},null,2))+'</pre>';
+ else if(section==='billing') p.innerHTML='<pre>'+esc(JSON.stringify({active_subscriptions:data.s?.metrics?.active_subscriptions,entitlements:data.t?.entitlements||[]},null,2))+'</pre>';
+ else if(section==='infrastructure') p.innerHTML='<pre>'+esc(JSON.stringify({resources:data.s?.metrics?.resources,deployments:data.s?.metrics?.deployments},null,2))+'</pre>';
+ else p.innerHTML='<pre>'+esc(JSON.stringify({architecture:data.s?.architecture,authority:data.s?.authority,metrics:data.s?.metrics},null,2))+'</pre>';
+}
+loadAll();setInterval(loadAll,30000);
+</script>
+</body></html>

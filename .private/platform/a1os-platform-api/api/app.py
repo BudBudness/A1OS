@@ -443,6 +443,162 @@ app = FastAPI(
 
 
 
+
+# === A1OS PRODUCTIZATION RELEASE ===
+from fastapi import APIRouter as _A1OSRouter
+from fastapi.responses import HTMLResponse as _A1OSHTMLResponse
+import sqlite3 as _A1OSSqlite3
+import json as _A1OSJson
+from datetime import datetime as _A1OSDatetime, timezone as _A1OSTimezone
+
+_a1os_product_router = _A1OSRouter(prefix="/v1/platform/product", tags=["platform-product"])
+
+def _a1os_product_db():
+    c = _A1OSSqlite3.connect(DB_PATH, timeout=30.0, isolation_level=None)
+    c.row_factory = _A1OSSqlite3.Row
+    c.execute("PRAGMA foreign_keys=ON")
+    return c
+
+def _a1os_product_now():
+    return _A1OSDatetime.now(_A1OSTimezone.utc).isoformat()
+
+def _a1os_product_actor(request):
+    return _require_permission(request, "organizations:read")
+
+@_a1os_product_router.get("/command-center")
+def _a1os_product_command_center(request: Request):
+    _a1os_product_actor(request)
+    p = ROOT / ".private" / "platform" / "a1os-platform-contract" / "runtime" / "command-center.html"
+    return _A1OSHTMLResponse(p.read_text())
+
+@_a1os_product_router.get("/snapshot")
+def _a1os_product_snapshot(request: Request):
+    actor = _a1os_product_actor(request)
+    org_id = actor.get("organization_id")
+    c = _a1os_product_db()
+    try:
+        def count(sql, args=()):
+            return c.execute(sql,args).fetchone()[0]
+
+        orgs = count("SELECT COUNT(*) FROM organizations")
+        products = count("SELECT COUNT(*) FROM products")
+        workflows = count("SELECT COUNT(*) FROM platform_workflow_definitions WHERE enabled=1")
+        approvals = count("SELECT COUNT(*) FROM platform_approvals WHERE status='pending'")
+        attention = count("SELECT COUNT(*) FROM platform_attention_items WHERE status='open'")
+        runs = count("SELECT COUNT(*) FROM platform_execution_runs WHERE status='running'")
+        subscriptions = count("SELECT COUNT(*) FROM platform_subscriptions WHERE status='active'")
+        resources = count("SELECT COUNT(*) FROM platform_resources")
+        deployments = count("SELECT COUNT(*) FROM platform_deployments")
+
+        return {
+            "status":"ok",
+            "generated_at":_a1os_product_now(),
+            "authority":"approval_gated",
+            "architecture":"folders_over_agents",
+            "scope":{"organization_id":org_id},
+            "metrics":{
+                "organizations":orgs,
+                "products":products,
+                "resources":resources,
+                "active_workflows":workflows,
+                "pending_approvals":approvals,
+                "open_attention":attention,
+                "running_executions":runs,
+                "active_subscriptions":subscriptions,
+                "deployments":deployments
+            }
+        }
+    finally:
+        c.close()
+
+@_a1os_product_router.get("/attention")
+def _a1os_product_attention(request: Request):
+    _a1os_product_actor(request)
+    c = _a1os_product_db()
+    try:
+        rows = c.execute("""
+            SELECT id,organization_id,severity,category,title,detail,status,created_at
+            FROM platform_attention_items
+            WHERE status='open'
+            ORDER BY
+              CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2
+              WHEN 'medium' THEN 3 ELSE 4 END, id DESC
+            LIMIT 100
+        """).fetchall()
+        return {"items":[dict(x) for x in rows]}
+    finally:
+        c.close()
+
+@_a1os_product_router.get("/workflows")
+def _a1os_product_workflows(request: Request):
+    actor = _a1os_product_actor(request)
+    c = _a1os_product_db()
+    try:
+        rows = c.execute("""
+            SELECT id,organization_id,key,name,description,trigger_type,
+                   enabled,version,created_at,updated_at
+            FROM platform_workflow_definitions
+            WHERE organization_id IS NULL OR organization_id=?
+            ORDER BY name
+        """,(actor.get("organization_id"),)).fetchall()
+        return {"workflows":[dict(x) for x in rows]}
+    finally:
+        c.close()
+
+@_a1os_product_router.get("/executions")
+def _a1os_product_executions(request: Request):
+    actor = _a1os_product_actor(request)
+    c = _a1os_product_db()
+    try:
+        rows = c.execute("""
+            SELECT id,organization_id,workflow_key,status,requested_by,
+                   approval_id,started_at,finished_at,error
+            FROM platform_execution_runs
+            WHERE organization_id IS NULL OR organization_id=?
+            ORDER BY id DESC LIMIT 100
+        """,(actor.get("organization_id"),)).fetchall()
+        return {"executions":[dict(x) for x in rows]}
+    finally:
+        c.close()
+
+@_a1os_product_router.get("/entitlements")
+def _a1os_product_entitlements(request: Request):
+    actor = _a1os_product_actor(request)
+    c = _a1os_product_db()
+    try:
+        rows = c.execute("""
+            SELECT organization_id,capability_key,status,source,
+                   starts_at,expires_at,updated_at
+            FROM platform_entitlements
+            WHERE organization_id=?
+            ORDER BY capability_key
+        """,(actor.get("organization_id"),)).fetchall()
+        return {"entitlements":[dict(x) for x in rows]}
+    finally:
+        c.close()
+
+@_a1os_product_router.get("/release")
+def _a1os_product_release(request: Request):
+    _a1os_product_actor(request)
+    c = _a1os_product_db()
+    try:
+        rows = c.execute("""
+            SELECT release_id,check_name,result,evidence,created_at
+            FROM platform_release_evidence
+            ORDER BY id DESC LIMIT 100
+        """).fetchall()
+        return {
+            "release":"production-certified",
+            "authority":"approval_gated",
+            "architecture":"folders_over_agents",
+            "evidence":[dict(x) for x in rows]
+        }
+    finally:
+        c.close()
+
+app.include_router(_a1os_product_router)
+# === END A1OS PRODUCTIZATION RELEASE ===
+
 @app.get("/", response_class=HTMLResponse)
 def a1os_platform_root():
     return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>A1OS Platform</title>\n<style>\nbody{font-family:system-ui,sans-serif;max-width:900px;margin:0 auto;padding:48px 24px}\nh1{margin-bottom:8px}\n.card{border:1px solid #ddd;border-radius:12px;padding:20px;margin-top:24px}\n.status{font-weight:700}\na{display:inline-block;margin:8px 12px 8px 0}\n</style>\n</head>\n<body>\n<h1>A1OS Platform</h1>\n<p>Platform control plane and API.</p>\n<div class="card">\n<div class="status">Platform API: <span id="status">checking...</span></div>\n<p>\n<a href="/docs">API Documentation</a>\n<a href="/openapi.json">OpenAPI</a>\n</p>\n</div>\n<script>\nfetch(\'/v1/health\')\n.then(r=>r.ok?r.json():Promise.reject())\n.then(d=>document.getElementById(\'status\').textContent=\'Operational\')\n.catch(()=>document.getElementById(\'status\').textContent=\'Unavailable\');\n</script>\n</body>\n</html>\n'
@@ -1972,6 +2128,80 @@ def list_stock_movements(request: Request):
         conn.close()
 
 
+
+# ============================================================
+# COMMERCE / POS
+# ============================================================
+POS_READ="commerce:read"
+POS_WRITE="commerce:write"
+
+def _pos_actor(request: Request, permission: str):
+    actor=_require_permission(request, permission)
+    if not actor.get("organization_id"):
+        raise HTTPException(status_code=403, detail="Commerce access requires an organization")
+    return actor
+
+@app.get("/v1/pos/sales")
+async def pos_sales(request: Request):
+    actor=_pos_actor(request,POS_READ)
+    conn=db()
+    try:
+        rows=conn.execute("""SELECT s.*,p.name AS customer_name FROM sales s LEFT JOIN parties p ON p.id=s.customer_party_id AND p.organization_id=s.organization_id WHERE s.organization_id=? ORDER BY s.id DESC LIMIT 200""",(actor["organization_id"],)).fetchall()
+        return {"sales":[dict(r) for r in rows]}
+    finally: conn.close()
+
+@app.get("/v1/pos/sales/{sale_id}")
+async def pos_sale(sale_id:int,request:Request):
+    actor=_pos_actor(request,POS_READ)
+    conn=db()
+    try:
+        sale=conn.execute("SELECT * FROM sales WHERE id=? AND organization_id=?",(sale_id,actor["organization_id"])).fetchone()
+        if not sale: raise HTTPException(status_code=404,detail="Sale not found")
+        items=conn.execute("SELECT si.*,p.name AS product_name,p.sku FROM sale_items si JOIN products p ON p.id=si.product_id AND p.organization_id=si.organization_id WHERE si.sale_id=? AND si.organization_id=? ORDER BY si.id",(sale_id,actor["organization_id"])).fetchall()
+        payments=conn.execute("SELECT * FROM sale_payments WHERE sale_id=? AND organization_id=? ORDER BY id",(sale_id,actor["organization_id"])).fetchall()
+        return {"sale":dict(sale),"items":[dict(r) for r in items],"payments":[dict(r) for r in payments]}
+    finally: conn.close()
+
+@app.post("/v1/pos/sales",status_code=201)
+async def create_pos_sale(request:Request):
+    actor=_pos_actor(request,POS_WRITE)
+    org=actor["organization_id"]; user=actor.get("id")
+    body=await request.json(); items=body.get("items",[])
+    if not isinstance(items,list) or not items: raise HTTPException(status_code=400,detail="At least one sale item is required")
+    warehouse=body.get("warehouse","main"); conn=db()
+    try:
+        conn.execute("BEGIN"); normalized=[]; total=0.0
+        customer=body.get("customer_party_id")
+        if customer is not None and not conn.execute("SELECT 1 FROM parties WHERE id=? AND organization_id=?",(customer,org)).fetchone(): raise HTTPException(status_code=400,detail="Invalid customer")
+        for i in items:
+            product=conn.execute("SELECT id,name,selling_price,active FROM products WHERE id=? AND organization_id=?",(i.get("product_id"),org)).fetchone()
+            q=float(i.get("quantity",0))
+            if not product or not product["active"] or q<=0: raise HTTPException(status_code=400,detail="Invalid product or quantity")
+            price=float(i["unit_price"]) if i.get("unit_price") is not None else float(product["selling_price"] or 0)
+            if price<0: raise HTTPException(status_code=400,detail="Invalid price")
+            stock=conn.execute("SELECT quantity FROM stock_items WHERE organization_id=? AND product_id=? AND warehouse=?",(org,product["id"],warehouse)).fetchone()
+            if not stock or float(stock["quantity"])<q: raise HTTPException(status_code=409,detail=f"Insufficient stock for product {product['id']}")
+            line=round(q*price,2); total=round(total+line,2); normalized.append((product["id"],q,price,line))
+        pay=body.get("payment") or {}; method=str(pay.get("method","")).lower(); amount=float(pay.get("amount",0) or 0)
+        if amount<0 or amount>total: raise HTTPException(status_code=400,detail="Invalid payment amount")
+        if amount and method not in {"cash","mobile_money","bank","card","credit"}: raise HTTPException(status_code=400,detail="Unsupported payment method")
+        status="paid" if amount>=total else "partial" if amount else "unpaid"
+        cur=conn.execute("""INSERT INTO sales(organization_id,customer_party_id,status,subtotal,total,payment_status,reference,created_by) VALUES(?,?, 'completed',?,?, ?,?,?,?)""",(org,customer,total,total,status,body.get("reference"),user))
+        sid=cur.lastrowid
+        for pid,q,price,line in normalized:
+            conn.execute("INSERT INTO sale_items(sale_id,organization_id,product_id,quantity,unit_price,line_total) VALUES(?,?,?,?,?,?)",(sid,org,pid,q,price,line))
+            conn.execute("UPDATE stock_items SET quantity=quantity-?,updated_at=CURRENT_TIMESTAMP WHERE organization_id=? AND product_id=? AND warehouse=?",(q,org,pid,warehouse))
+            conn.execute("INSERT INTO stock_movements(organization_id,product_id,warehouse,movement_type,quantity,reference,created_by) VALUES(?,?,?,?,?,?,?)",(org,pid,warehouse,"sale",-q,f"POS-{sid}",user))
+        if amount:
+            conn.execute("INSERT INTO sale_payments(sale_id,organization_id,method,amount,reference,created_by) VALUES(?,?,?,?,?,?)",(sid,org,method,amount,pay.get("reference"),user))
+        conn.execute("INSERT INTO audit_log(organization_id,actor_user_id,entity_type,entity_id,action,details) VALUES(?,?,?,?,?,?)",(org,user,"sale",sid,"created",json.dumps({"total":total,"payment":amount,"method":method})))
+        conn.commit()
+        return {"id":sid,"status":"completed","subtotal":total,"total":total,"payment_status":status}
+    except HTTPException: conn.rollback(); raise
+    except Exception: conn.rollback(); raise
+    finally: conn.close()
+
+
 # ============================================================
 # NOTIFICATIONS
 # ============================================================
@@ -2833,3 +3063,351 @@ async def websocket_endpoint(websocket: WebSocket):
         room = WS_ROOMS.get(organization_id, [])
         if websocket in room:
             room.remove(websocket)
+
+
+# A1OS_UNIFIED_PLATFORM_V1
+# Deterministic platform control plane. AI is not an execution authority.
+
+from pathlib import Path as _A1OSPath
+import json as _a1os_json
+import os as _a1os_os
+import sqlite3 as _a1os_sqlite
+import platform as _a1os_platform
+import shutil as _a1os_shutil
+import time as _a1os_time
+from fastapi.responses import HTMLResponse as _A1OSHTMLResponse
+
+_A1OS_ROOT = _A1OSPath(_a1os_os.getenv(
+    "A1OS_ROOT",
+    str(_A1OSPath.home() / "A1OS_RESTORED")
+))
+_A1OS_DB = _A1OSPath(_a1os_os.getenv(
+    "A1OS_PLATFORM_DB",
+    str(
+        _A1OS_ROOT
+        / "runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db"
+    )
+))
+
+def _a1os_platform_db():
+    c = _a1os_sqlite.connect(_A1OS_DB, timeout=30.0, isolation_level=None)
+    c.row_factory = _a1os_sqlite.Row
+    c.execute("PRAGMA foreign_keys=ON")
+    return c
+
+def _a1os_json(row):
+    return _a1os_json.loads(row) if isinstance(row, str) else row
+
+def _a1os_platform_actor(request: Request, permission: str = "organizations:read"):
+    return _require_permission(request, permission)
+
+def _a1os_rows(conn, sql, args=()):
+    return [dict(x) for x in conn.execute(sql, args).fetchall()]
+
+@app.get("/v1/platform/overview")
+def a1os_platform_overview(request: Request):
+    actor = _a1os_platform_actor(request)
+    conn = _a1os_platform_db()
+    try:
+        orgs = conn.execute("SELECT COUNT(*) FROM organizations").fetchone()[0]
+        resources = conn.execute("SELECT COUNT(*) FROM platform_resources").fetchone()[0]
+        workflows = conn.execute("SELECT COUNT(*) FROM platform_workflows WHERE enabled=1").fetchone()[0]
+        approvals = conn.execute(
+            "SELECT COUNT(*) FROM platform_approvals WHERE status='pending'"
+        ).fetchone()[0]
+        subscriptions = conn.execute(
+            "SELECT COUNT(*) FROM platform_subscriptions WHERE status='active'"
+        ).fetchone()[0]
+        deployments = conn.execute(
+            "SELECT COUNT(*) FROM platform_deployments WHERE status='running'"
+        ).fetchone()[0]
+        return {
+            "ok": True,
+            "platform": "A1OS",
+            "architecture": "folders_over_agents",
+            "authority": "approval_gated",
+            "organizations": orgs,
+            "resources": resources,
+            "active_workflows": workflows,
+            "pending_approvals": approvals,
+            "active_subscriptions": subscriptions,
+            "running_deployments": deployments,
+            "actor": {
+                "id": actor.get("id"),
+                "organization_id": actor.get("organization_id"),
+                "role": actor.get("role"),
+            },
+        }
+    finally:
+        conn.close()
+
+@app.get("/v1/platform/organizations")
+def a1os_platform_organizations(request: Request):
+    _a1os_platform_actor(request)
+    conn = _a1os_platform_db()
+    try:
+        return {"ok": True, "items": _a1os_rows(
+            conn,
+            """SELECT id, code, name, industry, created_at, updated_at
+               FROM organizations ORDER BY id"""
+        )}
+    finally:
+        conn.close()
+
+@app.get("/v1/platform/resources")
+def a1os_platform_resources(request: Request):
+    actor = _a1os_platform_actor(request)
+    org_id = actor.get("organization_id")
+    conn = _a1os_platform_db()
+    try:
+        if actor.get("role") in ("super_admin", "platform_admin", "owner", "admin"):
+            rows = _a1os_rows(
+                conn,
+                """SELECT * FROM platform_resources
+                   ORDER BY updated_at DESC"""
+            )
+        else:
+            rows = _a1os_rows(
+                conn,
+                """SELECT * FROM platform_resources
+                   WHERE organization_id IS NULL OR organization_id=?
+                   ORDER BY updated_at DESC""",
+                (org_id,)
+            )
+        for row in rows:
+            row["config_json"] = _a1os_json(row["config_json"])
+        return {"ok": True, "items": rows}
+    finally:
+        conn.close()
+
+@app.get("/v1/platform/capabilities")
+def a1os_platform_capabilities(request: Request):
+    _a1os_platform_actor(request)
+    conn = _a1os_platform_db()
+    try:
+        return {"ok": True, "items": _a1os_rows(
+            conn,
+            """SELECT id, capability_key, name, description, enabled
+               FROM platform_capabilities
+               WHERE enabled=1 ORDER BY name"""
+        )}
+    finally:
+        conn.close()
+
+@app.get("/v1/platform/products")
+def a1os_platform_products(request: Request):
+    actor = _a1os_platform_actor(request)
+    conn = _a1os_platform_db()
+    try:
+        org_id = actor.get("organization_id")
+        rows = _a1os_rows(
+            conn,
+            """SELECT id, organization_id, product_key, version,
+                      config_json, enabled, updated_at
+               FROM platform_product_configs
+               WHERE organization_id=? OR organization_id IS NULL
+               ORDER BY product_key""",
+            (org_id,)
+        )
+        for row in rows:
+            row["config_json"] = _a1os_json(row["config_json"])
+        return {"ok": True, "items": rows}
+    finally:
+        conn.close()
+
+@app.get("/v1/platform/workflows")
+def a1os_platform_workflows(request: Request):
+    actor = _a1os_platform_actor(request)
+    conn = _a1os_platform_db()
+    try:
+        org_id = actor.get("organization_id")
+        rows = _a1os_rows(
+            conn,
+            """SELECT id, organization_id, workflow_key, name,
+                      definition_json, enabled, updated_at
+               FROM platform_workflows
+               WHERE organization_id IS NULL OR organization_id=?
+               ORDER BY name""",
+            (org_id,)
+        )
+        for row in rows:
+            row["definition_json"] = _a1os_json(row["definition_json"])
+        return {"ok": True, "items": rows}
+    finally:
+        conn.close()
+
+@app.get("/v1/platform/approvals")
+def a1os_platform_approvals(request: Request):
+    _a1os_platform_actor(request)
+    conn = _a1os_platform_db()
+    try:
+        rows = _a1os_rows(
+            conn,
+            """SELECT id, organization_id, action_key, action_type,
+                      target_type, target_id, status, reason,
+                      created_at, decided_at
+               FROM platform_approvals
+               ORDER BY created_at DESC LIMIT 100"""
+        )
+        return {"ok": True, "items": rows}
+    finally:
+        conn.close()
+
+@app.get("/v1/platform/billing")
+def a1os_platform_billing(request: Request):
+    actor = _a1os_platform_actor(request)
+    conn = _a1os_platform_db()
+    try:
+        plans = _a1os_rows(
+            conn,
+            """SELECT id, plan_key, name, currency, amount, interval, active
+               FROM platform_billing_plans WHERE active=1 ORDER BY amount"""
+        )
+        org_id = actor.get("organization_id")
+        subs = _a1os_rows(
+            conn,
+            """SELECT s.id, s.organization_id, p.plan_key, p.name,
+                      p.currency, p.amount, s.status, s.started_at, s.renews_at
+               FROM platform_subscriptions s
+               JOIN platform_billing_plans p ON p.id=s.plan_id
+               WHERE s.organization_id=? ORDER BY s.created_at DESC""",
+            (org_id,)
+        )
+        return {"ok": True, "plans": plans, "subscriptions": subs}
+    finally:
+        conn.close()
+
+@app.get("/v1/platform/health")
+def a1os_platform_health(request: Request):
+    _a1os_platform_actor(request)
+    checks = []
+    start = _a1os_time.monotonic()
+
+    checks.append({
+        "key": "api",
+        "status": "pass",
+        "details": {"service": _a1os_os.getenv("A1OS_SERVICE_NAME", "a1os-platform-api")}
+    })
+
+    conn = _a1os_platform_db()
+    try:
+        conn.execute("SELECT 1")
+        checks.append({"key": "database", "status": "pass", "details": {"path": str(_A1OS_DB)}})
+
+        required = [
+            "organizations",
+            "platform_resources",
+            "platform_capabilities",
+            "platform_policies",
+            "platform_workflows",
+            "platform_workflow_runs",
+            "platform_approvals",
+            "platform_health_checks",
+            "platform_product_configs",
+            "platform_billing_plans",
+            "platform_subscriptions",
+            "platform_usage_events",
+            "platform_deployments",
+        ]
+        existing = {
+            r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        missing = [x for x in required if x not in existing]
+        checks.append({
+            "key": "schema",
+            "status": "pass" if not missing else "fail",
+            "details": {"missing": missing},
+        })
+
+        disk = _a1os_shutil.disk_usage(_A1OS_ROOT)
+        checks.append({
+            "key": "storage",
+            "status": "pass" if disk.free > 100 * 1024 * 1024 else "warn",
+            "details": {
+                "free_bytes": disk.free,
+                "total_bytes": disk.total,
+            },
+        })
+
+        conn.executemany(
+            """INSERT INTO platform_health_checks
+               (check_key,name,category,status,details_json,checked_at)
+               VALUES(?,?,?,?,?,CURRENT_TIMESTAMP)
+               ON CONFLICT(check_key) DO UPDATE SET
+               status=excluded.status,
+               details_json=excluded.details_json,
+               checked_at=excluded.checked_at""",
+            [
+                (
+                    x["key"],
+                    x["key"].replace("_", " ").title(),
+                    "platform",
+                    x["status"],
+                    _a1os_json.dumps(x["details"]),
+                )
+                for x in checks
+            ],
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    failed = [x for x in checks if x["status"] == "fail"]
+    return {
+        "ok": not failed,
+        "checks": checks,
+        "duration_ms": round((_a1os_time.monotonic() - start) * 1000, 2),
+        "runtime": {
+            "python": _a1os_platform.python_version(),
+            "platform": _a1os_platform.platform(),
+        },
+    }
+
+@app.get("/v1/platform/terminal")
+def a1os_platform_terminal(request: Request):
+    actor = _a1os_platform_actor(request)
+    if actor.get("role") not in (
+        "super_admin", "platform_admin", "owner", "admin", "manager"
+    ):
+        raise HTTPException(status_code=403, detail="Terminal control requires platform authority")
+
+    disk = _a1os_shutil.disk_usage(_A1OS_ROOT)
+    return {
+        "ok": True,
+        "authority": "restricted_workflows_only",
+        "arbitrary_shell": False,
+        "root": str(_A1OS_ROOT),
+        "python": _a1os_platform.python_version(),
+        "system": _a1os_platform.system(),
+        "release": _a1os_platform.release(),
+        "machine": _a1os_platform.machine(),
+        "cpu_count": _a1os_os.cpu_count(),
+        "storage": {
+            "total": disk.total,
+            "used": disk.used,
+            "free": disk.free,
+        },
+    }
+
+@app.get("/v1/platform/deployments")
+def a1os_platform_deployments(request: Request):
+    _a1os_platform_actor(request)
+    conn = _a1os_platform_db()
+    try:
+        return {"ok": True, "items": _a1os_rows(
+            conn,
+            """SELECT id, organization_id, deployment_key, target,
+                      version, status, evidence_json, created_at, completed_at
+               FROM platform_deployments
+               ORDER BY created_at DESC LIMIT 100"""
+        )}
+    finally:
+        conn.close()
+
+@app.get("/command-center", response_class=_A1OSHTMLResponse)
+def a1os_command_center():
+    return _A1OSPath(
+        _A1OS_ROOT / ".private/platform/a1os-platform-contract/runtime/command-center.html"
+    ).read_text()

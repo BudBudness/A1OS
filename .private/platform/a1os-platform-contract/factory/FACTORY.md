@@ -1,0 +1,17 @@
+# Product Factory
+
+The factory provisions organizations from product templates.
+
+Flow:
+
+SELECT PRODUCT
+-> SELECT CAPABILITIES
+-> CONFIGURE ORGANIZATION
+-> CONFIGURE BRAND
+-> CONFIGURE ACCESS
+-> CONFIGURE WORKFLOWS
+-> CONFIGURE INTEGRATIONS
+-> VALIDATE
+-> PROVISION
+-> VERIFY
+-> AUDIT

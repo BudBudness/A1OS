@@ -1,0 +1,14 @@
+{
+  "01": {"folder":"core","deliverable":"platform contract and invariants"},
+  "02": {"folder":"ui/command-center","deliverable":"owner command center"},
+  "03": {"folder":"core","deliverable":"organizations/resources/capabilities/policies"},
+  "04": {"folder":"products","deliverable":"configurable product and vertical system"},
+  "05": {"folder":"terminal","deliverable":"managed terminal control"},
+  "06": {"folder":"automation","deliverable":"deterministic workflow and automation engine"},
+  "07": {"folder":"authority","deliverable":"approval and consequence controls"},
+  "08": {"folder":"health","deliverable":"health, drift and reconciliation"},
+  "09": {"folder":"billing","deliverable":"plans, subscriptions, usage and monetization"},
+  "10": {"folder":"factory","deliverable":"product templates and organization provisioning"},
+  "11": {"folder":"verticals","deliverable":"production hardening of existing verticals"},
+  "12": {"folder":"certification","deliverable":"production certification and release evidence"}
+}
