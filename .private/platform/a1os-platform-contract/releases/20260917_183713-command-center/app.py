@@ -424,239 +424,11 @@ async def _ws_send_to_org(organization_id, message):
 a1os_boundary_migrate()
 
 
-def _bootstrap_runtime_schema():
-    conn = db()
-    try:
-        conn.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS platform_workflow_definitions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                key TEXT NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                trigger_type TEXT NOT NULL DEFAULT 'manual',
-                enabled INTEGER NOT NULL DEFAULT 1,
-                version TEXT NOT NULL DEFAULT '1',
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(organization_id, key)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_attention_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                severity TEXT NOT NULL DEFAULT 'medium',
-                category TEXT NOT NULL DEFAULT 'general',
-                title TEXT NOT NULL,
-                detail TEXT,
-                status TEXT NOT NULL DEFAULT 'open',
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_execution_runs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                workflow_key TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'pending',
-                requested_by INTEGER,
-                approval_id INTEGER,
-                started_at TEXT,
-                finished_at TEXT,
-                error TEXT,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_resources (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                resource_type TEXT NOT NULL,
-                resource_key TEXT NOT NULL,
-                name TEXT NOT NULL,
-                config_json TEXT NOT NULL DEFAULT '{}',
-                status TEXT NOT NULL DEFAULT 'active',
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(organization_id, resource_type, resource_key)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_capabilities (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                capability_key TEXT NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                config_json TEXT NOT NULL DEFAULT '{}',
-                enabled INTEGER NOT NULL DEFAULT 1,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(organization_id, capability_key)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_policies (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                policy_key TEXT NOT NULL,
-                name TEXT NOT NULL,
-                effect TEXT NOT NULL DEFAULT 'allow',
-                rules_json TEXT NOT NULL DEFAULT '{}',
-                enabled INTEGER NOT NULL DEFAULT 1,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(organization_id, policy_key)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_workflows (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                workflow_key TEXT NOT NULL,
-                name TEXT NOT NULL,
-                definition_json TEXT NOT NULL DEFAULT '{}',
-                enabled INTEGER NOT NULL DEFAULT 1,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(organization_id, workflow_key)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_workflow_runs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                workflow_id INTEGER NOT NULL,
-                organization_id INTEGER,
-                status TEXT NOT NULL DEFAULT 'pending',
-                input_json TEXT NOT NULL DEFAULT '{}',
-                output_json TEXT NOT NULL DEFAULT '{}',
-                error TEXT,
-                started_at TEXT,
-                completed_at TEXT,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(workflow_id) REFERENCES platform_workflows(id)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_approvals (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                action_key TEXT NOT NULL,
-                action_type TEXT NOT NULL,
-                target_type TEXT,
-                target_id TEXT,
-                requested_by INTEGER,
-                approved_by INTEGER,
-                status TEXT NOT NULL DEFAULT 'pending',
-                reason TEXT,
-                decision_json TEXT NOT NULL DEFAULT '{}',
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                decided_at TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_billing_plans (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                plan_key TEXT NOT NULL UNIQUE,
-                name TEXT NOT NULL,
-                currency TEXT NOT NULL DEFAULT 'UGX',
-                amount REAL NOT NULL DEFAULT 0,
-                interval TEXT NOT NULL DEFAULT 'monthly',
-                capabilities_json TEXT NOT NULL DEFAULT '[]',
-                active INTEGER NOT NULL DEFAULT 1,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_subscriptions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER NOT NULL,
-                plan_id INTEGER NOT NULL,
-                status TEXT NOT NULL DEFAULT 'active',
-                started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                renews_at TEXT,
-                external_ref TEXT,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(plan_id) REFERENCES platform_billing_plans(id)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_deployments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                deployment_key TEXT NOT NULL,
-                target TEXT NOT NULL,
-                version TEXT,
-                status TEXT NOT NULL DEFAULT 'pending',
-                evidence_json TEXT NOT NULL DEFAULT '{}',
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                completed_at TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_product_configs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER NOT NULL,
-                product_key TEXT NOT NULL,
-                version TEXT NOT NULL DEFAULT '1',
-                config_json TEXT NOT NULL DEFAULT '{}',
-                enabled INTEGER NOT NULL DEFAULT 1,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(organization_id, product_key)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_usage_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER,
-                capability_key TEXT NOT NULL,
-                quantity REAL NOT NULL DEFAULT 1,
-                unit TEXT NOT NULL DEFAULT 'event',
-                reference TEXT,
-                metadata_json TEXT NOT NULL DEFAULT '{}',
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_health_checks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                check_key TEXT NOT NULL UNIQUE,
-                name TEXT NOT NULL,
-                category TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'unknown',
-                details_json TEXT NOT NULL DEFAULT '{}',
-                checked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_entitlements (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                organization_id INTEGER NOT NULL,
-                capability_key TEXT NOT NULL,
-                status TEXT NOT NULL DEFAULT 'active',
-                source TEXT NOT NULL DEFAULT 'system',
-                starts_at TEXT,
-                expires_at TEXT,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(organization_id, capability_key)
-            );
-
-            CREATE TABLE IF NOT EXISTS platform_release_evidence (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                release_id TEXT NOT NULL,
-                check_name TEXT NOT NULL,
-                result TEXT NOT NULL DEFAULT 'pass',
-                evidence TEXT,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            """
-        )
-        conn.commit()
-    finally:
-        conn.close()
-
-
-_bootstrap_runtime_schema()
-
-
 app = FastAPI(
     title="A1OS Platform API",
     version="1.0.0",
     description="Multi-tenant platform backend serving industry-specific frontends.",
 )
-
-
-@app.on_event("startup")
-def _on_startup():
-    _bootstrap_runtime_schema()
 
 
 
@@ -3297,7 +3069,7 @@ async def websocket_endpoint(websocket: WebSocket):
 # Deterministic platform control plane. AI is not an execution authority.
 
 from pathlib import Path as _A1OSPath
-import json as _a1os_json_module
+import json as _a1os_json
 import os as _a1os_os
 import sqlite3 as _a1os_sqlite
 import platform as _a1os_platform
@@ -3307,11 +3079,14 @@ from fastapi.responses import HTMLResponse as _A1OSHTMLResponse
 
 _A1OS_ROOT = _A1OSPath(_a1os_os.getenv(
     "A1OS_ROOT",
-    str(_A1OSPath(__file__).resolve().parents[4])
+    str(_A1OSPath.home() / "A1OS_RESTORED")
 ))
 _A1OS_DB = _A1OSPath(_a1os_os.getenv(
     "A1OS_PLATFORM_DB",
-    str(DB_PATH)
+    str(
+        _A1OS_ROOT
+        / "runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db"
+    )
 ))
 
 def _a1os_platform_db():
@@ -3321,7 +3096,7 @@ def _a1os_platform_db():
     return c
 
 def _a1os_json(row):
-    return _a1os_json_module.loads(row) if isinstance(row, str) else row
+    return _a1os_json.loads(row) if isinstance(row, str) else row
 
 def _a1os_platform_actor(request: Request, permission: str = "organizations:read"):
     return _require_permission(request, permission)
@@ -3570,7 +3345,7 @@ def a1os_platform_health(request: Request):
                     x["key"].replace("_", " ").title(),
                     "platform",
                     x["status"],
-                    _a1os_json_module.dumps(x["details"]),
+                    _a1os_json.dumps(x["details"]),
                 )
                 for x in checks
             ],
@@ -3636,119 +3411,3 @@ def a1os_command_center():
     return _A1OSPath(
         _A1OS_ROOT / ".private/platform/a1os-platform-contract/runtime/command-center.html"
     ).read_text()
-
-# === A1OS COMMAND CENTER API V2 ===
-from fastapi import APIRouter, Request
-command_center_router=APIRouter(
-    prefix="/v1/command-center",
-    tags=["command-center"]
-)
-
-def _cc_platform(request: Request, path: str, permission: str = "organizations:read"):
-    """
-    Command Center is a read/control projection over the existing
-    authenticated platform contract. It does not bypass platform auth.
-    """
-    actor = _a1os_platform_actor(request, permission)
-    return actor, path
-
-
-@command_center_router.get("/dashboard")
-def command_center_dashboard(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/overview")
-    return a1os_platform_overview(request)
-
-
-@command_center_router.get("/organizations")
-def command_center_organizations(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/organizations")
-    return a1os_platform_organizations(request)
-
-
-@command_center_router.get("/resources")
-def command_center_resources(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/resources")
-    return a1os_platform_resources(request)
-
-
-@command_center_router.get("/capabilities")
-def command_center_capabilities(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/capabilities")
-    return a1os_platform_capabilities(request)
-
-
-@command_center_router.get("/products")
-def command_center_products(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/products")
-    return a1os_platform_products(request)
-
-
-@command_center_router.get("/workflows")
-def command_center_workflows(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/workflows")
-    return a1os_platform_workflows(request)
-
-
-@command_center_router.get("/approvals")
-def command_center_approvals(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/approvals")
-    return a1os_platform_approvals(request)
-
-
-@command_center_router.get("/billing")
-def command_center_billing(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/billing")
-    return a1os_platform_billing(request)
-
-
-@command_center_router.get("/health")
-def command_center_health(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/health")
-    return a1os_platform_health(request)
-
-
-@command_center_router.get("/deployments")
-def command_center_deployments(request: Request):
-    actor, _ = _cc_platform(request, "/v1/platform/deployments")
-    return a1os_platform_deployments(request)
-
-
-@command_center_router.get("/terminal")
-def command_center_terminal(request: Request):
-    """
-    Terminal remains restricted by the existing platform authority check.
-    The Command Center never weakens that restriction.
-    """
-    return a1os_platform_terminal(request)
-
-
-@command_center_router.get("/automation")
-def command_center_automation(request: Request):
-    """
-    Automation projection currently uses the existing workflow contract.
-    No new execution authority is introduced here.
-    """
-    actor, _ = _cc_platform(request, "/v1/platform/workflows")
-    data = a1os_platform_workflows(request)
-    if isinstance(data, dict):
-        data.setdefault("control_surface", "automation")
-    return data
-
-
-@command_center_router.get("/security")
-def command_center_security(request: Request):
-    """
-    Security projection is intentionally read-only. It reports the
-    platform security contract without creating a second auth system.
-    """
-    actor, _ = _cc_platform(request, "/v1/platform/capabilities")
-    capabilities = a1os_platform_capabilities(request)
-    return {
-        "control_surface": "security",
-        "mode": "read_only",
-        "authority": actor,
-        "capabilities": capabilities,
-    }
-
-
-app.include_router(command_center_router)

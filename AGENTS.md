@@ -14,17 +14,17 @@ Autonomous multi-engine AI/agent orchestration platform ("A1OS Factory"). Python
 
 - Tests: `python3 -m pytest` (pytest.ini `asyncio_mode=auto`; asyncio handling in `tests/conftest.py`). CI equivalent: `python -m compileall .` and `python -m unittest discover tests`.
 - Root-level `*_test.py` (e.g. `authorization_lifecycle_integrity_test.py`) are standalone async scripts — run directly with `python3 <file>.py`.
-- Core API: `python3 main.py` → uvicorn on :3011 (`core/api.py`), binds `127.0.0.1`, reconciled hourly by the watchdog loop (`ops/a1os-reconciler.py` + `ops/services.json` + `ops/adapters/`). `a1ctl` talks to it.
-- Control CLI: `./a1ctl status` / `./a1ctl exec` — talks to the core on `http://127.0.0.1:3011/v1`.
+- Canonical platform API: `.private/platform/a1os-platform-api/api/app.py` is the authoritative runtime entrypoint for the main repo. It is launched with `uvicorn api.app:app --host 127.0.0.1 --port 3013` from the platform API directory.
+- Control CLI: `./a1ctl status` / `./a1ctl exec` — talks to the active platform API on `http://127.0.0.1:3013/v1`.
 - Node tooling (`package.json`: playwright, chrome-remote-interface, react-three): `npm install`.
 
 ## Runtime wiring (production topology)
 
-Canonical launchers and service ownership are defined by `ops/services.json` and the A1OS reconcile loop. One service per port — do not move core service ports.
+Canonical launchers and service ownership are defined by `ops/services.json` and the A1OS reconcile loop. One service per port — do not move the active platform service ports.
 
-- **3011** — A1OS core engine (`python3 main.py`, binds `127.0.0.1`). Reconciled hourly: probe → restart via `ops/adapters/restart-core.sh` → `ops/a1os-core-launch.sh` (single-owner launcher — kills any port-owner then starts exactly one core). Manual bring-up: `ops/a1os-core-launch.sh`.
-- **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — `little-oaks.pyongcity.org/api/*` → 3012, everything else → 8080.
-`a1ctl` talks to the A1OS core on 3011 (`python3 main.py`). The stack is reconciled by the A1OS watchdog according to `ops/services.json`.
+- **3013** — A1OS platform API (`uvicorn api.app:app --host 127.0.0.1 --port 3013` from `.private/platform/a1os-platform-api/api`). This is the verified active service for the main repo and is the source-of-truth contract used by `ops/services.json` and the contract gates.
+- **Cloudflare tunnel `a1os-prod`** (`~/.cloudflared/config.yml`) — public ingress is separate from the repo's canonical runtime contract. The active repo service is `http://127.0.0.1:3013/v1/health`; tunnel rules can forward external traffic to that origin or to auxiliary frontends, but the authoritative main-repo platform API remains on 3013.
+`a1ctl` talks to the A1OS platform API on `http://127.0.0.1:3013/v1`. The stack is reconciled by the A1OS watchdog according to `ops/services.json`.
 
 Watchdogs + cron (canonical source `~/crontab.txt`; installed to BOTH the `u0_a433` spool that crond reads and the `root` spool that proot `crontab -l` shows): hourly `ops/a1os-production-watchdog.sh` — the single reconcile-loop driver. It (a) runs `ops/a1os-reconciler.py` to reconcile all local services against `ops/services.json` (probe → restart via `ops/adapters/`), (b) checks public reachability + tunnel (restarts tunnel as `cloudflared tunnel --protocol http2 --config ~/.cloudflared/config.yml run a1os-prod`; kill patterns scoped to `a1os-prod`/its UUID `7fdd3dce` so other tunnels are never touched), (c) checks DB integrity. Daily 1:00 + weekly Sun 12:00 (local EAT) DB backups via `~/backup-little-oaks-education-db.sh` (tracked source `ops/backup-little-oaks-education-db.sh`; sqlite `.backup`, integrity-checked, 30-day retention). The watchdog fires a **ntfy.sh alert** on any FAIL/CRITICAL — topic read from `~/.a1os/ntfy.topic` (untracked; subscribe in the ntfy app to receive pushes). After each DB backup, `ops/push-education-backups.sh` copies the latest `education-*.db` into the **private** GitHub repo `BudBudness/a1os-backups` (local clone `~/a1os-backups`, HTTPS/`gh` auth, idempotent). Auth: `POST /auth/change-password` (authed; requires `current_password` + `new_password`, min 8 chars; invalidates other sessions); UI has a Change Password page + Logout in the sidebar. `/auth/login` and `/auth/change-password` are rate-limited (20 attempts / 300s per client IP, in-memory — keep uvicorn at `--workers 1`).
 

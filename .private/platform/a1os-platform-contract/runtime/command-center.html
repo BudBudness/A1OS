@@ -25,6 +25,79 @@ button:hover{border-color:#65748b}pre{white-space:pre-wrap;overflow:auto;font-si
 </style>
 </head>
 <body>
+<style>
+:root{--cc-border:#252a33;--cc-muted:#8b93a1;--cc-panel:#11151b;--cc-bg:#080a0e}
+.cc-shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh;background:var(--cc-bg)}
+.cc-nav{position:sticky;top:0;height:100vh;border-right:1px solid var(--cc-border);padding:20px 14px;background:#0b0e13}
+.cc-brand{font-weight:800;font-size:18px;margin:0 8px 22px}
+.cc-owner{font-size:11px;color:var(--cc-muted);margin:0 8px 18px;text-transform:uppercase;letter-spacing:.12em}
+.cc-nav button{display:block;width:100%;text-align:left;border:0;background:transparent;color:inherit;padding:10px 12px;border-radius:8px;margin:2px 0;cursor:pointer}
+.cc-nav button:hover,.cc-nav button.active{background:#181d25}
+.cc-main{padding:24px;max-width:1600px;width:100%;box-sizing:border-box}
+.cc-head{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:22px}
+.cc-title{font-size:25px;font-weight:800}
+.cc-status{font-size:12px;color:var(--cc-muted)}
+.cc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}
+.cc-card,.cc-panel{border:1px solid var(--cc-border);background:var(--cc-panel);border-radius:12px}
+.cc-card{padding:16px}
+.cc-label{font-size:11px;color:var(--cc-muted);text-transform:uppercase;letter-spacing:.08em}
+.cc-value{font-size:26px;font-weight:800;margin-top:7px}
+.cc-section{display:none}
+.cc-section.active{display:block}
+.cc-panel{padding:16px;margin-bottom:14px}
+.cc-panel h2{font-size:15px;margin:0 0 12px}
+.cc-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:11px 0;border-top:1px solid var(--cc-border);font-size:12px}
+.cc-row span{min-width:0;overflow-wrap:anywhere}
+.cc-empty{color:var(--cc-muted);padding:16px 0;font-size:13px}
+.cc-ok{color:#8bd49c}.cc-warn{color:#e5bd73}.cc-err{color:#df8585}
+@media(max-width:900px){.cc-shell{grid-template-columns:1fr}.cc-nav{position:relative;height:auto;display:flex;overflow:auto;gap:4px}.cc-brand,.cc-owner{display:none}.cc-nav button{width:auto;white-space:nowrap}.cc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cc-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<div class="cc-shell">
+<nav class="cc-nav" aria-label="Owner control navigation">
+  <div class="cc-brand">A1OS OWNER</div>
+  <div class="cc-owner">Control Surface</div>
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="organizations">Organizations</button>
+  <button data-tab="resources">Resources</button>
+  <button data-tab="approvals">Approvals</button>
+  <button data-tab="health">Health</button>
+  <button data-tab="deployments">Deployments</button>
+  <button data-tab="billing">Billing</button>
+  <button data-tab="automation">Automation</button>
+  <button data-tab="terminal">Terminal</button>
+  <button data-tab="security">Security</button>
+</nav>
+<main class="cc-main">
+  <header class="cc-head">
+    <div>
+      <div class="cc-title">Command Center</div>
+      <div class="cc-status" id="cc-sync">Connecting to live control plane…</div>
+    </div>
+    <div class="cc-status" id="cc-clock"></div>
+  </header>
+
+  <section id="cc-overview" class="cc-section active">
+    <div class="cc-grid">
+      <div class="cc-card"><div class="cc-label">Organizations</div><div class="cc-value" data-cc="organizations">0</div></div>
+      <div class="cc-card"><div class="cc-label">Resources</div><div class="cc-value" data-cc="resources">0</div></div>
+      <div class="cc-card"><div class="cc-label">Approvals</div><div class="cc-value" data-cc="approvals">0</div></div>
+      <div class="cc-card"><div class="cc-label">Deployments</div><div class="cc-value" data-cc="deployments">0</div></div>
+    </div>
+    <div class="cc-panel"><h2>System Overview</h2><div data-list="overview" class="cc-empty">Loading live state…</div></div>
+  </section>
+
+  <section id="cc-organizations" class="cc-section"><div class="cc-panel"><h2>Organizations</h2><div data-list="organizations" class="cc-empty">Loading…</div></div></section>
+  <section id="cc-resources" class="cc-section"><div class="cc-panel"><h2>Resources</h2><div data-list="resources" class="cc-empty">Loading…</div></div></section>
+  <section id="cc-approvals" class="cc-section"><div class="cc-panel"><h2>Approvals</h2><div data-list="approvals" class="cc-empty">Loading…</div></div></section>
+  <section id="cc-health" class="cc-section"><div class="cc-panel"><h2>Health</h2><div data-list="health" class="cc-empty">Loading…</div></div></section>
+  <section id="cc-deployments" class="cc-section"><div class="cc-panel"><h2>Deployments</h2><div data-list="deployments" class="cc-empty">Loading…</div></div></section>
+  <section id="cc-billing" class="cc-section"><div class="cc-panel"><h2>Billing</h2><div data-list="billing" class="cc-empty">Waiting for billing API…</div></div></section>
+  <section id="cc-automation" class="cc-section"><div class="cc-panel"><h2>Automation</h2><div data-list="automation" class="cc-empty">Waiting for automation API…</div></div></section>
+  <section id="cc-terminal" class="cc-section"><div class="cc-panel"><h2>Terminal</h2><div data-list="terminal" class="cc-empty">Terminal execution remains approval-gated.</div></div></section>
+  <section id="cc-security" class="cc-section"><div class="cc-panel"><h2>Security</h2><div data-list="security" class="cc-empty">Loading security state…</div></div></section>
+</main>
+</div>
+
 <header><div class="brand">A1OS / COMMAND CENTER</div><div id="state" class="status">CONNECTING</div></header>
 <main>
 <nav>
@@ -77,5 +150,100 @@ function show(section){
  else p.innerHTML='<pre>'+esc(JSON.stringify({architecture:data.s?.architecture,authority:data.s?.authority,metrics:data.s?.metrics},null,2))+'</pre>';
 }
 loadAll();setInterval(loadAll,30000);
+</script>
+
+<script>
+(()=>{
+const endpoints={
+  overview:"/v1/command-center/dashboard",
+  organizations:"/v1/command-center/organizations",
+  resources:"/v1/command-center/resources",
+  approvals:"/v1/command-center/approvals",
+  health:"/v1/command-center/health",
+  deployments:"/v1/command-center/deployments",
+  billing:"/v1/command-center/billing",
+  automation:"/v1/command-center/automation",
+  terminal:"/v1/command-center/terminal",
+  security:"/v1/command-center/security"
+};
+
+const api=async path=>{
+  const r=await fetch(path,{credentials:"include",headers:{"Accept":"application/json"}});
+  if(!r.ok) throw Error(String(r.status));
+  return r.json();
+};
+
+const esc=v=>String(v??"")
+ .replaceAll("&","&amp;").replaceAll("<","&lt;")
+ .replaceAll(">","&gt;").replaceAll('"',"&quot;");
+
+const render=(key,j)=>{
+  const el=document.querySelector(`[data-list="${key}"]`);
+  if(!el)return;
+  const a=Array.isArray(j.items)?j.items:
+          Array.isArray(j.data)?j.data:
+          key==="overview"?[j.dashboard||j]:[];
+  if(!a.length){
+    el.innerHTML='<div class="cc-empty">No live records.</div>';
+    return;
+  }
+  el.innerHTML=a.map(v=>{
+    if(typeof v!=="object"||v===null)
+      return `<div class="cc-row"><span>${esc(v)}</span></div>`;
+    return `<div class="cc-row">${
+      Object.entries(v).slice(0,5).map(([k,val])=>
+        `<span><b>${esc(k)}</b> ${esc(typeof val==="object"?JSON.stringify(val):val)}</span>`
+      ).join("")
+    }</div>`;
+  }).join("");
+};
+
+async function refresh(){
+  const sync=document.getElementById("cc-sync");
+  try{
+    const d=await api(endpoints.overview);
+    const x=d.dashboard||d;
+    document.querySelectorAll("[data-cc]").forEach(e=>{
+      e.textContent=x[e.dataset.cc]??0;
+    });
+    render("overview",d);
+    sync.textContent="LIVE • API connected";
+    sync.className="cc-status cc-ok";
+  }catch(e){
+    sync.textContent="API unavailable / authentication required";
+    sync.className="cc-status cc-err";
+  }
+
+  for(const key of Object.keys(endpoints)){
+    if(key==="overview")continue;
+    if(!endpoints[key]){
+      const el=document.querySelector(`[data-list="${key}"]`);
+      if(el)el.innerHTML='<div class="cc-empty">Control surface not yet exposed by the platform API.</div>';
+      continue;
+    }
+    try{render(key,await api(endpoints[key]));}
+    catch(e){
+      const el=document.querySelector(`[data-list="${key}"]`);
+      if(el)el.innerHTML='<div class="cc-empty">Endpoint unavailable or authentication required.</div>';
+    }
+  }
+}
+
+document.querySelectorAll("[data-tab]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".cc-section").forEach(x=>x.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("cc-"+btn.dataset.tab)?.classList.add("active");
+  });
+});
+
+setInterval(()=>{
+  document.getElementById("cc-clock").textContent=new Date().toLocaleString();
+},1000);
+
+refresh();
+setInterval(refresh,15000);
+})();
 </script>
 </body></html>

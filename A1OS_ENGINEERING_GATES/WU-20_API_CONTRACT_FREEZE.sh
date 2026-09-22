@@ -19,6 +19,8 @@ TOKEN="$(login)"
 BASE="http://127.0.0.1:3013"
 CONTRACT="$EVIDENCE/openapi.json"
 
+mkdir -p "$EVIDENCE"
+
 curl -fsS \
     -H "Authorization: Bearer $TOKEN" \
     "$BASE/openapi.json" > "$CONTRACT" ||

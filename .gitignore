@@ -109,6 +109,7 @@ delivery-final-release-*/
 
 data/state.json
 # A1OS generated audit/runtime evidence
+A1OS_ENGINEERING_GATES/evidence/openapi.json
 A1OS_ENGINEERING_GATES/evidence/*-audit-*/
 A1OS_ENGINEERING_GATES/evidence/*-integration-*/
 A1OS_ENGINEERING_GATES/evidence/runtime-path-*/

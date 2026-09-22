@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A1OS Command Center</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#080b10;color:#edf2f7;font-family:system-ui,-apple-system,sans-serif}
+main{max-width:1400px;margin:auto;padding:28px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+h1{font-size:28px;margin:0}.muted{color:#8994a3}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.card{background:#10151d;border:1px solid #202936;border-radius:14px;padding:18px}.value{font-size:30px;font-weight:700;margin-top:8px}
+section{margin-top:24px}table{width:100%;border-collapse:collapse}.card table{margin-top:10px}
+td,th{text-align:left;padding:10px;border-bottom:1px solid #202936;font-size:13px}.pass{color:#6ee7a2}.warn{color:#f6c85f}.fail{color:#ff7777}
+button{background:#edf2f7;color:#080b10;border:0;border-radius:8px;padding:9px 14px;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><div><h1>A1OS Command Center</h1><div class="muted">Platform control plane · folders over agents · approval gated</div></div><button onclick="load()">Refresh</button></div>
+<div id="cards" class="grid"></div>
+<section class="card"><b>Platform Health</b><div id="health"></div></section>
+<section class="card"><b>Organizations</b><div id="orgs"></div></section>
+<section class="card"><b>Capabilities</b><div id="caps"></div></section>
+</main>
+<script>
+async function get(u){let r=await fetch(u,{credentials:'include'});return r.json()}
+function table(rows,cols){if(!rows||!rows.length)return '<div class="muted">No records</div>';return '<table><tr>'+cols.map(x=>'<th>'+x+'</th>').join('')+'</tr>'+rows.map(r=>'<tr>'+cols.map(x=>'<td>'+((r[x]??'').toString().replaceAll('<','&lt;'))+'</td>').join('')+'</tr>').join('')+'</table>'}
+async function load(){
+ try{
+  const [o,h,c,org,cap]=await Promise.all([
+   get('/v1/platform/overview'),get('/v1/platform/health'),
+   get('/v1/platform/capabilities'),get('/v1/platform/organizations'),
+   get('/v1/platform/capabilities')
+  ]);
+  document.getElementById('cards').innerHTML=[
+   ['Organizations',o.organizations],['Resources',o.resources],
+   ['Workflows',o.active_workflows],['Pending approvals',o.pending_approvals],
+   ['Subscriptions',o.active_subscriptions],['Deployments',o.running_deployments]
+  ].map(x=>'<div class="card"><div class="muted">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('');
+  document.getElementById('health').innerHTML=table(h.checks,['key','status']);
+  document.getElementById('orgs').innerHTML=table(org.items,['code','name','industry','status']);
+  document.getElementById('caps').innerHTML=table(cap.items,['capability_key','name','enabled']);
+ }catch(e){document.getElementById('health').innerHTML='<span class="fail">Command Center API error</span>'}
+}
+load();
+</script>
+</body>
+</html>
