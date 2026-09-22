@@ -654,6 +654,48 @@ app = FastAPI(
 )
 
 
+# ============================================================
+# A1OS WEB EXPERIENCES
+# ============================================================
+# The canonical 3013 service serves the A1OS public website and
+# Control Plane without introducing another backend or port.
+_A1OS_PRODUCTS_ROOT = ROOT.parent / "products"
+_A1OS_PUBLIC_ROOT = _A1OS_PRODUCTS_ROOT / "a1os-public"
+_A1OS_CONTROL_ROOT = _A1OS_PRODUCTS_ROOT / "a1os-control-plane"
+
+
+def _a1os_host(request: Request) -> str:
+    return (request.headers.get("host") or "").split(":", 1)[0].lower()
+
+
+@app.get("/", include_in_schema=False)
+def a1os_web_root(request: Request):
+    host = _a1os_host(request)
+    if host in {"a1os.ug", "www.a1os.ug"} and (_A1OS_PUBLIC_ROOT / "index.html").is_file():
+        return FileResponse(_A1OS_PUBLIC_ROOT / "index.html")
+    if host == "app.a1os.ug" and (_A1OS_CONTROL_ROOT / "index.html").is_file():
+        return FileResponse(_A1OS_CONTROL_ROOT / "index.html")
+    return JSONResponse({
+        "platform": "A1OS",
+        "service": "a1os-platform-api",
+        "status": "ok",
+    })
+
+
+@app.get("/styles.css", include_in_schema=False)
+def a1os_styles(request: Request):
+    host = _a1os_host(request)
+    if host in {"a1os.ug", "www.a1os.ug"}:
+        path = _A1OS_PUBLIC_ROOT / "styles.css"
+    elif host == "app.a1os.ug":
+        path = _A1OS_CONTROL_ROOT / "styles.css"
+    else:
+        raise HTTPException(status_code=404, detail="Web asset not found")
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Web asset not found")
+    return FileResponse(path)
+
+
 @app.on_event("startup")
 def _on_startup():
     _bootstrap_runtime_schema()
