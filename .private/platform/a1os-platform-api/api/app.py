@@ -768,56 +768,55 @@ if _A1OS_LITTLE_OAKS_PUBLIC_DIST.is_dir():
 # ============================================================
 # A1OS WEB EXPERIENCES
 # ============================================================
-# The canonical 3013 service serves the A1OS public website and
-# Control Plane without introducing another backend or port.
+# The canonical 3013 service serves all host-aware web experiences.
+# Host routing is resolved before the normal FastAPI route table so
+# the Little Oaks public fallback cannot shadow A1OS domains.
 _A1OS_PRODUCTS_ROOT = ROOT.parent / "products"
 _A1OS_PUBLIC_ROOT = _A1OS_PRODUCTS_ROOT / "a1os-public"
 _A1OS_CONTROL_ROOT = _A1OS_PRODUCTS_ROOT / "a1os-control-plane"
+_A1OS_LITTLE_OAKS_PUBLIC_ROOT = _A1OS_PRODUCTS_ROOT / "verticals" / "little-oaks-public"
 
 
 def _a1os_host(request: Request) -> str:
     return (request.headers.get("host") or "").split(":", 1)[0].lower()
 
 
-@app.get("/", include_in_schema=False)
-def a1os_web_root(request: Request):
+@app.middleware("http")
+async def _a1os_host_web_middleware(request: Request, call_next):
     host = _a1os_host(request)
-    if host in {"a1os.ug", "www.a1os.ug"} and (_A1OS_PUBLIC_ROOT / "index.html").is_file():
-        return FileResponse(_A1OS_PUBLIC_ROOT / "index.html")
-    if host == "app.a1os.ug" and (_A1OS_CONTROL_ROOT / "index.html").is_file():
-        return FileResponse(_A1OS_CONTROL_ROOT / "index.html")
-    return JSONResponse({
-        "platform": "A1OS",
-        "service": "a1os-platform-api",
-        "status": "ok",
-    })
+    path = request.url.path
 
-
-@app.get("/styles.css", include_in_schema=False)
-def a1os_styles(request: Request):
-    host = _a1os_host(request)
     if host in {"a1os.ug", "www.a1os.ug"}:
-        path = _A1OS_PUBLIC_ROOT / "styles.css"
-    elif host == "app.a1os.ug":
-        path = _A1OS_CONTROL_ROOT / "styles.css"
-    else:
-        raise HTTPException(status_code=404, detail="Web asset not found")
-    if not path.is_file():
-        raise HTTPException(status_code=404, detail="Web asset not found")
-    return FileResponse(path)
+        if path == "/" and (_A1OS_PUBLIC_ROOT / "index.html").is_file():
+            return FileResponse(_A1OS_PUBLIC_ROOT / "index.html")
+        if path == "/styles.css" and (_A1OS_PUBLIC_ROOT / "styles.css").is_file():
+            return FileResponse(_A1OS_PUBLIC_ROOT / "styles.css")
 
+    if host == "app.a1os.ug":
+        if path in {"/", ""} and (_A1OS_CONTROL_ROOT / "index.html").is_file():
+            return FileResponse(_A1OS_CONTROL_ROOT / "index.html")
+        if path == "/styles.css" and (_A1OS_CONTROL_ROOT / "styles.css").is_file():
+            return FileResponse(_A1OS_CONTROL_ROOT / "styles.css")
 
-@app.on_event("startup")
-def _on_startup():
-    _bootstrap_runtime_schema()
-    _ensure_little_oaks_rbac()
+    if host == "api.a1os.ug" and path == "/":
+        return JSONResponse({
+            "platform": "A1OS",
+            "service": "a1os-platform-api",
+            "status": "ok",
+        })
 
+    if host in {"littleoaksmontessori.ug", "www.littleoaksmontessori.ug"}:
+        if path == "/" and (_A1OS_LITTLE_OAKS_PUBLIC_ROOT / "index.html").is_file():
+            return FileResponse(_A1OS_LITTLE_OAKS_PUBLIC_ROOT / "index.html")
+        if path == "/styles.css" and (_A1OS_LITTLE_OAKS_PUBLIC_ROOT / "styles.css").is_file():
+            return FileResponse(_A1OS_LITTLE_OAKS_PUBLIC_ROOT / "styles.css")
+        if path.startswith("/assets/"):
+            asset = _A1OS_LITTLE_OAKS_PUBLIC_ROOT / path.removeprefix("/").replace("/", os.sep)
+            if asset.is_file():
+                return FileResponse(asset)
 
+    return await call_next(request)
 
-
-
-
-# ============================================================
 
 # ============================================================
 # HEALTH
