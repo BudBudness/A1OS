@@ -1,0 +1,8 @@
+{
+  "vertical": "school",
+  "state_owner": "frontend",
+  "server_state_owner": "A1OS Core/Platform",
+  "tenant_scoped": true,
+  "optimistic_state_allowed": true,
+  "local_persistence": false
+}

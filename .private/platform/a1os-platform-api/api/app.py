@@ -209,17 +209,36 @@ DEFAULT_ROLE_PERMISSIONS = {
     "platform_admin": {"*"},
     "owner": {"*"},
     "director": {
+        "organizations:read",
+        "organizations:write",
         "education:read",
         "education:write",
         "users:read",
         "users:write",
+        "roles:read",
+        "roles:write",
+        "parties:read",
+        "parties:write",
+        "accounts:read",
+        "products:read",
+        "products:write",
+        "inventory:read",
+        "inventory:write",
+        "ledger:read",
+        "ledger:write",
+        "audit:read",
+        "notifications:read",
+        "notifications:write",
     },
     "headmistress": {
         "education:read",
         "education:write",
+        "notifications:read",
     },
     "staff": {
         "education:read",
+        "education:write",
+        "notifications:read",
     },
     "driver": {
         "education:read",
@@ -255,6 +274,79 @@ DEFAULT_ROLE_PERMISSIONS = {
         "notifications:read",
     },
 }
+
+LITTLE_OAKS_ORG_CODE = "LITTLEOAKS"
+
+
+def _organization_id_for_code(code):
+    conn = db()
+    try:
+        row = conn.execute(
+            "SELECT id FROM organizations WHERE code = ?",
+            (code,),
+        ).fetchone()
+        return row["id"] if row else None
+    finally:
+        conn.close()
+
+
+def _ensure_little_oaks_rbac():
+    conn = db()
+    try:
+        org = conn.execute(
+            "SELECT id FROM organizations WHERE code = ?",
+            (LITTLE_OAKS_ORG_CODE,),
+        ).fetchone()
+        if not org:
+            return
+        permissions = {
+            "organizations:read",
+            "organizations:write",
+            "education:read",
+            "education:write",
+            "users:read",
+            "users:write",
+            "roles:read",
+            "roles:write",
+            "parties:read",
+            "parties:write",
+            "accounts:read",
+            "products:read",
+            "products:write",
+            "inventory:read",
+            "inventory:write",
+            "ledger:read",
+            "ledger:write",
+            "audit:read",
+            "notifications:read",
+            "notifications:write",
+        }
+        conn.execute(
+            """
+            UPDATE roles
+            SET name = 'director', permissions = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE organization_id = ? AND id = (
+                SELECT id FROM roles
+                WHERE organization_id = ? AND name IN ('director', 'Little Oaks Director')
+                ORDER BY CASE name WHEN 'director' THEN 0 ELSE 1 END, id
+                LIMIT 1
+            )
+            """,
+            (json.dumps(sorted(permissions)), org["id"], org["id"]),
+        )
+        conn.execute(
+            """
+            INSERT INTO roles (organization_id, name, permissions)
+            SELECT ?, 'director', ?
+            WHERE NOT EXISTS (
+                SELECT 1 FROM roles WHERE organization_id = ? AND name = 'director'
+            )
+            """,
+            (org["id"], json.dumps(sorted(permissions)), org["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _rate_limit_auth(request: Request):
@@ -645,6 +737,7 @@ def _bootstrap_runtime_schema():
 
 
 _bootstrap_runtime_schema()
+_ensure_little_oaks_rbac()
 
 
 app = FastAPI(
@@ -652,6 +745,24 @@ app = FastAPI(
     version="1.0.0",
     description="Multi-tenant platform backend serving industry-specific frontends.",
 )
+
+_A1OS_LITTLE_OAKS_DIST = ROOT.parent / "products" / "verticals" / "little-oaks"
+_A1OS_LITTLE_OAKS_PUBLIC_DIST = ROOT.parent / "products" / "verticals" / "little-oaks-public"
+if _A1OS_LITTLE_OAKS_DIST.is_dir():
+    app.mount(
+        "/little-oaks",
+        StaticFiles(directory=str(_A1OS_LITTLE_OAKS_DIST), html=True),
+        name="little-oaks",
+    )
+    app.mount(
+        "/portal",
+        StaticFiles(directory=str(_A1OS_LITTLE_OAKS_DIST), html=True),
+        name="little-oaks-portal",
+    )
+if _A1OS_LITTLE_OAKS_PUBLIC_DIST.is_dir():
+    @app.get("/", include_in_schema=False)
+    def little_oaks_public_home():
+        return FileResponse(_A1OS_LITTLE_OAKS_PUBLIC_DIST / "index.html")
 
 
 # ============================================================
@@ -699,6 +810,7 @@ def a1os_styles(request: Request):
 @app.on_event("startup")
 def _on_startup():
     _bootstrap_runtime_schema()
+    _ensure_little_oaks_rbac()
 
 
 
@@ -1397,7 +1509,7 @@ def create_user(payload: dict, request: Request):
     try:
         if target_org_id != actor["organization_id"]:
             org = conn.execute(
-                "SELECT id FROM organizations WHERE id = ?",
+                "SELECT id, code FROM organizations WHERE id = ?",
                 (target_org_id,),
             ).fetchone()
             if not org:
@@ -1405,6 +1517,17 @@ def create_user(payload: dict, request: Request):
                     status_code=422,
                     detail="Organization not found",
                 )
+        else:
+            org = conn.execute(
+                "SELECT id, code FROM organizations WHERE id = ?",
+                (target_org_id,),
+            ).fetchone()
+
+        if org and org["code"] == LITTLE_OAKS_ORG_CODE and role == "driver":
+            raise HTTPException(
+                status_code=422,
+                detail="Driver is not a Little Oaks application role",
+            )
 
         existing = conn.execute(
             "SELECT id FROM users WHERE lower(email) = ?",
@@ -1497,6 +1620,15 @@ def update_user(user_id: int, payload: dict, request: Request):
             raise HTTPException(
                 status_code=403,
                 detail="Only super_admin may assign super_admin",
+            )
+        if (
+            requested_role == "driver"
+            and actor["organization_id"]
+            == _organization_id_for_code(LITTLE_OAKS_ORG_CODE)
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Driver is not a Little Oaks application role",
             )
         updates["role"] = requested_role
 

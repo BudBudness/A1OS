@@ -1,0 +1,13 @@
+{
+  "vertical": "school",
+  "required": true,
+  "checks": [
+    "frontend-only",
+    "platform-owned-authentication",
+    "platform-owned-tenancy",
+    "platform-owned-authorization",
+    "platform-owned-persistence",
+    "platform-owned-audit",
+    "capability-routes-present"
+  ]
+}

@@ -1,53 +1,29 @@
-const baseUrl =
-  globalThis.__A1OS_PLATFORM_API_URL__ ||
-  import.meta?.env?.VITE_A1OS_PLATFORM_API_URL ||
-  "/api";
+const base = globalThis.__A1OS_PLATFORM_API_URL__ || "/v1";
+
+async function request(path, options = {}) {
+  const token = sessionStorage.getItem("a1os_session_token");
+  const response = await fetch(`${base}${path}`, {
+    headers: {
+      "Content-Type":"application/json",
+      ...(token ? {"Authorization": `Bearer ${token}`} : {}),
+      ...(options.headers || {})
+    },
+    credentials: "include",
+    ...options
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed (${response.status}): ${await response.text()}`);
+  }
+
+  if (response.status === 204) return null;
+  return response.json();
+}
 
 export const api = {
-  provider: "a1os-platform-api",
-  baseUrl,
-
-  async request(path, options = {}) {
-    const response = await fetch(`${baseUrl}${path}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`A1OS Platform API request failed: ${response.status}`);
-    }
-
-    if (response.status === 204) {
-      return null;
-    }
-
-    return response.json();
-  },
-
-  get(path, options = {}) {
-    return this.request(path, { ...options, method: "GET" });
-  },
-
-  post(path, body, options = {}) {
-    return this.request(path, {
-      ...options,
-      method: "POST",
-      body: JSON.stringify(body)
-    });
-  },
-
-  patch(path, body, options = {}) {
-    return this.request(path, {
-      ...options,
-      method: "PATCH",
-      body: JSON.stringify(body)
-    });
-  },
-
-  delete(path, options = {}) {
-    return this.request(path, { ...options, method: "DELETE" });
-  }
+  get: path => request(path),
+  post: (path, body) => request(path, {method:"POST", body:JSON.stringify(body)}),
+  patch: (path, body) => request(path, {method:"PATCH", body:JSON.stringify(body)}),
+  delete: path => request(path, {method:"DELETE"})
 };
+export { request };

@@ -1,269 +1,170 @@
-import React from "react";
+import React,{useEffect,useMemo,useState} from "react";
+import {HashRouter,Routes,Route,Link,useLocation,Navigate} from "react-router-dom";
+import Organizations from "./pages/Organizations.jsx";
+import Users from "./pages/Users.jsx";
+import Roles from "./pages/Roles.jsx";
+import Parties from "./pages/Parties.jsx";
+import Students from "./pages/Students.jsx";
+import Parents from "./pages/Parents.jsx";
+import Admissions from "./pages/Admissions.jsx";
+import Attendance from "./pages/Attendance.jsx";
+import Fees from "./pages/Fees.jsx";
+import Notifications from "./pages/Notifications.jsx";
+import Audit from "./pages/Audit.jsx";
+import SiteContent from "./pages/SiteContent.jsx";
+import Finance from "./pages/Finance.jsx";
+import Transport from "./pages/Transport.jsx";
+import SchoolIdentity from "./pages/SchoolIdentity.jsx";
+import ChangePassword from "./pages/ChangePassword.jsx";
+import Login from "./pages/Login.jsx";
+import {api} from "./api/client.js";
+import {schoolResources} from "./data.js";
+import {loadSession,logout,currentRole,isAuthenticated,displayRole} from "./core/auth.js";
 
-const programmes = [
-  {
-    title: "Playgroup & Early Years",
-    age: "18 months – 3 years",
-    text: "A gentle beginning built around practical life, movement, language, sensory exploration, routines and secure relationships.",
+const roles={
+  Director:{
+    description:"Full Little Oaks organization governance and oversight",
+    sections:["Dashboard","Students","Staff","Classes","Parents","Admissions","Attendance","Fees","Finance","Transport","Users","Roles","Organizations","Audit","Site Content","School Identity","Change password"]
   },
-  {
-    title: "Montessori Nursery",
-    age: "3 – 5 years",
-    text: "Children learn through purposeful hands-on activity, choice, repetition and carefully prepared learning environments.",
+  Headmistress:{
+    description:"Academic and staff operations",
+    sections:["Dashboard","Students","Staff","Classes","Parents","Admissions","Attendance","Fees","Notifications","Change password"]
   },
-  {
-    title: "Kindergarten",
-    age: "5 – 6 years",
-    text: "A stronger academic foundation through literacy, numeracy, cultural exploration, creativity, independence and school readiness.",
-  },
-  {
-    title: "Full-Day Daycare",
-    age: "Early years",
-    text: "A nurturing full-day environment combining care, routines, play, rest and meaningful early learning."
+  Staff:{
+    description:"Assigned teaching and operational duties",
+    sections:["Dashboard","Students","Attendance","Notifications","Change password"]
   }
-];
+};
 
-const learningAreas = [
-  "Practical Life",
-  "Sensorial Exploration",
-  "Language & Early Literacy",
-  "Mathematics & Numeracy",
-  "Culture, Nature & Discovery",
-  "Creative Arts",
-  "Movement & Outdoor Play",
-  "Social & Emotional Development"
-];
+const routes={
+  Dashboard:"/",
+  Students:"/students",
+  Staff:"/staff",
+  Classes:"/classes",
+  Parents:"/parents",
+  Admissions:"/admissions",
+  Attendance:"/attendance",
+  Fees:"/fees",
+  Users:"/users",
+  Roles:"/roles",
+  Organizations:"/organizations",
+  Audit:"/audit",
+  "Site Content":"/site-content",
+  Notifications:"/notifications",
+  Finance:"/finance",
+  Transport:"/transport",
+  "School Identity":"/school-identity"
+  ,"Change password":"/change-password"
+};
 
-export function App() {
-  return (
-    <div className="site">
-      <header className="nav">
-        <div className="container nav-inner">
-          <a className="brand" href="#home" aria-label="Little Oaks home">
-            <span className="brand-mark">LO</span>
-            <span>
-              <strong>Little Oaks</strong>
-              <small>Montessori Nursery & Kindergarten</small>
-            </span>
-          </a>
-
-          <nav>
-            <a href="#programmes">Programmes</a>
-            <a href="#learning">Learning</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
-          </nav>
-
-          <a className="nav-cta" href="#contact">Enquire</a>
-        </div>
-      </header>
-
-      <main id="home">
-        <section className="hero">
-          <div className="container hero-grid">
-            <div className="hero-copy">
-              <p className="eyebrow">NURTURE · EXPLORE · GROW</p>
-              <h1>
-                A beautiful beginning
-                <span>for little minds.</span>
-              </h1>
-              <p className="hero-text">
-                Little Oaks Montessori Kindergarten & Day Care Centre is an
-                early childhood environment where children are cared for,
-                encouraged to explore and supported as they grow in
-                independence, confidence and love of learning.
-              </p>
-
-              <div className="actions">
-                <a className="button primary" href="#contact">Talk to Little Oaks</a>
-                <a className="button secondary" href="#programmes">Explore programmes</a>
-              </div>
-
-              <div className="hero-facts">
-                <div>
-                  <strong>18 mo – 6 yrs</strong>
-                  <span>Early childhood</span>
-                </div>
-                <div>
-                  <strong>Montessori-inspired</strong>
-                  <span>Hands-on learning</span>
-                </div>
-                <div>
-                  <strong>Mbarara</strong>
-                  <span>Nyamitanga</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="hero-card">
-              <div className="sun"></div>
-              <div className="tree tree-one"></div>
-              <div className="tree tree-two"></div>
-              <div className="card-content">
-                <span className="card-label">THE LITTLE OAKS WAY</span>
-                <h2>Small hands.<br />Big discoveries.</h2>
-                <p>
-                  Children learn by doing — touching, moving, choosing,
-                  repeating, asking questions and discovering the world around
-                  them.
-                </p>
-                <div className="leaf-row">
-                  <span>Explore</span>
-                  <span>Discover</span>
-                  <span>Grow</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="intro" id="about">
-          <div className="container intro-grid">
-            <div>
-              <p className="eyebrow">WELCOME TO LITTLE OAKS</p>
-              <h2>More than childcare.<br />A foundation for life.</h2>
-            </div>
-            <div className="intro-copy">
-              <p>
-                The early years are when children develop the foundations for
-                how they think, communicate, relate to others and approach new
-                experiences.
-              </p>
-              <p>
-                Little Oaks combines nurturing care with Montessori-inspired
-                early learning so children can develop at their own pace while
-                building independence, concentration, confidence and practical
-                skills.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="programmes" id="programmes">
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">OUR PROGRAMMES</p>
-                <h2>A place to belong,<br />learn and grow.</h2>
-              </div>
-              <p>
-                Programmes designed around the developmental needs of young
-                children — from their first experiences away from home through
-                to kindergarten and school readiness.
-              </p>
-            </div>
-
-            <div className="programme-grid">
-              {programmes.map((programme) => (
-                <article className="programme-card" key={programme.title}>
-                  <span className="programme-age">{programme.age}</span>
-                  <h3>{programme.title}</h3>
-                  <p>{programme.text}</p>
-                  <span className="arrow">→</span>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="learning" id="learning">
-          <div className="container learning-grid">
-            <div className="learning-panel">
-              <p className="eyebrow">THE MONTESSORI APPROACH</p>
-              <h2>Learning begins with curiosity.</h2>
-              <p>
-                A prepared environment gives children meaningful opportunities
-                to work with their hands, make choices, practise skills and
-                develop concentration. The adult guides the child rather than
-                doing everything for them.
-              </p>
-              <p>
-                At Little Oaks, this philosophy can become part of everyday
-                learning — from practical routines and sensory discovery to
-                language, mathematics, creativity and understanding the world.
-              </p>
-            </div>
-
-            <div className="areas">
-              {learningAreas.map((area, index) => (
-                <div className="area" key={area}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{area}</strong>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="promise">
-          <div className="container promise-inner">
-            <p className="eyebrow">OUR PROMISE</p>
-            <h2>Every child deserves to be known.</h2>
-            <p>
-              We believe children flourish when they feel safe, respected,
-              understood and trusted to try. Our goal is not simply to prepare
-              children for the next classroom, but to help them become capable,
-              curious and confident young people.
-            </p>
-          </div>
-        </section>
-
-        <section className="contact" id="contact">
-          <div className="container contact-grid">
-            <div>
-              <p className="eyebrow">COME AND MEET US</p>
-              <h2>Let's start your child's<br />Little Oaks journey.</h2>
-              <p>
-                Parents and guardians are welcome to contact Little Oaks to
-                discuss programmes, availability, visits and enrolment.
-              </p>
-            </div>
-
-            <div className="contact-card">
-              <div>
-                <span>LOCATION</span>
-                <strong>Nyamitanga, Mbarara</strong>
-                <p>Along Isingiro Road, Uganda</p>
-              </div>
-
-              <div>
-                <span>CALL / WHATSAPP</span>
-                <a href="tel:+256762023393">+256 762 023393</a>
-                <a href="tel:+256705074279">+256 705 074279</a>
-              </div>
-
-              <div>
-                <span>EMAIL</span>
-                <a href="mailto:admin@littleoaksmontessori.ac.ug">
-                  admin@littleoaksmontessori.ac.ug
-                </a>
-              </div>
-
-              <a
-                className="button primary full"
-                href="https://wa.me/256762023393"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Message Little Oaks on WhatsApp
-              </a>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer>
-        <div className="container footer-inner">
-          <div>
-            <strong>Little Oaks Montessori Kindergarten & Day Care Centre (U) Limited</strong>
-            <span>Nyamitanga, Mbarara · Uganda</span>
-          </div>
-          <div>
-            <span>URSB Registration: 80034303611084</span>
-            <span>© {new Date().getFullYear()} Little Oaks</span>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
+function Staff(){
+  const [state,setState]=useState({items:[],error:""});
+  useEffect(()=>{api.get("/users").then(data=>setState({items:data.users||[],error:""})).catch(error=>setState({items:[],error:error.message}));},[]);
+  return <section><h2>Staff</h2>{state.error?<p>Staff records are not available for this role.</p>:<table><thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody>{state.items.map(user=><tr key={user.id}><td>{user.full_name}</td><td>{user.email}</td><td>{user.role}</td></tr>)}</tbody></table>}</section>;
 }
+
+function Classes(){
+  return <section><h2>Classes</h2><p>Class records are not configured in the current school data system.</p></section>;
+}
+
+function Dashboard({role}){
+  const [stats,setStats]=useState(null);
+  const [error,setError]=useState("");
+  useEffect(()=>{
+    Promise.all([
+      schoolResources.students.list(),
+      schoolResources.attendance.list(),
+      schoolResources.fees.list(),
+      schoolResources.admissions.list(),
+    ]).then(([students,attendance,fees,admissions])=>{
+      setStats({
+        students: students.items?.length || 0,
+        attendance: attendance.items?.length || 0,
+        fees: fees.items?.length || 0,
+        admissions: admissions.items?.length || 0,
+      });
+    }).catch(err=>setError(err.message));
+  },[]);
+  return <section className="dashboard">
+    <div className="dashboard-title">
+      <div><span className="eyebrow">LITTLE OAKS</span><h2>{role} Dashboard</h2><p>{roles[role].description}</p></div>
+      <span className="role-badge">{role}</span>
+    </div>
+    <div className="stat-grid">
+      <article><strong>Students</strong><b>{stats?.students ?? "—"}</b><small>School records</small></article>
+      <article><strong>Attendance</strong><b>{stats?.attendance ?? "—"}</b><small>Records</small></article>
+      <article><strong>Fees</strong><b>{stats?.fees ?? "—"}</b><small>Fee records</small></article>
+      <article><strong>Admissions</strong><b>{stats?.admissions ?? "—"}</b><small>Applications</small></article>
+    </div>
+    <div className="dashboard-grid">
+      <article className="panel"><h3>School data</h3><p>{error || "Live data is loaded from the school data system."}</p></article>
+      <article className="panel"><h3>Quick actions</h3><div className="quick-actions">
+        {roles[role].sections.filter(x=>routes[x]&&x!=="Dashboard").slice(0,5).map(x=><Link key={x} to={routes[x]}>{x}</Link>)}
+      </div></article>
+    </div>
+  </section>
+}
+
+function Shell(){
+  const location=useLocation();
+  const [ready,setReady]=useState(false);
+  const [authenticated,setAuthenticated]=useState(isAuthenticated());
+
+  useEffect(()=>{
+    loadSession()
+      .then(principal=>setAuthenticated(Boolean(principal)))
+      .finally(()=>setReady(true));
+  },[]);
+
+  const role=displayRole(currentRole() || "director");
+  const allowed=roles[role]?.sections || ["Dashboard"];
+  const nav=useMemo(
+    ()=>allowed.map(label=>({label,path:routes[label]})).filter(x=>x.path),
+    [allowed]
+  );
+
+  if(!ready) return <main className="app"><section className="panel"><h2>Little Oaks</h2><p>Loading secure session…</p></section></main>;
+  if(!authenticated) return <Login onAuthenticated={()=>setAuthenticated(true)}/>;
+
+  return <main className="app">
+    <header className="brand-header">
+      <div className="brand-mark">LO</div>
+      <div className="brand-copy">
+        <h1>Little Oaks</h1>
+        <p>Montessori Kindergarten &amp; Daycare</p>
+        <small>Nurture. Explore. Grow.</small>
+      </div>
+      <div className="role-control">
+        <span className="role-badge">{role}</span>
+        <button type="button" onClick={async()=>{await logout();setAuthenticated(false)}}>Sign out</button>
+      </div>
+    </header>
+    <nav className="main-nav" aria-label="School navigation">
+      {nav.map(({label,path})=><Link className={location.pathname===path?"active":""} key={label} to={path}>{label}</Link>)}
+    </nav>
+    <Routes>
+      <Route path="/" element={<Dashboard role={role}/>}/>
+      <Route path="/organizations" element={<Organizations/>}/>
+      <Route path="/users" element={<Users/>}/>
+      <Route path="/roles" element={<Roles/>}/>
+      <Route path="/parties" element={<Parties/>}/>
+      <Route path="/students" element={<Students/>}/>
+      <Route path="/staff" element={<Staff/>}/>
+      <Route path="/classes" element={<Classes/>}/>
+      <Route path="/parents" element={<Parents/>}/>
+      <Route path="/admissions" element={<Admissions/>}/>
+      <Route path="/attendance" element={<Attendance/>}/>
+      <Route path="/fees" element={<Fees/>}/>
+      <Route path="/notifications" element={<Notifications/>}/>
+      <Route path="/audit" element={<Audit/>}/>
+      <Route path="/finance" element={<Finance/>}/>
+      <Route path="/transport" element={<Transport/>}/>
+      <Route path="/school-identity" element={<SchoolIdentity/>}/>
+      <Route path="/site-content" element={<SiteContent/>}/>
+      <Route path="/change-password" element={<ChangePassword/>}/>
+      <Route path="*" element={<Navigate to="/" replace/>}/>
+    </Routes>
+  </main>
+}
+
+export default function App(){return <HashRouter><Shell/></HashRouter>}
