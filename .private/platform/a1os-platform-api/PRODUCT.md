@@ -18,15 +18,17 @@ cd .private/platform/a1os-platform-api/api && \
 
 or `runtime/a1os-platform-api/run-production.sh`.
 
-## Production deployment (v1.0.0)
+## Production deployment
 
-Live on the a1os-prod Cloudflare tunnel (`pyongcity.org` zone):
+The canonical application binds to `127.0.0.1:3013`. Public ingress is environment-managed through the `a1os-prod` Cloudflare tunnel; tunnel/DNS configuration is not stored in this repository.
 
 | Public hostname | Service |
 | --- | --- |
+| `a1os.ug` / `www.a1os.ug` | A1OS public website on 3013 |
+| `app.a1os.ug` | A1OS Control Plane on 3013 |
+| `api.a1os.ug` | A1OS Platform API on 3013 |
 
-- Both CNAMEs route through tunnel `a1os-prod` (`7fdd3dce`); the platform API stays bound to `127.0.0.1` — only the tunnel exposes it.
-- Watchdog (`ops/a1os-production-watchdog.sh`) health-checks `http://127.0.0.1:3013/v1/health` and `http://127.0.0.1:3000/login` hourly and restarts either service if down.
+The same canonical runtime serves the A1OS web experiences and API. No second backend, database, or web-server process is required. Public domain activation remains an environment/DNS concern and must not be represented as complete until externally verified.
 
 ## Modules (v1.0)
 
