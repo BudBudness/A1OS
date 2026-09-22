@@ -61,7 +61,7 @@ def run_adapter(service):
         return "no-adapter"
 
     import asyncio
-from core.execution.v2.security.sandbox import Sandbox
+    from core.execution.v2.security.sandbox import Sandbox
     from core.lifecycle import ExecutionBroker, ExecutionRequest
 
     async def executor(request):
