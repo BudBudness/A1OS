@@ -3,7 +3,8 @@
 set -Eeuo pipefail                                                                                              
 export PATH="/data/data/com.termux/files/usr/bin:$PATH" 
 ROOT="$HOME/A1OS_RESTORED"                              
-LAUNCHER="$ROOT/runtime/a1os-platform-api/run-production.sh"                                                    
+LAUNCHER="$ROOT/runtime/a1os-platform-api/run-production.sh"
+export SVDIR="${SVDIR:-/data/data/com.termux/files/usr/var/service}"
 
 if [ ! -x "$LAUNCHER" ]; then                               
     echo "ERROR: canonical platform runtime launcher missing or non-executable: $LAUNCHER" >&2                      
@@ -26,4 +27,3 @@ done
 
 echo "ERROR: platform-api failed to become healthy on :3013" >&2                                                
 exit 1
-

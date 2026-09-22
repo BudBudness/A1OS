@@ -5,7 +5,7 @@
     {
       "name": "a1os-platform-api",
       "type": "control-plane",
-      "database": ".private/platform/a1os-platform-api/api/a1os_state.db",
+      "database": "runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db",
       "health_local": "http://127.0.0.1:3013/v1/health",
       "adapter": [
         "ops/adapters/restart-platform-api.sh"

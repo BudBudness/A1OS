@@ -26,7 +26,7 @@ DB_PATH = Path(
     os.getenv(
         "A1OS_PLATFORM_DB",
         str(
-            ROOT
+            ROOT.parent
             / "runtime"
             / "a1os-platform-api"
             / "deployments"
@@ -187,7 +187,7 @@ def _verify_password(password: str, stored: str) -> bool:
 
 A1OS_RUNTIME_ENV = os.getenv("A1OS_RUNTIME_ENV", "development")
 A1OS_SERVICE_NAME = os.getenv("A1OS_SERVICE_NAME", "a1os-platform-api")
-A1OS_READINESS_DB = os.getenv("A1OS_READINESS_DB", '/data/data/com.termux/files/home/A1OS_RESTORED/runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db')
+A1OS_READINESS_DB = os.getenv("A1OS_READINESS_DB", str(DB_PATH))
 A1OS_COOKIE_SECURE = os.getenv("A1OS_COOKIE_SECURE", "false").lower() in ("1", "true", "yes", "on")
 
 _LOGIN_ATTEMPTS = {}

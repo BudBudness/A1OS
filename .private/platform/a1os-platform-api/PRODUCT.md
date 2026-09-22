@@ -3,17 +3,20 @@
 Multi-tenant platform backend serving industry-specific frontend applications.
 
 - **Port**: 3013
-- **Backend**: FastAPI + SQLite (`deployments/a1os-platform/data/a1os-platform.db`)
+- **Backend**: FastAPI + SQLite (`runtime/a1os-platform-api/deployments/a1os-platform/data/a1os-platform.db`)
 - **Auth**: SSO-style opaque session tokens (PBKDF2-HMAC-SHA256 password hashing), role-based permissions
 - **Admin seed**: administrator identity is provisioned through the protected platform secret authority; production credentials are not stored in source documentation or application environment files.
 
 ## Run
 
 ```
-cd platform/a1os-platform-api && python3 -m uvicorn api.app:app --host 127.0.0.1 --port 3013
+cd .private/platform/a1os-platform-api/api && \
+  PYTHONPATH="$PWD:$PWD/../../../:$PWD/../../.." \
+  python3 -m uvicorn app:app --host 127.0.0.1 --port 3013 \
+  --workers 1 --proxy-headers
 ```
 
-or `./run-production.sh` (loads `.env.production` if present).
+or `runtime/a1os-platform-api/run-production.sh`.
 
 ## Production deployment (v1.0.0)
 
