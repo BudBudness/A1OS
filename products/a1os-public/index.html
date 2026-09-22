@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="A1OS — shared operating platform for independently deployable digital products and verticals.">
+<title>A1OS — Operating Platform</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header><a class="brand" href="#top"><span>A1</span>A1OS</a><nav><a href="#platform">Platform</a><a href="#architecture">Architecture</a><a href="#verticals">Verticals</a><a href="#security">Security</a><a class="button small" href="https://app.a1os.ug/">Control Plane</a></nav></header>
+<main id="top">
+<section class="hero"><div class="eyebrow">OPERATING PLATFORM</div><h1>One platform.<br><em>Many products.</em></h1><p>A1OS provides the shared backend, identity, authorization, audit, workflows and operational control layer underneath independently deployable products.</p><div class="actions"><a class="button" href="#architecture">Explore A1OS</a><a href="https://app.a1os.ug/">Open Control Plane →</a></div><div class="status"><i></i><span id="status">Checking platform status…</span></div></section>
+<section id="platform"><div class="label">01</div><h2>The shared platform layer</h2><div class="grid three"><article><b>Identity</b><p>Authentication, organizations, roles and permissions are shared platform capabilities.</p></article><article><b>Operations</b><p>Resources, workflows, approvals, deployments and audit belong to the platform layer.</p></article><article><b>Products</b><p>Verticals keep their own identity, data and business rules while using A1OS underneath.</p></article></div></section>
+<section id="architecture" class="dark"><div class="label">02</div><h2>Folders over agents</h2><div class="architecture"><pre>A1OS
+├── platform
+│   ├── authentication
+│   ├── organizations
+│   ├── authorization
+│   ├── audit
+│   ├── workflows
+│   ├── approvals
+│   └── deployments
+└── verticals
+    ├── little-oaks
+    ├── fanya
+    ├── milky-events
+    └── future-projects</pre><div><p>Deterministic folders, modules and workflows are the execution foundation. AI may interpret or assist; application code and explicit workflows remain authoritative.</p><p class="muted">Human authority is preserved for consequential actions.</p></div></div></section>
+<section id="verticals"><div class="label">03</div><h2>Built for a portfolio</h2><p class="lead">Each vertical can have its own public domain, private application, business data, rules and RBAC while reusing the same A1OS platform.</p><div class="grid three"><article><small>VERTICAL</small><h3>Little Oaks</h3><p>School public experience and private school portal.</p></article><article><small>VERTICAL</small><h3>FANYA</h3><p>Employment and work marketplace.</p></article><article><small>VERTICAL</small><h3>Future products</h3><p>Independently deployable products without rebuilding the platform.</p></article></div></section>
+<section id="security"><div class="label">04</div><h2>Control with evidence</h2><div class="grid two"><article><b>Observe → Communicate → Decide</b><p>The Control Plane gives humans an operational view of platform state and a place to communicate with A1OS.</p></article><article><b>Approve → Execute → Verify</b><p>Consequential operations remain subject to authorization and appropriate human approval gates.</p></article></div></section>
+<section class="cta"><h2>A common operating layer for what comes next.</h2><a class="button" href="https://app.a1os.ug/">Enter Control Plane</a></section>
+</main>
+<footer><b>A1OS</b><span>Platform · Control · Products</span><a href="https://api.a1os.ug/docs">API Documentation</a></footer>
+<script>fetch("https://api.a1os.ug/v1/health").then(r=>r.ok?r.json():Promise.reject()).then(()=>document.querySelector("#status").textContent="Platform API operational").catch(()=>document.querySelector("#status").textContent="Platform status unavailable");</script>
+</body></html>
