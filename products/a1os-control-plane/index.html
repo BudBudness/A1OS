@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="A1OS Control Plane"><title>A1OS Control Plane</title><link rel="stylesheet" href="./styles.css"></head>
+<body>
+<header><a class="brand" href="https://a1os.ug/"><span>A1</span>A1OS</a><span class="pill" id="api-state">CONNECTING</span></header>
+<main>
+<section id="login" class="panel"><small>CONTROL PLANE</small><h1>Operate A1OS.</h1><p>Authenticate through the shared A1OS platform. The interface reports platform state; authorization and execution remain server-side.</p><form id="login-form"><label>Email<input id="email" type="email" autocomplete="username" required></label><label>Password<input id="password" type="password" autocomplete="current-password" required></label><button>Sign in</button><div id="error" class="error"></div></form></section>
+<section id="console" hidden><div class="welcome"><div><small>CONTROL PLANE</small><h1>Operational view</h1></div><button id="logout" class="secondary">Sign out</button></div>
+<div class="grid"><article class="card"><small>IDENTITY</small><strong id="identity">—</strong><p id="role">—</p></article><article class="card"><small>ORGANIZATIONS</small><strong id="count">—</strong><p>Visible to this operator.</p></article><article class="card"><small>PLATFORM</small><strong id="health">—</strong><p id="ready">Readiness —</p></article></div>
+<section class="card table"><div class="head"><div><small>ORGANIZATIONS</small><h2>Connected organizations</h2></div><button id="refresh" class="secondary">Refresh</button></div><div id="orgs">Loading…</div></section>
+<section class="card"><small>AUTHORITY</small><h2>Human-controlled execution</h2><p>This interface never becomes the authority. A1OS authentication, authorization, workflows and approval gates remain authoritative for consequential actions.</p></section>
+</section>
+</main>
+<footer><a href="https://a1os.ug/">A1OS</a><a href="https://api.a1os.ug/docs">API documentation</a></footer>
+<script>
+const API="https://api.a1os.ug/v1";const $=s=>document.querySelector(s);
+async function api(path,opt={}){const r=await fetch(API+path,{credentials:"include",...opt,headers:{"Content-Type":"application/json",...(opt.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok){const e=new Error(d.detail||("HTTP "+r.status));e.status=r.status;throw e}return d}
+async function status(){try{const h=await api("/health");$("#api-state").textContent="OPERATIONAL";$("#health").textContent=h.status==="ok"?"Operational":"Degraded";try{const r=await api("/ready");$("#ready").textContent="Readiness "+(r.status||"ready")}catch{$("#ready").textContent="Readiness unavailable"}}catch{$("#api-state").textContent="UNAVAILABLE";$("#health").textContent="Unavailable"}}
+async function session(){try{const u=await api("/auth/me");show(u);await orgs()}catch(e){if(e.status!==401)console.warn(e)}}
+function show(u){$("#login").hidden=true;$("#console").hidden=false;$("#identity").textContent=u.full_name||u.email;$("#role").textContent=(u.role||"user")+" · organization "+(u.organization_id??"—")}
+async function orgs(){try{const xs=await api("/organizations");$("#count").textContent=xs.length;$("#orgs").innerHTML=xs.length?xs.map(o=>"<div class=row><strong>"+esc(o.name||("Organization "+o.id))+"</strong><span>#"+esc(String(o.id))+"</span></div>").join(""):"<p class=muted>No organizations returned.</p>"}catch{$("#count").textContent="—";$("#orgs").innerHTML="<p class=error>Organizations unavailable.</p>"}}
+function esc(v){return v.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]||c))}
+$("#login-form").addEventListener("submit",async e=>{e.preventDefault();$("#error").textContent="";try{await api("/auth/login",{method:"POST",body:JSON.stringify({email:$("#email").value,password:$("#password").value})});const u=await api("/auth/me");show(u);await orgs()}catch(e){$("#error").textContent=e.message||"Sign-in failed"}});
+$("#logout").onclick=async()=>{try{await api("/auth/logout",{method:"POST"})}finally{location.reload()}};$("#refresh").onclick=()=>{status();orgs()};status();session();
+</script></body></html>
