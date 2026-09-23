@@ -1,4 +1,4 @@
-"""Lightweight deterministic self-improvement factory engine."""
+"""Deterministic self-improvement factory engine."""
 from tools.a1os_factory.engine_runtime import cli, make_engine
 
 ENGINE = make_engine("self-improvement", "self-improvement", "improvement-plan", true)
