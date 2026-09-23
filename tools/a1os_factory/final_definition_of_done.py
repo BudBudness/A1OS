@@ -7,7 +7,7 @@ ROOT=Path(__file__).resolve().parents[2]
 FACTORY=ROOT/"tools"/"a1os_factory"
 ROADMAP=ROOT/"IMPLEMENTATION_ROADMAP.json"
 EXPECTED=37
-FORBIDDEN=re.compile(r"\\b(?:jarvis|mcp)\\b", re.IGNORECASE)
+FORBIDDEN=re.compile(r"\b(?:jarvis|mcp)\b", re.IGNORECASE)
 
 def main()->int:
     findings=[]
