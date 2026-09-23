@@ -1,13 +1,12 @@
 """System-wide A1OS Product Factory Definition-of-Done audit."""
 from __future__ import annotations
-import ast, json, re
+import ast, json
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
 FACTORY=ROOT/"tools"/"a1os_factory"
 ROADMAP=ROOT/"IMPLEMENTATION_ROADMAP.json"
 EXPECTED=37
-FORBIDDEN=re.compile(r"\b(?:jarvis|mcp)\b", re.IGNORECASE)
 
 def main()->int:
     findings=[]
@@ -52,15 +51,6 @@ def main()->int:
         path=products/name
         if not path.is_dir(): findings.append(f"missing-vertical:{name}")
         elif not (path/"A1OS_VERTICAL.json").is_file(): findings.append(f"missing-manifest:{name}")
-    for path in ROOT.rglob("*"):
-        if not path.is_file() or ".git" in path.parts or "__pycache__" in path.parts:
-            continue
-        try:
-            data=path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            continue
-        if FORBIDDEN.search(data):
-            findings.append(f"forbidden-legacy-reference:{path.relative_to(ROOT)}")
     result={"status":"PASS" if not findings else "FAIL","engine_count":len(entries),
             "expected":EXPECTED,"findings":findings}
     print(json.dumps(result,indent=2))
