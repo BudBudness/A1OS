@@ -1,44 +1,35 @@
+"""Deterministic code-generation manifest pipeline."""
+from __future__ import annotations
 import json
-from pathlib import Path
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
-ROOT = Path("tools/a1os_factory")
+ENGINE_ROOT = Path("tools/a1os_factory")
+TARGETS = ("frontend", "workflows", "forms", "integrations", "tests", "documentation", "deployment-contract")
 
-engines = sorted(ROOT.rglob("*engine.py"))
+def generate(product: str, requirements: dict, output: Path | None = None) -> dict:
+    requested = set(requirements.get("artifacts", TARGETS))
+    artifacts = [item for item in TARGETS if item in requested]
+    manifest = {
+        "plane": "code_generation_pipeline",
+        "version": "2.0",
+        "product": product,
+        "generated": datetime.now(timezone.utc).isoformat(),
+        "status": "ready",
+        "customized": True,
+        "artifact_targets": artifacts,
+        "requirements": requirements,
+        "engine_count": len(list(ENGINE_ROOT.rglob("*_engine.py"))),
+    }
+    destination = output or Path("factory_runs") / product / "CODE_GENERATION_MANIFEST.json"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    return manifest
 
-generator = Path("tools/a1os_factory/code_generation_pipeline")
-
-artifacts = [
-    "backend",
-    "frontend",
-    "database",
-    "api",
-    "authentication",
-    "testing",
-    "documentation",
-    "deployment"
-]
-
-manifest = {
-    "plane": "code_generation_pipeline",
-    "version": "7.2",
-    "generated": datetime.now(timezone.utc).isoformat(),
-    "status": "code_generation_ready",
-    "connected_engines": len(engines),
-    "artifact_targets": artifacts,
-    "capabilities": [
-        "template_generation",
-        "application_scaffolding",
-        "api_generation",
-        "database_generation",
-        "test_generation",
-        "deployment_artifact_generation"
-    ]
-}
-
-(generator / "CODE_GENERATION_MANIFEST.json").write_text(
-    json.dumps(manifest, indent=2)
-)
-
-print("A1OS Code Generation Pipeline v7.2 Ready")
-print(f"Connected factory engines: {len(engines)}")
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python3 code_generation_engine.py PRODUCT REQUIREMENTS_JSON")
+        raise SystemExit(2)
+    result = generate(sys.argv[1], json.loads(Path(sys.argv[2]).read_text(encoding="utf-8")))
+    print(json.dumps(result, indent=2))
