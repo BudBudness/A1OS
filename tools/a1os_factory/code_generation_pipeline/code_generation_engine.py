@@ -19,10 +19,18 @@ def generate(product: str, requirements: dict, output: Path | None = None) -> di
     destination = output or Path("factory_runs")/product/"CODE_GENERATION_MANIFEST.json"
     destination.parent.mkdir(parents=True,exist_ok=True)
     destination.write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf-8")
+    for artifact in artifacts:
+        path = destination.parent / f"{artifact.upper().replace('-', '_')}_CONTRACT.json"
+        path.write_text(json.dumps({
+            "product": product,
+            "artifact": artifact,
+            "status": "generated",
+            "requirements": requirements,
+        }, indent=2, sort_keys=True)+"\n", encoding="utf-8")
     return manifest
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python3 code_generation_engine.py PRODUCT REQUIREMENTS_JSON")
         raise SystemExit(2)
-    print(json.dumps(generate(sys.argv[1],json.loads(Path(sys.argv[2]).read_text(encoding="utf-8")),),indent=2))
+    print(json.dumps(generate(sys.argv[1],json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))),indent=2))
