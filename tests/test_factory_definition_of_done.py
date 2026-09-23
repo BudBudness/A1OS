@@ -71,3 +71,15 @@ def test_control_plane_command_is_allowlisted():
     assert "shell=True" not in text
     assert '"/bin/sh"' not in text
     assert "execution_policy" in text
+
+def test_legacy_jarvis_and_mcp_are_absent_from_working_tree():
+    for path in ROOT.rglob("*"):
+        if not path.is_file() or ".git" in path.parts or "__pycache__" in path.parts:
+            continue
+        try:
+            data = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        lowered = data.lower()
+        assert "jarvis" not in lowered, path
+        assert "mcp" not in lowered, path
