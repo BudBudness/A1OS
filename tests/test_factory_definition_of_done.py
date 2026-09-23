@@ -57,6 +57,11 @@ def test_generated_vertical_passes_real_validation_and_build(tmp_path):
     build = execute("e2e-product", products, evidence)
     assert build["status"] == "built", build
     assert (evidence / "e2e-product" / "BUILD_EXECUTOR_MANIFEST.json").is_file()
+    from tools.a1os_factory.code_generation_pipeline.code_generation_engine import generate as generate_code
+    generated = generate_code("e2e-product", {"artifacts": ["frontend", "forms"]}, evidence / "code")
+    assert generated["artifact_targets"] == ["frontend", "forms"]
+    assert (evidence / "code" / "FRONTEND_CONTRACT.json").is_file()
+    assert (evidence / "code" / "FORMS_CONTRACT.json").is_file()
 
 def test_existing_products_have_manifests():
     for name in ("little-oaks", "legal", "charity"):
