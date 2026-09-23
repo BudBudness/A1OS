@@ -1,15 +1,16 @@
 import json
 from pathlib import Path
-import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
-def test_factory_has_37_engines():
+def test_factory_has_37_roadmap_engines():
     roadmap = json.loads((ROOT / "IMPLEMENTATION_ROADMAP.json").read_text())
-    engines = list((ROOT / "tools/a1os_factory").rglob("*_engine.py"))
     assert roadmap["engines"] == 37
-    assert len(engines) == 37
+    assert len(roadmap["roadmap"]) == 37
+    for item in roadmap["roadmap"]:
+        assert (ROOT / item["engine"]).is_file()
+        assert item["status"] == "IMPLEMENTED"
 
 def test_factory_engines_are_deterministic_contracts():
     sys.path.insert(0, str(ROOT))
@@ -23,9 +24,10 @@ def test_verticals_present():
     for name in ("little-oaks", "legal", "charity"):
         assert (ROOT / "products/verticals" / name).is_dir()
 
-def test_no_jarvis_in_control_plane():
+def test_no_forbidden_control_plane_legacy():
     text = (ROOT / "core/control_plane/app.py").read_text().lower()
     assert "jarvis" not in text
+    assert "mcp" not in text
 
 def test_control_plane_command_is_allowlisted():
     text = (ROOT / "core/control_plane/app.py").read_text()
