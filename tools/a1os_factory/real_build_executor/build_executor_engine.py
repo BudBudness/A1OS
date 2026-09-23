@@ -4,14 +4,14 @@ import json, subprocess, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-def execute(product: str, root: Path = Path("products")) -> dict:
-    target = root/product
+def execute(product: str, root: Path = Path("products"), evidence_root: Path = Path("factory_runs")) -> dict:
+    target = root / product
     if not target.is_dir():
         raise FileNotFoundError(target)
     command=[sys.executable,"-m","compileall","-q",str(target)]
     proc=subprocess.run(command,capture_output=True,text=True,check=False)
     ok=proc.returncode==0
-    out=Path("factory_runs")/product
+    out=evidence_root / product
     out.mkdir(parents=True,exist_ok=True)
     manifest={"plane":"real_build_executor","version":"2.1","product":product,
               "timestamp":datetime.now(timezone.utc).isoformat(),"status":"built" if ok else "failed",
