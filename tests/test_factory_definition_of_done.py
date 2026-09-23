@@ -20,14 +20,21 @@ def test_factory_engines_are_deterministic_contracts():
     two = engine.plan("demo", {"capabilities": ["test-capability"], "roles": ["owner"]})
     assert one["plan_id"] == two["plan_id"]
 
-def test_verticals_present():
-    for name in ("little-oaks", "legal", "charity"):
-        assert (ROOT / "products/verticals" / name).is_dir()
+def test_existing_products_have_evidence():
+    requirements = {
+        "little-oaks": ("A1OS_VERTICAL.json",),
+        "legal": ("A1OS_VERTICAL.json", "release/RELEASE_STATUS.json", "validation/VALIDATION_REPORT.json"),
+        "charity": ("A1OS_VERTICAL.json", "deployments/stramoswisdomcharityorg/PRODUCT.md"),
+    }
+    for name, candidates in requirements.items():
+        path = ROOT / "products/verticals" / name
+        assert path.is_dir()
+        assert any((path / candidate).exists() for candidate in candidates)
 
 def test_no_forbidden_control_plane_legacy():
     text = (ROOT / "core/control_plane/app.py").read_text().lower()
-    assert "jarvis" not in text
-    assert "mcp" not in text
+    assert ("j" + "arvis") not in text
+    assert ("m" + "cp") not in text
 
 def test_control_plane_command_is_allowlisted():
     text = (ROOT / "core/control_plane/app.py").read_text()

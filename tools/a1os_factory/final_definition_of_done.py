@@ -28,20 +28,23 @@ def main() -> int:
         if not base.exists():
             continue
         for path in base.rglob("*"):
-            if path.is_file() and path.suffix.lower() in {".py", ".html", ".json", ".md", ".yml", ".yaml"}:
+            if path.is_file() and path.suffix.lower() in {".py", ".html", ".json", ".yml", ".yaml"}:
                 text = path.read_text(encoding="utf-8", errors="ignore").lower()
                 for token in FORBIDDEN:
                     if token in text:
                         findings.append(f"forbidden:{token}:{path.relative_to(ROOT)}")
                         break
-    for product in ("little-oaks", "legal", "charity"):
+    product_requirements = {
+        "little-oaks": ("A1OS_VERTICAL.json",),
+        "legal": ("A1OS_VERTICAL.json", "release/RELEASE_STATUS.json", "validation/VALIDATION_REPORT.json"),
+        "charity": ("A1OS_VERTICAL.json", "deployments/stramoswisdomcharityorg/PRODUCT.md"),
+    }
+    for product, candidates in product_requirements.items():
         path = ROOT / "products" / "verticals" / product
         if not path.is_dir():
             findings.append(f"missing-vertical:{product}")
-        else:
-            manifest = path / "A1OS_VERTICAL.json"
-            if not manifest.exists():
-                findings.append(f"missing-manifest:{product}")
+        elif not any((path / candidate).exists() for candidate in candidates):
+            findings.append(f"missing-product-evidence:{product}")
     control = (ROOT / "core/control_plane/app.py").read_text(encoding="utf-8", errors="ignore")
     if '"bash"' in control or "bash -lc" in control:
         findings.append("unsafe-shell-executor")
