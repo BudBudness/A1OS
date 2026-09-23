@@ -1,4 +1,4 @@
-"""Lightweight deterministic customer-deployment factory engine."""
+"""Deterministic customer-deployment factory engine."""
 from tools.a1os_factory.engine_runtime import cli, make_engine
 
 ENGINE = make_engine("customer-deployment", "customer-deployment", "deployment-plan", true)
