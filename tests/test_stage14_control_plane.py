@@ -8,7 +8,7 @@ def test_status_is_read_only():
     assert response.status_code == 200
     data = response.json()
     assert data["human_authority"] is True
-    assert data["autonomous_execution"] == "approval_gated"
+    assert data["execution_policy"] == "approval_gated"
 
 def test_command_requires_human_approval():
     response = client.post("/api/command", json={"command": "git status --short"})
