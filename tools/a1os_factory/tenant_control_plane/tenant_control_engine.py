@@ -1,4 +1,4 @@
-"""Lightweight deterministic tenant-control factory engine."""
+"""Deterministic tenant-control factory engine."""
 from tools.a1os_factory.engine_runtime import cli, make_engine
 
 ENGINE = make_engine("tenant-control", "tenant-control", "tenant-policy", false)
