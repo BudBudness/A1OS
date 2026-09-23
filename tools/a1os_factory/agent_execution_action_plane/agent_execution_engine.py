@@ -1,4 +1,4 @@
-"""Lightweight deterministic agent_execution factory engine."""
+"""Deterministic agent_execution factory engine."""
 from tools.a1os_factory.engine_runtime import cli, make_engine
 
 ENGINE = make_engine("agent_execution", "agent_execution", "execution-plan", true)
