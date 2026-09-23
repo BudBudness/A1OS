@@ -1,4 +1,4 @@
-"""Lightweight deterministic product-dna factory engine."""
+"""Deterministic product-dna factory engine."""
 from tools.a1os_factory.engine_runtime import cli, make_engine
 
 ENGINE = make_engine("product-dna", "product-dna", "product-profile", false)
