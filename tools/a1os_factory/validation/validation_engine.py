@@ -4,8 +4,10 @@ import json, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from tools.a1os_factory.engine_runtime import EngineSpec, FactoryEngine
+
 ROOT = Path("products")
-REQUIRED_DIRS = ("pages","components","workflows","forms","integrations","state","assets","tests")
+REQUIRED_DIRS = ("config","pages","components","workflows","forms","integrations","state","assets","tests")
 
 def validate_product(name: str, root: Path = ROOT) -> dict:
     product = root / name
@@ -54,6 +56,8 @@ def validate_product(name: str, root: Path = ROOT) -> dict:
             "validation_time": datetime.now(timezone.utc).isoformat(),
             "checks": checks, "issues": issues,
             "repair_plan": [f"repair:{x}" for x in issues], "status": status}
+
+ENGINE = FactoryEngine(EngineSpec("validation", "validation", "validation-report"))
 
 def main() -> int:
     if len(sys.argv) != 2:
