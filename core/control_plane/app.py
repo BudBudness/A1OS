@@ -67,6 +67,7 @@ ALLOWED_COMMANDS = {
     "python3 -m pytest",
     "git status --short",
     "git diff --check",
+    "printf control-plane",
 }
 
 def _validate_command(command: str) -> list[str]:
