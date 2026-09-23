@@ -95,7 +95,7 @@ async def health():
 
 @app.get("/api/status")
 async def status():
-    return {"a1os": "online", "human_authority": True, "autonomous_execution": "approval_gated", "cwd": str(ROOT)}
+    return {"a1os": "online", "human_authority": True, "execution_policy": "approval_gated", "cwd": str(ROOT)}
 
 @app.post("/api/command", response_model=CommandResponse)
 async def command(request: CommandRequest):
