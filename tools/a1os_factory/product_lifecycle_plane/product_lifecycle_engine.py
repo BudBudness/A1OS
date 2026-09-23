@@ -1,4 +1,4 @@
-"""Lightweight deterministic product-lifecycle factory engine."""
+"""Deterministic product-lifecycle factory engine."""
 from tools.a1os_factory.engine_runtime import cli, make_engine
 
 ENGINE = make_engine("product-lifecycle", "product-lifecycle", "lifecycle-plan", false)
