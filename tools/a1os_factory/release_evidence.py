@@ -1,13 +1,15 @@
 """End-to-end evidence runner for the A1OS Product Factory."""
 from __future__ import annotations
-import importlib, json, tempfile
+import importlib, json, tempfile, sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
 from tools.a1os_factory.code_generation_pipeline.code_generation_engine import generate as generate_code
 from tools.a1os_factory.real_build_executor.build_executor_engine import execute
 from tools.a1os_factory.validation.validation_engine import validate_product
 from tools.a1os_factory.vertical_os_generator_plane.vertical_os_generator_engine import generate
-
-ROOT = Path(__file__).resolve().parents[2]
 ROADMAP = ROOT / "IMPLEMENTATION_ROADMAP.json"
 
 def run() -> dict:
