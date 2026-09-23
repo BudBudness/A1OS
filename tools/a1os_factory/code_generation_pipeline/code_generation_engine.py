@@ -16,11 +16,11 @@ def generate(product: str, requirements: dict, output: Path | None = None) -> di
     manifest = {"plane":"code_generation_pipeline","version":"2.1","product":product,
                 "generated":datetime.now(timezone.utc).isoformat(),"status":"generated",
                 "customized":True,"artifact_targets":artifacts,"requirements":requirements}
-    destination = output or Path("factory_runs")/product/"CODE_GENERATION_MANIFEST.json"
-    destination.parent.mkdir(parents=True,exist_ok=True)
-    destination.write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf-8")
+    destination = output or Path("factory_runs")/product
+    destination.mkdir(parents=True,exist_ok=True)
+    (destination / "CODE_GENERATION_MANIFEST.json").write_text(json.dumps(manifest,indent=2)+"\n",encoding="utf-8")
     for artifact in artifacts:
-        path = destination.parent / f"{artifact.upper().replace('-', '_')}_CONTRACT.json"
+        path = destination / f"{artifact.upper().replace('-', '_')}_CONTRACT.json"
         path.write_text(json.dumps({
             "product": product,
             "artifact": artifact,
