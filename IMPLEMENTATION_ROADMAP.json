@@ -24,23 +24,19 @@
       "state",
       "assets",
       "tests"
-    ],
-    "excluded": [
-      "JARVIS",
-      "MCP"
     ]
   },
   "definition_of_done": {
-    "engine_contract": "Every engine is implemented, callable, deterministic, testable and evidence-producing.",
-    "generation": "Verticals are generated from explicit requirements and contain only requested capabilities.",
-    "validation": "Validation performs real structural, syntax and policy checks and fails honestly.",
+    "engine_contract": "Every factory engine is implemented, callable, deterministic, testable and evidence-producing.",
+    "generation": "Explicit requirements produce a frontend vertical contract and generation evidence.",
+    "validation": "Validation performs real manifest, structure, syntax and platform-boundary checks and fails honestly.",
     "execution": "Execution is explicit, scoped and approval-gated.",
     "products": [
       "little-oaks",
       "legal",
       "charity"
     ],
-    "evidence": "Automated audit and CI must pass before release."
+    "evidence": "Automated tests and the final audit must pass before release."
   },
   "roadmap": [
     {
