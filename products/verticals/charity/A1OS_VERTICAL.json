@@ -1,0 +1,23 @@
+{
+  "name": "charity",
+  "type": "frontend-vertical",
+  "product": "stramoswisdomcharity",
+  "backend": "a1os-platform-api",
+  "status": "existing",
+  "customized": true,
+  "ownership": {
+    "frontend": "vertical",
+    "workflows": "vertical",
+    "forms": "vertical",
+    "state": "vertical",
+    "integrations": "a1os-platform",
+    "authentication": "a1os-core",
+    "tenancy": "a1os-core",
+    "authorization": "a1os-core",
+    "rbac": "a1os-core",
+    "persistence": "a1os-platform",
+    "security": "a1os-core",
+    "deployment": "a1os-platform"
+  },
+  "deployment_path": "deployments/stramoswisdomcharityorg"
+}
