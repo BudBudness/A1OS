@@ -1,50 +1,27 @@
 from fastapi.testclient import TestClient
-
 from core.control_plane.app import app
-
 
 client = TestClient(app)
 
-
 def test_status_is_read_only():
-    response = client.post(
-        "/api/jarvis/plan",
-        json={"command": "status"},
-    )
+    response = client.get("/api/status")
     assert response.status_code == 200
     data = response.json()
-    assert data["risk"] == "read"
-    assert data["requires_approval"] is False
-    assert data["approval_token"] is None
+    assert data["human_authority"] is True
+    assert data["autonomous_execution"] == "approval_gated"
 
-
-def test_terminal_requires_human_approval():
-    response = client.post(
-        "/api/jarvis/plan",
-        json={"command": "run echo A1OS"},
-    )
+def test_command_requires_human_approval():
+    response = client.post("/api/command", json={"command": "git status --short"})
     assert response.status_code == 200
     data = response.json()
-    assert data["risk"] == "execute"
-    assert data["requires_approval"] is True
-    assert data["approval_token"]
+    assert data["approval_required"] is True
+    assert data["status"] == "approval_required"
 
+def test_command_allowlist_blocks_arbitrary_shell():
+    response = client.post("/api/command", json={"command": "rm -rf /"})
+    assert response.status_code == 403
 
-def test_destructive_requires_human_approval():
-    response = client.post(
-        "/api/jarvis/plan",
-        json={"command": "stop"},
-    )
+def test_approved_allowlisted_command_executes():
+    response = client.post("/api/command", json={"command": "git diff --check", "approve": True})
     assert response.status_code == 200
-    data = response.json()
-    assert data["risk"] == "destructive"
-    assert data["requires_approval"] is True
-    assert data["approval_token"]
-
-
-def test_invalid_approval_token_is_rejected():
-    response = client.post(
-        "/api/jarvis/approve",
-        json={"token": "invalid-token"},
-    )
-    assert response.status_code == 404
+    assert response.json()["status"] == "success"

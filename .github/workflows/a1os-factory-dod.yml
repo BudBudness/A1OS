@@ -1,0 +1,25 @@
+name: A1OS Factory Definition of Done
+
+on:
+  push:
+    branches: [main, factory-dod-complete]
+  pull_request:
+    branches: [main]
+
+jobs:
+  factory-dod:
+    name: factory-dod
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pytest fastapi pydantic
+      - name: Compile
+        run: python -m compileall -q tools core
+      - name: Factory tests
+        run: python -m pytest -q tests/test_factory_definition_of_done.py tests/test_stage14_control_plane.py
+      - name: Definition of Done audit
+        run: python tools/a1os_factory/final_definition_of_done.py

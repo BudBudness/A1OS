@@ -1,40 +1,7 @@
-from pathlib import Path
-import json
-from datetime import datetime
-import sys
+"""Lightweight deterministic tenant-control factory engine."""
+from tools.a1os_factory.engine_runtime import cli, make_engine
 
-if len(sys.argv) < 2:
-    print("Usage: python3 tenant_control_engine.py product-name")
-    sys.exit(1)
+ENGINE = make_engine("tenant-control", "tenant-control", "tenant-policy", false)
 
-product = sys.argv[1]
-
-root = Path("products") / product / "tenant_control"
-
-layers = [
-    "tenants",
-    "organizations",
-    "workspaces",
-    "identity",
-    "billing",
-    "entitlements",
-    "governance",
-    "analytics"
-]
-
-for layer in layers:
-    (root / layer).mkdir(parents=True, exist_ok=True)
-
-manifest = {
-    "product": product,
-    "factory_version": "4.1",
-    "status": "tenant_control_ready",
-    "generated": datetime.utcnow().isoformat(),
-    "capabilities": layers
-}
-
-(root / "TENANT_CONTROL_MANIFEST.json").write_text(
-    json.dumps(manifest, indent=2)
-)
-
-print(f"A1OS Tenant Control Plane Generated: {product}")
+if __name__ == "__main__":
+    cli(ENGINE)

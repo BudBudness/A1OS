@@ -7,12 +7,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi.staticfiles import StaticFiles
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.middleware.base import BaseHTTPMiddleware
 
 ROOT = Path(os.environ.get("A1OS_ROOT", Path.cwd())).resolve()
 STATIC = Path(__file__).with_name("static")
@@ -21,27 +20,22 @@ SAFE_ROOT = ROOT
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(), payment=()"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers.update({
+            "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+            "X-Frame-Options": "DENY",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        })
         return response
 
-
-app = FastAPI(title="A1OS Control Plane", version="1.0.0")
-
+app = FastAPI(title="A1OS Control Plane", version="2.0.0")
 app.add_middleware(SecurityHeadersMiddleware)
 
-from core.control_plane.jarvis import router as jarvis_router
-app.include_router(jarvis_router)
-
-
 class CommandRequest(BaseModel):
-    command: str = Field(min_length=1, max_length=4000)
+    command: str = Field(min_length=1, max_length=500)
     approve: bool = False
-
 
 class CommandResponse(BaseModel):
     status: str
@@ -51,11 +45,9 @@ class CommandResponse(BaseModel):
     returncode: int | None = None
     approval_required: bool = False
 
-
 class EventHub:
     def __init__(self) -> None:
         self.clients: set[WebSocket] = set()
-
     async def publish(self, event: dict[str, Any]) -> None:
         dead = []
         for client in self.clients:
@@ -66,106 +58,54 @@ class EventHub:
         for client in dead:
             self.clients.discard(client)
 
-
 hub = EventHub()
 
+ALLOWED_COMMANDS = {
+    "python -m compileall .",
+    "python3 -m compileall .",
+    "python -m pytest",
+    "python3 -m pytest",
+    "git status --short",
+    "git diff --check",
+}
 
-def _validate_command(command: str) -> None:
-    dangerous = (
-        "rm -rf /",
-        "mkfs",
-        "dd if=",
-        ":(){ :|:& };:",
-        "shutdown",
-        "reboot",
-    )
-    normalized = command.strip().lower()
-    if any(item in normalized for item in dangerous):
-        raise HTTPException(status_code=403, detail="Command blocked by control-plane policy")
+def _validate_command(command: str) -> list[str]:
+    try:
+        parts = shlex.split(command)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid command syntax: {exc}") from exc
+    normalized = " ".join(parts)
+    if normalized not in ALLOWED_COMMANDS:
+        raise HTTPException(status_code=403, detail="Command is not in the control-plane allowlist")
+    return parts
 
-
-async def _execute(command: str) -> tuple[int, str, str]:
-    proc = await asyncio.create_subprocess_exec(
-        "bash",
-        "-lc",
-        command,
-        cwd=str(SAFE_ROOT),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
+async def _execute(parts: list[str]) -> tuple[int, str, str]:
+    proc = await asyncio.create_subprocess_exec(*parts, cwd=str(SAFE_ROOT),
+        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     stdout, stderr = await proc.communicate()
     return proc.returncode, stdout.decode(errors="replace"), stderr.decode(errors="replace")
-
 
 @app.get("/")
 async def index():
     return FileResponse(STATIC / "index.html")
 
-
 @app.get("/api/health")
 async def health():
-    return {
-        "status": "online",
-        "system": "A1OS",
-        "control_plane": "online",
-        "root": str(ROOT),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-
+    return {"status": "online", "system": "A1OS", "control_plane": "online", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 @app.get("/api/status")
 async def status():
-    return {
-        "a1os": "online",
-        "termux_linux": "connected",
-        "human_authority": True,
-        "autonomous_execution": "approval_gated",
-        "cwd": str(ROOT),
-    }
-
-
-
-@app.get("/api/jarvis/status")
-async def jarvis_status():
-    return {
-        "status": "online",
-        "phase": "ready",
-        "message": "JARVIS online",
-        "a1os": "online",
-        "termux_linux": "connected",
-        "human_authority": True,
-        "autonomous_execution": "approval_gated",
-    }
+    return {"a1os": "online", "human_authority": True, "autonomous_execution": "approval_gated", "cwd": str(ROOT)}
 
 @app.post("/api/command", response_model=CommandResponse)
 async def command(request: CommandRequest):
     command_text = request.command.strip()
-    _validate_command(command_text)
-
+    parts = _validate_command(command_text)
     if not request.approve:
-        return CommandResponse(
-            status="approval_required",
-            command=command_text,
-            approval_required=True,
-        )
-
-    code, output, error = await _execute(command_text)
-    event = {
-        "type": "command",
-        "command": command_text,
-        "returncode": code,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
-    await hub.publish(event)
-
-    return CommandResponse(
-        status="success" if code == 0 else "failed",
-        command=command_text,
-        output=output,
-        error=error,
-        returncode=code,
-    )
-
+        return CommandResponse(status="approval_required", command=command_text, approval_required=True)
+    code, output, error = await _execute(parts)
+    await hub.publish({"type": "command", "command": command_text, "returncode": code, "timestamp": datetime.now(timezone.utc).isoformat()})
+    return CommandResponse(status="success" if code == 0 else "failed", command=command_text, output=output, error=error, returncode=code)
 
 @app.websocket("/ws")
 async def websocket(websocket: WebSocket):
@@ -180,7 +120,5 @@ async def websocket(websocket: WebSocket):
     finally:
         hub.clients.discard(websocket)
 
-
-_STATIC = Path(__file__).parent / "static"
-if _STATIC.is_dir():
-    app.mount("/ui", StaticFiles(directory=_STATIC, html=True), name="ui")
+if STATIC.is_dir():
+    app.mount("/ui", StaticFiles(directory=STATIC, html=True), name="ui")

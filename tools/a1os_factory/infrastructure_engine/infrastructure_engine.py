@@ -1,38 +1,7 @@
-from pathlib import Path
-import json
-from datetime import datetime
-import sys
+"""Lightweight deterministic infrastructure factory engine."""
+from tools.a1os_factory.engine_runtime import cli, make_engine
 
-if len(sys.argv) < 2:
-    print("Usage: python3 infrastructure_engine.py product-name")
-    sys.exit(1)
+ENGINE = make_engine("infrastructure", "infrastructure", "infrastructure-plan", false)
 
-product = sys.argv[1]
-
-root = Path("products") / product / "infrastructure"
-
-layers = {
-    "terraform": {},
-    "ansible": {},
-    "kubernetes": {},
-    "environments": {},
-    "secrets": {},
-    "validation": {}
-}
-
-for layer in layers:
-    (root / layer).mkdir(parents=True, exist_ok=True)
-
-manifest = {
-    "product": product,
-    "factory_version": "3.1",
-    "status": "infrastructure_ready",
-    "generated": datetime.utcnow().isoformat(),
-    "components": list(layers.keys())
-}
-
-(root / "INFRASTRUCTURE_MANIFEST.json").write_text(
-    json.dumps(manifest, indent=2)
-)
-
-print(f"A1OS Infrastructure Engine Generated: {product}")
+if __name__ == "__main__":
+    cli(ENGINE)
