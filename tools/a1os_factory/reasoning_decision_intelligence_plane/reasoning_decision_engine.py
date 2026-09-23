@@ -1,4 +1,4 @@
-"""Lightweight deterministic reasoning-decision factory engine."""
+"""Deterministic reasoning-decision factory engine."""
 from tools.a1os_factory.engine_runtime import cli, make_engine
 
 ENGINE = make_engine("reasoning-decision", "reasoning-decision", "decision-record", false)
