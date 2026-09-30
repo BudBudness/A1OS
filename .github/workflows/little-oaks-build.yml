@@ -1,0 +1,25 @@
+name: little-oaks-build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "products/verticals/little-oaks/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: products/verticals/little-oaks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: products/verticals/little-oaks/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
