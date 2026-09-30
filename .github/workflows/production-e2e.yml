@@ -12,9 +12,29 @@ jobs:
       - name: Check production health
         run: |
           set -euo pipefail
-          for path in health ready ping; do
-            echo "GET /$path"
-            curl --fail --silent --show-error --retry 12 --retry-delay 10 --retry-all-errors \
-              "https://a1-os.vercel.app/$path"
-            echo
-          done
+          curl_json() {
+            curl --fail --silent --show-error --retry 12 --retry-delay 10 --retry-all-errors "$1"
+          }
+
+          health="$(curl_json https://a1-os.vercel.app/health)"
+          ready="$(curl_json https://a1-os.vercel.app/ready)"
+          ping="$(curl_json https://a1-os.vercel.app/ping)"
+
+          python - <<'PY' "$health" "$ready" "$ping"
+          import json, sys
+
+          health, ready, ping = map(json.loads, sys.argv[1:])
+
+          assert health == {"status": "healthy", "service": "a1os-api"}, health
+          assert ready == {
+              "status": "ready",
+              "service": "a1os-api",
+              "execution_mode": "serverless-safe",
+          }, ready
+          assert ping == {"status": "ok"}, ping
+
+          print("A1OS production E2E: PASS")
+          print("health:", health)
+          print("ready:", ready)
+          print("ping:", ping)
+          PY
