@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
+
+const SUPABASE_URL = "https://kiigbojuvcjnldxvdxlq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_0kH7sD4Ee4DL_QyGVvxqYQ_yvNlT2nL";
 
 const programmes = [
   {
@@ -35,6 +38,22 @@ const learningAreas = [
 ];
 
 export function App() {
+  const [enquiry, setEnquiry] = useState({ parent_name: "", child_name: "", child_age: "", programme: "", phone: "", message: "" });
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleEnquirySubmit(event) {
+    event.preventDefault(); setError(""); setSubmitted(false);
+    const response = await fetch(SUPABASE_URL + "/rest/v1/enquiries", {
+      method: "POST", headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(enquiry)
+    });
+    if (!response.ok) { setError("We could not send your enquiry. Please call or WhatsApp Little Oaks."); return; }
+    setSubmitted(true);
+    const text = ["Little Oaks enquiry", "", "Parent/Guardian: " + enquiry.parent_name, "Child: " + enquiry.child_name, "Child age: " + enquiry.child_age, "Programme: " + (enquiry.programme || "Not specified"), "Phone: " + enquiry.phone, "Message: " + (enquiry.message || "Please contact me about availability and enrolment.")].join("\n");
+    window.open("https://wa.me/256762023393?text=" + encodeURIComponent(text), "_blank", "noopener,noreferrer");
+    setEnquiry({ parent_name: "", child_name: "", child_age: "", programme: "", phone: "", message: "" });
+  }
+
   return (
     <div className="site">
       <header className="nav">
@@ -214,9 +233,18 @@ export function App() {
               <p className="eyebrow">COME AND MEET US</p>
               <h2>Let's start your child's<br />Little Oaks journey.</h2>
               <p>
-                Parents and guardians are welcome to contact Little Oaks to
-                discuss programmes, availability, visits and enrolment.
+                Send an enquiry with your child’s details. We’ll save it securely and open WhatsApp so the Little Oaks team can follow up.
               </p>
+              <form className="enquiry-form" onSubmit={handleEnquirySubmit}>
+                <label>Parent / guardian<input required value={enquiry.parent_name} onChange={e => setEnquiry({...enquiry, parent_name:e.target.value})} placeholder="Your name" /></label>
+                <div className="form-row"><label>Child’s name<input required value={enquiry.child_name} onChange={e => setEnquiry({...enquiry, child_name:e.target.value})} placeholder="Child’s name" /></label><label>Child’s age<input required value={enquiry.child_age} onChange={e => setEnquiry({...enquiry, child_age:e.target.value})} placeholder="e.g. 3 years" /></label></div>
+                <label>Programme<select value={enquiry.programme} onChange={e => setEnquiry({...enquiry, programme:e.target.value})}><option value="">Select a programme</option>{programmes.map(p => <option key={p.title} value={p.title}>{p.title}</option>)}</select></label>
+                <label>Phone / WhatsApp<input required type="tel" value={enquiry.phone} onChange={e => setEnquiry({...enquiry, phone:e.target.value})} placeholder="+256 ..." /></label>
+                <label>Message<textarea value={enquiry.message} onChange={e => setEnquiry({...enquiry, message:e.target.value})} placeholder="Ask about availability, visits or enrolment." rows="4" /></label>
+                {submitted && <p className="form-success" role="status">Enquiry saved. WhatsApp has been opened for follow-up.</p>}
+                {error && <p className="form-error" role="alert">{error}</p>}
+                <button className="button primary full" type="submit">Send enquiry on WhatsApp</button>
+              </form>
             </div>
 
             <div className="contact-card">
