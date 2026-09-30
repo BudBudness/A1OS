@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import json
 import os
-from typing import Any
 
 from flask import Flask, jsonify, request
 
@@ -12,6 +11,15 @@ from observability.metrics import increment
 from core.queue.durable import DurableQueue
 
 app = Flask(__name__)
+
+
+@app.get("/")
+def root():
+    return jsonify({
+        "service": "a1os-api",
+        "status": "online",
+        "version": "1.0.0",
+    })
 
 
 @app.get("/ping")
@@ -138,9 +146,6 @@ def execute_task():
 
     increment("api.execute.accepted", f"target={payload['target']}")
 
-    # Serverless functions must not depend on an orphaned background task.
-    # Complete execution within the invocation so the durable task reaches
-    # a deterministic terminal state before the function is recycled.
     asyncio.run(
         system.runtime.execute(
             task_id=task_id,
