@@ -35,7 +35,7 @@ jobs:
               "service": "a1os-api",
               "execution_mode": "serverless-safe",
           }, ready
-          assert ping == {"status": "ok"}, ping
+          assert ping == {"ping": "pong"}, ping
 
           print("A1OS production E2E: PASS")
           PY
