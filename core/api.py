@@ -145,3 +145,17 @@ async def execute_task(payload: ExecutePayload, x_signature: str = Header(None))
     )
 
     return {"status": "accepted", "task_id": task_id}
+
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "service": "a1os-api"}
+
+
+@app.get("/ready")
+async def ready():
+    return {
+        "status": "ready",
+        "service": "a1os-api",
+        "execution_mode": "serverless-safe",
+    }
