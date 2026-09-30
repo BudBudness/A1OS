@@ -543,3 +543,11 @@ footer {
 
   .footer-inner { flex-direction: column; }
 }
+
+.enquiry-form { display: grid; gap: 14px; margin-top: 28px; }
+.enquiry-form label { display: grid; gap: 7px; color: #53665b; font-size: 12px; font-weight: 700; }
+.enquiry-form input, .enquiry-form select, .enquiry-form textarea { width: 100%; border: 1px solid #d5ddd2; border-radius: 12px; padding: 12px 13px; background: #fffdf7; color: #244235; font: inherit; font-size: 14px; }
+.enquiry-form textarea { resize: vertical; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-success { margin: 0; color: #315f43; font-size: 13px; font-weight: 700; }
+.form-error { margin: 0; color: #9a4f42; font-size: 13px; font-weight: 700; }
