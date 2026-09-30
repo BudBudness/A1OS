@@ -16,14 +16,18 @@ jobs:
             curl --fail --silent --show-error --retry 12 --retry-delay 10 --retry-all-errors "$1"
           }
 
-          health="$(curl_json https://a1-os.vercel.app/health)"
-          ready="$(curl_json https://a1-os.vercel.app/ready)"
-          ping="$(curl_json https://a1-os.vercel.app/ping)"
+          curl_json https://a1-os.vercel.app/health > health.json
+          curl_json https://a1-os.vercel.app/ready > ready.json
+          curl_json https://a1-os.vercel.app/ping > ping.json
 
-          python - <<'PY' "$health" "$ready" "$ping"
-          import json, sys
+          cat health.json ready.json ping.json
 
-          health, ready, ping = map(json.loads, sys.argv[1:])
+          python - <<'PY'
+          import json
+
+          health = json.load(open("health.json"))
+          ready = json.load(open("ready.json"))
+          ping = json.load(open("ping.json"))
 
           assert health == {"status": "healthy", "service": "a1os-api"}, health
           assert ready == {
@@ -34,7 +38,12 @@ jobs:
           assert ping == {"status": "ok"}, ping
 
           print("A1OS production E2E: PASS")
-          print("health:", health)
-          print("ready:", ready)
-          print("ping:", ping)
           PY
+
+      - name: Upload live responses
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a1os-production-e2e-responses
+          path: "*.json"
+          if-no-files-found: ignore
