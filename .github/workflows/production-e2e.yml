@@ -1,0 +1,23 @@
+name: production-e2e
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Vercel deployment
+        run: sleep 90
+
+      - name: Check production health
+        run: |
+          set -euo pipefail
+          for path in health ready ping; do
+            echo "GET /$path"
+            curl --fail --silent --show-error --retry 8 --retry-delay 10 --retry-all-errors \
+              "https://a1-os.vercel.app/$path"
+            echo
+          done
