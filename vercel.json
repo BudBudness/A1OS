@@ -1,8 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "main.py": {
+    "api/index.py": {
       "maxDuration": 60
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/ping", "destination": "/api/index.py/ping" },
+    { "source": "/health", "destination": "/api/index.py/health" },
+    { "source": "/ready", "destination": "/api/index.py/ready" },
+    { "source": "/v1/health", "destination": "/api/index.py/v1/health" },
+    { "source": "/v1/tasks/:taskId", "destination": "/api/index.py/v1/tasks/:taskId" },
+    { "source": "/v1/execute", "destination": "/api/index.py/v1/execute" }
+  ]
 }
