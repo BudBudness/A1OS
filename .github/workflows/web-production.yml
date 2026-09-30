@@ -1,0 +1,28 @@
+name: Web production verification
+
+on:
+  push:
+    branches: [main, "production/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-web-apps:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app:
+          - apps/a1os-web
+          - apps/little-oaks-web
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package.json
+      - run: npm install
+      - run: npm run build
