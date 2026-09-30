@@ -1,21 +1,14 @@
-import uvicorn
-from contextlib import asynccontextmanager
-
 from core.api import app
-from core.state import system
-from core.persistence.database import Database
 
 
-@asynccontextmanager
-async def lifespan(application):
-    await system.start()
-    yield
-
-
-app.router.lifespan_context = lifespan
-
+# Vercel/ASGI entrypoint.
+# The full A1OS control-plane singleton is intentionally not imported at
+# module load time: serverless instances must remain import-safe and should
+# not start a persistent background worker during request initialization.
 
 if __name__ == "__main__":
+    import uvicorn
+
     uvicorn.run(
         app,
         host="127.0.0.1",
