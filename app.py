@@ -50,7 +50,7 @@ def ready():
         "service": "a1os-api",
         "execution_mode": "cloud-queue" if cloud else "serverless-safe",
         "persistence": "supabase" if cloud else "local",
-    }), (200 if cloud else 503)
+    })
 
 
 @app.get("/v1/health")
