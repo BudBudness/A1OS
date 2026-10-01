@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import os
+import uuid
 
 from flask import Flask, jsonify, request
 
@@ -10,16 +11,25 @@ from observability.health import health_snapshot
 from observability.metrics import increment
 from core.queue.durable import DurableQueue
 
+try:
+    from core.persistence.supabase_tasks import store as supabase_tasks
+except Exception:
+    supabase_tasks = None
+
 app = Flask(__name__)
+
+
+def _production_cloud_store():
+    return bool(
+        os.environ.get("VERCEL")
+        and supabase_tasks is not None
+        and supabase_tasks.configured
+    )
 
 
 @app.get("/")
 def root():
-    return jsonify({
-        "service": "a1os-api",
-        "status": "online",
-        "version": "1.0.0",
-    })
+    return jsonify({"service": "a1os-api", "status": "online", "version": "1.0.0"})
 
 
 @app.get("/ping")
@@ -34,11 +44,13 @@ def health():
 
 @app.get("/ready")
 def ready():
+    cloud = _production_cloud_store()
     return jsonify({
-        "status": "ready",
+        "status": "ready" if cloud else "degraded",
         "service": "a1os-api",
-        "execution_mode": "serverless-safe",
-    })
+        "execution_mode": "cloud-queue" if cloud else "serverless-safe",
+        "persistence": "supabase" if cloud else "local",
+    }), (200 if cloud else 503)
 
 
 @app.get("/v1/health")
@@ -50,38 +62,48 @@ def health_check():
         if isinstance(database, dict):
             database_integrity = database.get("integrity")
     snapshot["database_integrity"] = database_integrity
-    snapshot["status"] = "healthy" if database_integrity == "ok" else "degraded"
+    snapshot["persistence"] = "supabase" if _production_cloud_store() else "local"
+    snapshot["status"] = "healthy" if _production_cloud_store() else (
+        "healthy" if database_integrity == "ok" else "degraded"
+    )
     snapshot["version"] = "1.0.0"
     return jsonify(snapshot)
 
 
 @app.get("/v1/tasks/<task_id>")
 def get_task(task_id: str):
-    row = DurableQueue.get(task_id)
-    if row is None:
-        return jsonify({"detail": "Task not found"}), 404
+    try:
+        if _production_cloud_store():
+            row = supabase_tasks.get_task(task_id)
+            if row is None:
+                return jsonify({"detail": "Task not found"}), 404
+            return jsonify(row)
 
-    return jsonify({
-        "task_id": row["task_id"],
-        "target": row["target"],
-        "role": row["role"],
-        "action": row["action"],
-        "status": row["status"],
-        "attempts": row["attempts"],
-        "created_at": row["created_at"],
-        "updated_at": row["updated_at"],
-        "completed_at": row["completed_at"],
-        "error": row["error"],
-    })
+        row = DurableQueue.get(task_id)
+        if row is None:
+            return jsonify({"detail": "Task not found"}), 404
+        return jsonify({
+            "task_id": row["task_id"],
+            "target": row["target"],
+            "role": row["role"],
+            "action": row["action"],
+            "status": row["status"],
+            "attempts": row["attempts"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "completed_at": row["completed_at"],
+            "error": row["error"],
+        })
+    except Exception:
+        app.logger.exception("A1OS task lookup failed")
+        return jsonify({"detail": "Task lookup failed"}), 503
 
 
 @app.post("/v1/execute")
 def execute_task():
     secret = os.environ.get("A1OS_EXECUTE_SECRET")
     if not secret:
-        return jsonify({
-            "detail": "Execution authentication is not configured"
-        }), 503
+        return jsonify({"detail": "Execution authentication is not configured"}), 503
 
     signature = request.headers.get("X-Signature")
     if not signature:
@@ -93,67 +115,65 @@ def execute_task():
 
     required = ("target", "role", "action", "data")
     if any(key not in payload for key in required):
-        return jsonify({
-            "detail": "Payload requires target, role, action, and data"
-        }), 422
+        return jsonify({"detail": "Payload requires target, role, action, and data"}), 422
 
     canonical = json.dumps(
-        {
-            "target": payload["target"],
-            "role": payload["role"],
-            "action": payload["action"],
-            "data": payload["data"],
-        },
+        {key: payload[key] for key in required},
         sort_keys=True,
         separators=(",", ":"),
         default=str,
     ).encode("utf-8")
 
-    expected = hmac.new(
-        secret.encode("utf-8"),
-        canonical,
-        hashlib.sha256,
-    ).hexdigest()
-
+    expected = hmac.new(secret.encode("utf-8"), canonical, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(signature.strip().lower(), expected.lower()):
         return jsonify({"detail": "Invalid execution signature"}), 403
 
-    from core.state import system
+    try:
+        if _production_cloud_store():
+            task_id = str(uuid.uuid4())
+            supabase_tasks.insert_task(
+                task_id=task_id,
+                target=payload["target"],
+                role=payload["role"],
+                action=payload["action"],
+                data=payload["data"],
+            )
+            increment("api.execute.accepted", f"target={payload['target']}")
+            return jsonify({
+                "status": "accepted",
+                "task_id": task_id,
+                "execution_mode": "cloud-queue",
+            }), 202
 
-    memory_key = f"task_{payload['target']}_{payload['action']}"
-    system.memory.store(
-        key=memory_key,
-        value={"role": payload["role"], "data": payload["data"]},
-        memory_type="short",
-    )
+        from core.state import system
 
-    entity_id = system.knowledge.add_entity(
-        entity_type="api_execution_event",
-        attributes={
-            "target": payload["target"],
-            "action": payload["action"],
-            "role": payload["role"],
-        },
-    )
-
-    task_id = DurableQueue.enqueue(
-        target=payload["target"],
-        role=payload["role"],
-        action=payload["action"],
-        data=payload["data"],
-        task_id=entity_id,
-    )
-
-    increment("api.execute.accepted", f"target={payload['target']}")
-
-    asyncio.run(
-        system.runtime.execute(
-            task_id=task_id,
-            payload=payload,
+        memory_key = f"task_{payload['target']}_{payload['action']}"
+        system.memory.store(
+            key=memory_key,
+            value={"role": payload["role"], "data": payload["data"]},
+            memory_type="short",
         )
-    )
-
-    return jsonify({"status": "accepted", "task_id": task_id})
+        entity_id = system.knowledge.add_entity(
+            entity_type="api_execution_event",
+            attributes={
+                "target": payload["target"],
+                "action": payload["action"],
+                "role": payload["role"],
+            },
+        )
+        task_id = DurableQueue.enqueue(
+            target=payload["target"],
+            role=payload["role"],
+            action=payload["action"],
+            data=payload["data"],
+            task_id=entity_id,
+        )
+        increment("api.execute.accepted", f"target={payload['target']}")
+        asyncio.run(system.runtime.execute(task_id=task_id, payload=payload))
+        return jsonify({"status": "accepted", "task_id": task_id})
+    except Exception:
+        app.logger.exception("A1OS execution failed")
+        return jsonify({"detail": "Execution backend unavailable"}), 503
 
 
 @app.errorhandler(Exception)
