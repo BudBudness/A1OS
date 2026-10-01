@@ -27,6 +27,17 @@ def _production_cloud_store():
     )
 
 
+def _safe_error_message(error: Exception) -> str:
+    message = str(error).replace("\n", " ")[:500]
+    for value in (
+        os.environ.get("A1OS_EXECUTE_SECRET", ""),
+        os.environ.get("SUPABASE_SECRET_KEY", ""),
+    ):
+        if value:
+            message = message.replace(value, "[REDACTED]")
+    return message
+
+
 @app.get("/")
 def root():
     return jsonify({"service": "a1os-api", "status": "online", "version": "1.0.0"})
@@ -171,8 +182,12 @@ def execute_task():
         increment("api.execute.accepted", f"target={payload['target']}")
         asyncio.run(system.runtime.execute(task_id=task_id, payload=payload))
         return jsonify({"status": "accepted", "task_id": task_id})
-    except Exception:
-        app.logger.exception("A1OS execution failed")
+    except Exception as error:
+        app.logger.error(
+            "A1OS execution failed: error_type=%s error=%s",
+            type(error).__name__,
+            _safe_error_message(error),
+        )
         return jsonify({"detail": "Execution backend unavailable"}), 503
 
 
