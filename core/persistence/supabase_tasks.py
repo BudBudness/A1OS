@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -67,7 +68,6 @@ class SupabaseTaskStore:
             headers=self._headers(),
             params={
                 "status": "in.(queued,retry)",
-                "or": "(next_attempt_at.is.null,next_attempt_at.lte.now())",
                 "select": "*",
                 "order": "created_at.asc",
                 "limit": str(limit),
@@ -76,17 +76,38 @@ class SupabaseTaskStore:
         )
         response.raise_for_status()
         rows = response.json()
-        return rows if isinstance(rows, list) else []
+        if not isinstance(rows, list):
+            return []
+
+        now = datetime.now(timezone.utc)
+        ready = []
+        for row in rows:
+            next_attempt = row.get("next_attempt_at")
+            if not next_attempt:
+                ready.append(row)
+                continue
+            try:
+                scheduled = datetime.fromisoformat(str(next_attempt).replace("Z", "+00:00"))
+                if scheduled <= now:
+                    ready.append(row)
+            except ValueError:
+                ready.append(row)
+        return ready
 
     def claim_task(self, task_id: str) -> bool:
+        current = self.get_task(task_id)
+        if current is None or current.get("status") not in {"queued", "retry"}:
+            return False
+
+        attempts = int(current.get("attempts") or 0) + 1
         response = httpx.patch(
             f"{self.url}/rest/v1/a1os_tasks",
             headers={**self._headers(), "Prefer": "return=representation"},
             params={
                 "task_id": f"eq.{task_id}",
-                "status": "in.(queued,retry)",
+                "status": f"eq.{current['status']}",
             },
-            json={"status": "running", "attempts": 1},
+            json={"status": "running", "attempts": attempts},
             timeout=10.0,
         )
         response.raise_for_status()
@@ -94,15 +115,16 @@ class SupabaseTaskStore:
         return isinstance(rows, list) and len(rows) == 1
 
     def complete_task(self, task_id: str) -> None:
+        completed_at = datetime.now(timezone.utc).isoformat()
         response = httpx.patch(
             f"{self.url}/rest/v1/a1os_tasks",
             headers={**self._headers(), "Prefer": "return=minimal"},
-            params={"task_id": f"eq.{task_id}"},
+            params={"task_id": f"eq.{task_id}", "status": "eq.running"},
             json={
                 "status": "completed",
                 "error": None,
                 "next_attempt_at": None,
-                "completed_at": "now()",
+                "completed_at": completed_at,
             },
             timeout=10.0,
         )
@@ -110,7 +132,7 @@ class SupabaseTaskStore:
 
     def fail_task(self, task_id: str, error: str) -> None:
         current = self.get_task(task_id)
-        if current is None:
+        if current is None or current.get("status") != "running":
             return
 
         attempts = int(current.get("attempts") or 0)
@@ -128,7 +150,9 @@ class SupabaseTaskStore:
             body = {
                 "status": "retry",
                 "error": message,
-                "next_attempt_at": f"now() + interval '{delay} seconds'",
+                "next_attempt_at": (
+                    datetime.now(timezone.utc) + timedelta(seconds=delay)
+                ).isoformat(),
             }
 
         response = httpx.patch(
