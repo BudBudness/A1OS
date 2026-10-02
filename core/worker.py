@@ -26,6 +26,25 @@ def _row_payload(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+async def _execute_payload(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    target = str(payload["target"]).lower()
+    action = str(payload["action"])
+
+    if target == "a1os":
+        output = await system.execute(
+            action,
+            **{
+                key: value
+                for key, value in payload.items()
+                if key not in {"target", "role", "action"}
+            },
+        )
+        DurableQueue.complete(task_id)
+        return {"task_id": task_id, "status": "completed", "result": output}
+
+    return await system.runtime.execute(task_id=task_id, payload=payload)
+
+
 async def process_once() -> int:
     rows = supabase_tasks.pending_tasks(limit=BATCH_SIZE)
     processed = 0
@@ -42,15 +61,22 @@ async def process_once() -> int:
                 target=payload["target"],
                 role=payload["role"],
                 action=payload["action"],
-                data={k: v for k, v in payload.items() if k not in {"target", "role", "action"}},
+                data={
+                    key: value
+                    for key, value in payload.items()
+                    if key not in {"target", "role", "action"}
+                },
                 task_id=task_id,
             )
-            result = await system.runtime.execute(task_id=task_id, payload=payload)
+            result = await _execute_payload(task_id, payload)
 
             if result.get("status") == "completed":
                 supabase_tasks.complete_task(task_id)
             else:
-                supabase_tasks.fail_task(task_id, result.get("error", "Task execution failed"))
+                supabase_tasks.fail_task(
+                    task_id,
+                    result.get("error", "Task execution failed"),
+                )
 
         except Exception as exc:
             supabase_tasks.fail_task(task_id, str(exc))
@@ -61,7 +87,6 @@ async def process_once() -> int:
 
 
 async def run_worker() -> None:
-    await system.start()
     print("[A1OS] Supabase worker online.")
 
     while True:
