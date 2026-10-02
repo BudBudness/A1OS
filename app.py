@@ -94,14 +94,30 @@ def e2e_verify():
             "action": "e2e_queue_verification",
             "data": {"source": "temporary-server-side-verification"},
         }
-        supabase_tasks.insert_task(
-            task_id=task_id,
-            target=payload["target"],
-            role=payload["role"],
-            action=payload["action"],
-            data=payload["data"],
-        )
-        row = supabase_tasks.get_task(task_id)
+        try:
+            supabase_tasks.insert_task(
+                task_id=task_id,
+                target=payload["target"],
+                role=payload["role"],
+                action=payload["action"],
+                data=payload["data"],
+            )
+        except Exception as error:
+            return jsonify({
+                "verified": False,
+                "stage": "insert",
+                "error_type": type(error).__name__,
+                "error": _safe_error_message(error),
+            }), 503
+        try:
+            row = supabase_tasks.get_task(task_id)
+        except Exception as error:
+            return jsonify({
+                "verified": False,
+                "stage": "read",
+                "error_type": type(error).__name__,
+                "error": _safe_error_message(error),
+            }), 503
         return jsonify({"verified": row is not None, "task": row}), 200
     except Exception as error:
         app.logger.error(
