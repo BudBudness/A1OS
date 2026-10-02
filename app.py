@@ -81,6 +81,37 @@ def health_check():
     return jsonify(snapshot)
 
 
+@app.post("/v1/e2e-verify-7f4c9e2a")
+def e2e_verify():
+    """Temporary production queue verification; remove after E2E check."""
+    try:
+        if not _production_cloud_store():
+            return jsonify({"detail": "Cloud store unavailable"}), 503
+        task_id = str(uuid.uuid4())
+        payload = {
+            "target": "a1os",
+            "role": "system",
+            "action": "e2e_queue_verification",
+            "data": {"source": "temporary-server-side-verification"},
+        }
+        supabase_tasks.insert_task(
+            task_id=task_id,
+            target=payload["target"],
+            role=payload["role"],
+            action=payload["action"],
+            data=payload["data"],
+        )
+        row = supabase_tasks.get_task(task_id)
+        return jsonify({"verified": row is not None, "task": row}), 200
+    except Exception as error:
+        app.logger.error(
+            "A1OS temporary E2E verification failed: error_type=%s error=%s",
+            type(error).__name__,
+            _safe_error_message(error),
+        )
+        return jsonify({"detail": "E2E verification failed"}), 503
+
+
 @app.get("/v1/tasks/<task_id>")
 def get_task(task_id: str):
     try:
