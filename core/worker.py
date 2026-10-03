@@ -39,7 +39,6 @@ async def _execute_payload(task_id: str, payload: dict[str, Any]) -> dict[str, A
                 if key not in {"target", "role", "action"}
             },
         )
-        DurableQueue.complete(task_id)
         return {"task_id": task_id, "status": "completed", "result": output}
 
     return await system.runtime.execute(task_id=task_id, payload=payload)
@@ -57,18 +56,21 @@ async def process_once() -> int:
         payload = _row_payload(row)
 
         try:
-            DurableQueue.enqueue(
-                target=payload["target"],
-                role=payload["role"],
-                action=payload["action"],
-                data={
-                    key: value
-                    for key, value in payload.items()
-                    if key not in {"target", "role", "action"}
-                },
-                task_id=task_id,
-            )
-            result = await _execute_payload(task_id, payload)
+            if str(payload["target"]).lower() == "a1os":
+                result = await _execute_payload(task_id, payload)
+            else:
+                DurableQueue.enqueue(
+                    target=payload["target"],
+                    role=payload["role"],
+                    action=payload["action"],
+                    data={
+                        key: value
+                        for key, value in payload.items()
+                        if key not in {"target", "role", "action"}
+                    },
+                    task_id=task_id,
+                )
+                result = await _execute_payload(task_id, payload)
 
             if result.get("status") == "completed":
                 supabase_tasks.complete_task(task_id)

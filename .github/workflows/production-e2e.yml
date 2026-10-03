@@ -33,7 +33,8 @@ jobs:
           assert ready == {
               "status": "ready",
               "service": "a1os-api",
-              "execution_mode": "serverless-safe",
+              "execution_mode": "cloud-queue",
+              "persistence": "supabase",
           }, ready
           assert ping == {"ping": "pong"}, ping
 
