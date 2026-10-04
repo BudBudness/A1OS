@@ -4,13 +4,8 @@ from typing import Any
 
 import httpx
 
-
 class SupabaseTaskStore:
-    """Server-side durable task store for Vercel production and workers.
-
-    Requires SUPABASE_URL and SUPABASE_SECRET_KEY. The secret key must never
-    be exposed to browser code.
-    """
+    """Server-side durable task store for Vercel production and workers."""
 
     def __init__(self) -> None:
         self.url = os.environ.get("SUPABASE_URL", "").rstrip("/")
@@ -23,30 +18,13 @@ class SupabaseTaskStore:
     def _headers(self) -> dict[str, str]:
         if not self.configured:
             raise RuntimeError("Supabase production persistence is not configured")
-        return {
-            "apikey": self.key,
-            "Authorization": f"Bearer {self.key}",
-            "Content-Type": "application/json",
-        }
+        return {"apikey": self.key, "Authorization": f"Bearer {self.key}", "Content-Type": "application/json"}
 
-    def insert_task(
-        self,
-        task_id: str,
-        target: str,
-        role: str,
-        action: str,
-        data: Any,
-    ) -> None:
+    def insert_task(self, task_id: str, target: str, role: str, action: str, data: Any) -> None:
         response = httpx.post(
             f"{self.url}/rest/v1/a1os_tasks",
             headers={**self._headers(), "Prefer": "return=minimal"},
-            json={
-                "task_id": task_id,
-                "target": target,
-                "role": role,
-                "action": action,
-                "payload": data,
-            },
+            json={"task_id": task_id, "target": target, "role": role, "action": action, "payload": data},
             timeout=10.0,
         )
         response.raise_for_status()
@@ -66,19 +44,13 @@ class SupabaseTaskStore:
         response = httpx.get(
             f"{self.url}/rest/v1/a1os_tasks",
             headers=self._headers(),
-            params={
-                "status": "in.(queued,retry)",
-                "select": "*",
-                "order": "created_at.asc",
-                "limit": str(limit),
-            },
+            params={"status": "in.(queued,retry)", "select": "*", "order": "created_at.asc", "limit": str(limit)},
             timeout=10.0,
         )
         response.raise_for_status()
         rows = response.json()
         if not isinstance(rows, list):
             return []
-
         now = datetime.now(timezone.utc)
         ready = []
         for row in rows:
@@ -98,21 +70,50 @@ class SupabaseTaskStore:
         current = self.get_task(task_id)
         if current is None or current.get("status") not in {"queued", "retry"}:
             return False
-
         attempts = int(current.get("attempts") or 0) + 1
         response = httpx.patch(
             f"{self.url}/rest/v1/a1os_tasks",
             headers={**self._headers(), "Prefer": "return=representation"},
-            params={
-                "task_id": f"eq.{task_id}",
-                "status": f"eq.{current['status']}",
-            },
-            json={"status": "running", "attempts": attempts},
+            params={"task_id": f"eq.{task_id}", "status": f"eq.{current['status']}"},
+            json={"status": "running", "attempts": attempts, "updated_at": datetime.now(timezone.utc).isoformat()},
             timeout=10.0,
         )
         response.raise_for_status()
         rows = response.json()
         return isinstance(rows, list) and len(rows) == 1
+
+    def recover_stale_tasks(self, stale_after_seconds: int = 300) -> int:
+        cutoff = datetime.now(timezone.utc) - timedelta(seconds=stale_after_seconds)
+        response = httpx.get(
+            f"{self.url}/rest/v1/a1os_tasks",
+            headers=self._headers(),
+            params={"status": "eq.running", "updated_at": f"lt.{cutoff.isoformat()}", "select": "task_id,attempts,max_attempts", "order": "updated_at.asc", "limit": "100"},
+            timeout=10.0,
+        )
+        response.raise_for_status()
+        rows = response.json()
+        if not isinstance(rows, list):
+            return 0
+        recovered = 0
+        now = datetime.now(timezone.utc).isoformat()
+        for row in rows:
+            task_id = str(row["task_id"])
+            attempts = int(row.get("attempts") or 0)
+            max_attempts = int(row.get("max_attempts") or 3)
+            if attempts >= max_attempts:
+                body = {"status": "failed", "error": "Worker lease expired after maximum attempts", "next_attempt_at": None, "updated_at": now}
+            else:
+                body = {"status": "retry", "error": "Recovered stale running task after worker interruption", "next_attempt_at": now, "updated_at": now}
+            patch = httpx.patch(
+                f"{self.url}/rest/v1/a1os_tasks",
+                headers={**self._headers(), "Prefer": "return=minimal"},
+                params={"task_id": f"eq.{task_id}", "status": "eq.running"},
+                json=body,
+                timeout=10.0,
+            )
+            patch.raise_for_status()
+            recovered += 1
+        return recovered
 
     def complete_task(self, task_id: str) -> None:
         completed_at = datetime.now(timezone.utc).isoformat()
@@ -120,12 +121,7 @@ class SupabaseTaskStore:
             f"{self.url}/rest/v1/a1os_tasks",
             headers={**self._headers(), "Prefer": "return=minimal"},
             params={"task_id": f"eq.{task_id}", "status": "eq.running"},
-            json={
-                "status": "completed",
-                "error": None,
-                "next_attempt_at": None,
-                "completed_at": completed_at,
-            },
+            json={"status": "completed", "error": None, "next_attempt_at": None, "completed_at": completed_at, "updated_at": completed_at},
             timeout=10.0,
         )
         response.raise_for_status()
@@ -134,27 +130,15 @@ class SupabaseTaskStore:
         current = self.get_task(task_id)
         if current is None or current.get("status") != "running":
             return
-
         attempts = int(current.get("attempts") or 0)
         max_attempts = int(current.get("max_attempts") or 3)
         message = str(error).replace("\n", " ")[:1000]
-
+        now = datetime.now(timezone.utc)
         if attempts >= max_attempts:
-            body = {
-                "status": "failed",
-                "error": message,
-                "next_attempt_at": None,
-            }
+            body = {"status": "failed", "error": message, "next_attempt_at": None, "updated_at": now.isoformat()}
         else:
             delay = 2 ** attempts
-            body = {
-                "status": "retry",
-                "error": message,
-                "next_attempt_at": (
-                    datetime.now(timezone.utc) + timedelta(seconds=delay)
-                ).isoformat(),
-            }
-
+            body = {"status": "retry", "error": message, "next_attempt_at": (now + timedelta(seconds=delay)).isoformat(), "updated_at": now.isoformat()}
         response = httpx.patch(
             f"{self.url}/rest/v1/a1os_tasks",
             headers={**self._headers(), "Prefer": "return=minimal"},
@@ -163,6 +147,5 @@ class SupabaseTaskStore:
             timeout=10.0,
         )
         response.raise_for_status()
-
 
 store = SupabaseTaskStore()
