@@ -27,8 +27,11 @@ stop_requested=0
 trap 'stop_requested=1' INT TERM
 
 while true; do
-  python3 -m core.worker
-  exit_code=$?
+  if python3 -m core.worker; then
+    exit_code=0
+  else
+    exit_code=$?
+  fi
 
   if [[ "$stop_requested" == "1" ]]; then
     exit "$exit_code"
