@@ -455,7 +455,16 @@ class A1OS:
 
         read_only_capabilities = {
             "health",
+            "health_check",
+            "diagnostics",
+            "capabilities",
             "observability",
+            "database_repair",
+            "process_management",
+            "filesystem_management",
+            "network_management",
+            "security_audit",
+            "service_management",
             "digital_world_model",
             "digital_world_graph",
             "digital_world_query",
@@ -464,14 +473,25 @@ class A1OS:
             "printf control-plane",
         }
 
+        safe_operations = {
+            "process_management": {"list", "health"},
+            "filesystem_management": {"disk_usage", "exists"},
+            "network_management": {"interfaces", "routes", "connections", "ports"},
+            "security_audit": {"open_ports", "processes"},
+            "service_management": {"list", "health"},
+        }
+
         if capability in read_only_capabilities:
-            return {
-                "allowed": True,
-                "requires_authorization": False,
-                "classification": "read_only",
-                "capability": capability,
-                "decision": "read_only_allowed",
-            }
+            operation = kwargs.get("operation")
+            allowed_operations = safe_operations.get(capability)
+            if allowed_operations is None or operation is None or operation in allowed_operations:
+                return {
+                    "allowed": True,
+                    "requires_authorization": False,
+                    "classification": "read_only",
+                    "capability": capability,
+                    "decision": "read_only_allowed",
+                }
 
         entity_id = kwargs.get("entity_id", "primary-device")
         target_action = (
