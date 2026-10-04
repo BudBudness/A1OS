@@ -16,11 +16,13 @@ async def test_a1os_worker_dispatches_registered_control_plane_printf():
         await system.execute(action, command="printf arbitrary")
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("action", ["health_check", "diagnostics", "capabilities"])
-async def test_a1os_worker_dispatches_core_read_only_capabilities(action):
-    result = await _execute_payload(f"capability-{action}", {"target": "a1os", "action": action})
+async def test_a1os_worker_dispatches_observability_capability():
+    result = await _execute_payload(
+        "observability-regression",
+        {"target": "a1os", "action": "observability"},
+    )
     assert result["status"] == "completed"
-    assert isinstance(result["result"], dict)
+    assert result["result"]["status"] == "observability_snapshot_complete"
 
 @pytest.mark.asyncio
 async def test_a1os_consequential_capability_is_not_bypassed():
