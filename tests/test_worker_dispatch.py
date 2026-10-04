@@ -28,3 +28,36 @@ async def test_a1os_worker_dispatches_observability_capability():
 async def test_a1os_consequential_capability_is_not_bypassed():
     with pytest.raises(RuntimeError, match="CONSEQUENCE GATE BLOCKED EXECUTION"):
         await _execute_payload("consequence-gate-regression", {"target": "a1os", "action": "database_repair"})
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("action", "data", "expected_status"),
+    [
+        ("health_check", {}, "healthy"),
+        ("diagnostics", {}, "diagnostics_complete"),
+        ("capabilities", {}, "capabilities_available"),
+        ("database_repair", {}, "database_verified"),
+        ("process_management", {"operation": "health"}, "process_health_complete"),
+        ("filesystem_management", {"operation": "exists", "path": "."}, "filesystem_check_complete"),
+        ("network_management", {"operation": "interfaces"}, "network_inventory_complete"),
+        ("security_audit", {"operation": "processes"}, "security_audit_complete"),
+        ("service_management", {"operation": "health"}, "service_health_complete"),
+    ],
+)
+async def test_a1os_read_only_capability_surface(action, data, expected_status):
+    result = await _execute_payload(
+        f"read-only-{action}",
+        {"target": "a1os", "action": action, **data},
+    )
+    assert result["status"] == "completed"
+    assert result["result"]["status"] == expected_status
+
+
+@pytest.mark.asyncio
+async def test_a1os_gate_rejects_unsafe_operations_on_read_only_capabilities():
+    with pytest.raises(RuntimeError, match="CONSEQUENCE GATE BLOCKED EXECUTION"):
+        await _execute_payload(
+            "unsafe-process-operation",
+            {"target": "a1os", "action": "process_management", "operation": "kill"},
+        )
