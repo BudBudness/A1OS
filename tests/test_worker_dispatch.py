@@ -27,7 +27,10 @@ async def test_a1os_worker_dispatches_observability_capability():
 @pytest.mark.asyncio
 async def test_a1os_consequential_capability_is_not_bypassed():
     with pytest.raises(RuntimeError, match="CONSEQUENCE GATE BLOCKED EXECUTION"):
-        await _execute_payload("consequence-gate-regression", {"target": "a1os", "action": "database_repair"})
+        await _execute_payload(
+            "consequence-gate-regression",
+            {"target": "a1os", "action": "autonomous_actuation"},
+        )
 
 
 @pytest.mark.asyncio
