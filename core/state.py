@@ -484,14 +484,27 @@ class A1OS:
         if capability in read_only_capabilities:
             operation = kwargs.get("operation")
             allowed_operations = safe_operations.get(capability)
-            if allowed_operations is None or operation is None or operation in allowed_operations:
+            if (
+                allowed_operations is not None
+                and operation is not None
+                and operation not in allowed_operations
+            ):
                 return {
-                    "allowed": True,
-                    "requires_authorization": False,
-                    "classification": "read_only",
+                    "allowed": False,
+                    "requires_authorization": True,
+                    "classification": "consequential",
                     "capability": capability,
-                    "decision": "read_only_allowed",
+                    "decision": "human_required",
+                    "reason": "Operation is outside the read-only capability contract",
                 }
+
+            return {
+                "allowed": True,
+                "requires_authorization": False,
+                "classification": "read_only",
+                "capability": capability,
+                "decision": "read_only_allowed",
+            }
 
         entity_id = kwargs.get("entity_id", "primary-device")
         target_action = (
