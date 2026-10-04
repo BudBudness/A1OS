@@ -153,6 +153,77 @@ jobs:
               time.sleep(3)
           raise SystemExit(f"Timed out waiting for task completion: {last}")
           PY
+      - name: Submit capability inventory task
+        id: capability_inventory
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, hmac, json, os, urllib.request
+          payload = {
+              "target": "a1os",
+              "role": "system",
+              "action": "capabilities",
+              "data": {},
+          }
+          canonical = json.dumps(
+              {k: payload[k] for k in ("target", "role", "action", "data")},
+              sort_keys=True,
+              separators=(",", ":"),
+              default=str,
+          ).encode()
+          signature = hmac.new(
+              os.environ["A1OS_EXECUTE_SECRET"].encode(),
+              canonical,
+              hashlib.sha256,
+          ).hexdigest()
+          request = urllib.request.Request(
+              "https://a1-os.vercel.app/v1/execute",
+              data=json.dumps(payload).encode(),
+              headers={"Content-Type": "application/json", "X-Signature": signature},
+              method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              body = json.load(response)
+          assert body.get("status") == "accepted", body
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"task_id={body['task_id']}\n")
+          PY
+
+      - name: Poll capability inventory completion
+        env:
+          TASK_ID: ${{ steps.capability_inventory.outputs.task_id }}
+        run: |
+          set -euo pipefail
+          python - "$TASK_ID" <<'PY'
+          import json, os, sys, time, urllib.parse, urllib.request
+          task_id = sys.argv[1]
+          query = urllib.parse.urlencode({
+              "task_id": f"eq.{task_id}",
+              "select": "task_id,target,action,status,attempts,error,completed_at,payload",
+          })
+          url = f"{os.environ['SUPABASE_URL'].rstrip('/')}/rest/v1/a1os_tasks?{query}"
+          headers = {
+              "apikey": os.environ["SUPABASE_SECRET_KEY"],
+              "Authorization": f"Bearer {os.environ['SUPABASE_SECRET_KEY']}",
+          }
+          deadline = time.time() + 120
+          last = None
+          while time.time() < deadline:
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  rows = json.load(response)
+              if rows:
+                  last = rows[0]
+                  print(json.dumps(last, sort_keys=True))
+                  if last["status"] == "completed":
+                      assert last["error"] is None, last
+                      assert last["completed_at"], last
+                      raise SystemExit(0)
+                  if last["status"] == "failed":
+                      raise SystemExit(f"Capability inventory task failed: {last}")
+              time.sleep(3)
+          raise SystemExit(f"Timed out waiting for capability inventory task: {last}")
+
       - name: Dump worker log on failure
         if: failure()
         run: cat worker.log || true
