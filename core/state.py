@@ -1,3 +1,4 @@
+import asyncio
 import time
 import inspect
 from runtime.events.router import EventRouter
@@ -221,10 +222,39 @@ class A1OS:
             "capabilities": self.capabilities.list(),
         }
 
+    async def _capability_control_plane_printf(self, **kwargs):
+        if kwargs:
+            raise TypeError(
+                "printf control-plane does not accept execution arguments"
+            )
+
+        process = await asyncio.create_subprocess_exec(
+            "printf",
+            "control-plane",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            raise RuntimeError(
+                "printf control-plane failed: "
+                f"{stderr.decode(errors='replace')}"
+            )
+
+        return {
+            "status": "success",
+            "output": stdout.decode(errors="replace"),
+            "returncode": process.returncode,
+        }
+
     def _register_capabilities(self):
         self.capabilities.register(
             "health_check",
             self._capability_health_check,
+        )
+        self.capabilities.register(
+            "printf control-plane",
+            self._capability_control_plane_printf,
         )
         self.capabilities.register(
             "diagnostics",
@@ -431,6 +461,7 @@ class A1OS:
             "digital_world_query",
             "digital_world_state",
             "digital_world_intelligence",
+            "printf control-plane",
         }
 
         if capability in read_only_capabilities:
