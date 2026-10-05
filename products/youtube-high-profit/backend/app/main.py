@@ -1,9 +1,11 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pathlib import Path
-import uuid, json, threading
+import uuid, json, threading, os, subprocess, httpx
 
-app = FastAPI(title="YouTube High Profit API", version="0.1.0")
+app = FastAPI(title="YouTube High Profit API", version="0.2.0")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 JOBS, LOCK = {}, threading.Lock()
 WORKSPACE = Path("/workspace")
 STAGES = ["opportunity","angle","research","script","voice","visuals","timeline","render","thumbnail","seo","chapters"]
@@ -14,6 +16,24 @@ class GenerateRequest(BaseModel):
     target_minutes: int = Field(default=12, ge=3, le=60)
     audience: str = "general"
     monetization_goal: str = "ads"
+
+def persist_job(job: dict):
+    url, key = os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if not url or not key: return
+    payload = {k:job[k] for k in ("id","topic","format","target_minutes","status","progress","result","error") if k in job}
+    try:
+        httpx.post(f"{url}/rest/v1/yhp_jobs", headers={"apikey":key,"Authorization":f"Bearer {key}","Prefer":"resolution=merge-duplicates"}, json=payload, timeout=5)
+    except Exception:
+        pass
+
+def render_placeholder(root: Path):
+    out = root/"final"/"video.mp4"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        subprocess.run(["ffmpeg","-y","-f","lavfi","-i","color=c=black:s=1280x720:r=30:d=1","-pix_fmt","yuv420p",str(out)], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return str(out.relative_to(root))
+    except Exception:
+        return None
 
 def demo_run(job_id, req):
     root = WORKSPACE / job_id
@@ -36,17 +56,18 @@ def demo_run(job_id, req):
         elif stage == "timeline":
             out = base | {"edl":[{"start":0,"end":8,"asset":"broll-01"},{"start":8,"end":13,"asset":"graphic-01"}],"fps":30,"aspect_ratio":"16:9"}
         elif stage == "render":
-            out = base | {"renderer":"ffmpeg","output":"final/video.mp4","render_status":"ready"}
+            rendered = render_placeholder(root)
+            out = base | {"renderer":"ffmpeg","output":rendered or "final/video.mp4","render_status":"ready" if rendered else "planned"}
         elif stage == "thumbnail":
-            out = base | {"concepts":[{"hook":f"THE TRUTH ABOUT {req.topic.upper()}","composition":"single focal subject + strong text"}]}
+            out = base | {"output":"thumbnail/thumbnail.png","concepts":[{"hook":f"THE TRUTH ABOUT {req.topic.upper()}","composition":"single focal subject + strong text"}]}
         elif stage == "seo":
             out = base | {"titles":[f"The Truth About {req.topic}",f"How {req.topic} Really Works",f"What Nobody Tells You About {req.topic}"],"description":f"A researched video exploring {req.topic}.","keywords":[req.topic,req.format,"YouTube"]}
         else:
             out = base | {"chapters":[{"time":"00:00","title":"The hook"},{"time":"01:00","title":"Context"},{"time":"06:00","title":"What it means"}]}
         outputs[stage] = out
-        (root/f"{stage}.json").write_text(json.dumps(out,indent=2))
+        (root/f"{stage}.json").write_text(json.dumps(out,indent=2), encoding="utf-8")
     manifest = {"job_id":job_id,"topic":req.topic,"format":req.format,"target_minutes":req.target_minutes,"status":"succeeded","stages":STAGES,"outputs":outputs}
-    (root/"manifest.json").write_text(json.dumps(manifest,indent=2))
+    (root/"manifest.json").write_text(json.dumps(manifest,indent=2), encoding="utf-8")
     return manifest
 
 @app.get("/health")
@@ -55,14 +76,18 @@ def health(): return {"status":"ok","service":"youtube-high-profit-api"}
 @app.post("/api/jobs")
 def create_job(req: GenerateRequest, bg: BackgroundTasks):
     job_id = str(uuid.uuid4())
-    with LOCK: JOBS[job_id] = {"id":job_id,"topic":req.topic,"status":"queued","progress":0,"stages":[]}
+    job = {"id":job_id,"topic":req.topic,"format":req.format,"target_minutes":req.target_minutes,"status":"queued","progress":0,"stages":[]}
+    with LOCK: JOBS[job_id] = job
+    persist_job(job)
     def work():
         try:
             with LOCK: JOBS[job_id].update(status="running",progress=5)
             result = demo_run(job_id,req)
-            with LOCK: JOBS[job_id] = {"id":job_id,"topic":req.topic,"status":"succeeded","progress":100,"stages":[{"name":s,"status":"succeeded"} for s in STAGES],"result":result}
+            with LOCK: JOBS[job_id] = {"id":job_id,"topic":req.topic,"format":req.format,"target_minutes":req.target_minutes,"status":"succeeded","progress":100,"stages":[{"name":s,"status":"succeeded"} for s in STAGES],"result":result}
+            persist_job(JOBS[job_id])
         except Exception as e:
             with LOCK: JOBS[job_id].update(status="failed",error=str(e))
+            persist_job(JOBS[job_id])
     bg.add_task(work)
     return {"job_id":job_id,"status":"queued"}
 
