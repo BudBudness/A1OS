@@ -1,5 +1,7 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from .voice import make_silence
+from .thumbnail import make_thumbnail
 from pydantic import BaseModel, Field
 from pathlib import Path
 import uuid, json, threading, os, subprocess, httpx
@@ -50,7 +52,7 @@ def demo_run(job_id, req):
         elif stage == "script":
             out = base | {"title":f"The Truth About {req.topic}","sections":[{"heading":"Hook","narration":f"Why does {req.topic} matter now?"},{"heading":"Context","narration":f"This video explains the forces behind {req.topic}."},{"heading":"Implications","narration":"The evidence points to consequences viewers should understand."}],"estimated_minutes":req.target_minutes}
         elif stage == "voice":
-            out = base | {"provider":"demo","audio":"voiceover/demo.wav","duration_seconds":req.target_minutes*60}
+            audio = make_silence(str(root/"voiceover"/"narration.wav"), req.target_minutes*60)\n            out = base | {"provider":"demo","audio":audio,"duration_seconds":req.target_minutes*60}
         elif stage == "visuals":
             out = base | {"assets":[{"kind":"broll","query":req.topic,"duration_seconds":8},{"kind":"graphic","query":"key statistic","duration_seconds":5}]}
         elif stage == "timeline":
@@ -59,7 +61,7 @@ def demo_run(job_id, req):
             rendered = render_placeholder(root)
             out = base | {"renderer":"ffmpeg","output":rendered or "final/video.mp4","render_status":"ready" if rendered else "planned"}
         elif stage == "thumbnail":
-            out = base | {"output":"thumbnail/thumbnail.png","concepts":[{"hook":f"THE TRUTH ABOUT {req.topic.upper()}","composition":"single focal subject + strong text"}]}
+            thumb = make_thumbnail(f"THE TRUTH ABOUT {req.topic.upper()}", str(root/"thumbnail"/"thumbnail.png"))\n            out = base | {"output":thumb,"concepts":[{"hook":f"THE TRUTH ABOUT {req.topic.upper()}","composition":"single focal subject + strong text"}]}
         elif stage == "seo":
             out = base | {"titles":[f"The Truth About {req.topic}",f"How {req.topic} Really Works",f"What Nobody Tells You About {req.topic}"],"description":f"A researched video exploring {req.topic}.","keywords":[req.topic,req.format,"YouTube"]}
         else:
