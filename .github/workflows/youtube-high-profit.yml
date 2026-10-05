@@ -1,0 +1,30 @@
+name: youtube-high-profit-ci
+on:
+  push:
+    paths:
+      - "products/youtube-high-profit/**"
+  pull_request:
+    paths:
+      - "products/youtube-high-profit/**"
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: products/youtube-high-profit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: products/youtube-high-profit/frontend/package.json
+      - name: Build frontend
+        working-directory: products/youtube-high-profit/frontend
+        run: npm install && npm run build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile backend
+        working-directory: products/youtube-high-profit/backend
+        run: python -m compileall app
