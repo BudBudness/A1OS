@@ -1,0 +1,10 @@
+create extension if not exists pgcrypto;
+create table if not exists public.yhp_jobs(id uuid primary key default gen_random_uuid(),topic text not null,format text not null default 'explainer',target_minutes integer not null default 12,status text not null default 'queued',progress integer not null default 0,created_at timestamptz not null default now(),updated_at timestamptz not null default now(),result jsonb,error text);
+create table if not exists public.yhp_stage_runs(id uuid primary key default gen_random_uuid(),job_id uuid not null references public.yhp_jobs(id) on delete cascade,stage text not null,status text not null default 'queued',attempt integer not null default 1,input jsonb,output jsonb,error text,started_at timestamptz,finished_at timestamptz,unique(job_id,stage,attempt));
+create table if not exists public.yhp_assets(id uuid primary key default gen_random_uuid(),job_id uuid not null references public.yhp_jobs(id) on delete cascade,stage text not null,kind text not null,storage_path text not null,mime_type text,provenance jsonb,created_at timestamptz not null default now());
+alter table public.yhp_jobs enable row level security;
+alter table public.yhp_stage_runs enable row level security;
+alter table public.yhp_assets enable row level security;
+create policy "service role manages jobs" on public.yhp_jobs for all using(auth.role()='service_role') with check(auth.role()='service_role');
+create policy "service role manages stage runs" on public.yhp_stage_runs for all using(auth.role()='service_role') with check(auth.role()='service_role');
+create policy "service role manages assets" on public.yhp_assets for all using(auth.role()='service_role') with check(auth.role()='service_role');
