@@ -1,0 +1,23 @@
+services:
+  api:
+    build: ./backend
+    ports: ["8000:8000"]
+    environment:
+      APP_ENV: development
+    volumes:
+      - ./backend:/app
+      - ./workspace:/workspace
+  worker:
+    build: ./backend
+    command: python -m app.worker
+    environment:
+      APP_ENV: development
+    volumes:
+      - ./backend:/app
+      - ./workspace:/workspace
+  frontend:
+    build: ./frontend
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    depends_on: [api]
