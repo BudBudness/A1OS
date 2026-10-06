@@ -19,6 +19,9 @@ jobs:
       - name: Install dependencies
         working-directory: products/verticals/little-oaks
         run: npm ci
+      - name: Install E2E browser dependency
+        working-directory: products/verticals/little-oaks
+        run: npm install --no-save playwright@1.63.0
       - name: Install Chromium
         working-directory: products/verticals/little-oaks
         run: npx playwright install --with-deps chromium
