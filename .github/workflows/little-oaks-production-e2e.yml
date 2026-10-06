@@ -53,8 +53,7 @@ jobs:
             page.waitForResponse(r => r.url().includes('/rest/v1/enquiries') && r.request().method() === 'POST', { timeout: 30000 }),
             page.getByRole('button', { name: 'Send enquiry on WhatsApp' }).click()
           ]);
-          const body = await enquiryResponse.text();
-          console.log(JSON.stringify({ enquiry_http_status: enquiryResponse.status(), enquiry_response: body }));
+          console.log(JSON.stringify({ enquiry_http_status: enquiryResponse.status() }));
           if (!enquiryResponse.ok()) throw new Error(`Supabase enquiry POST failed: ${enquiryResponse.status()}`);
           const success = page.getByRole('status');
           await success.waitFor({ state: 'visible', timeout: 15000 });
