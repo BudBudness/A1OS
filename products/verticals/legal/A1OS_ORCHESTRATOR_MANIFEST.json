@@ -1,15 +1,15 @@
 {
-  "product": "legal-os",
-  "profile": "legal",
+  "product": "barya-byamugisha-legal-practice-platform",
+  "internal_id": "legal-os",
+  "customer": "M/S Barya, Byamugisha & Co. Advocates",
   "factory_version": "2.0",
-  "created": "2026-08-02T06:36:36.655655",
   "pipeline": {
     "dna": "complete",
-    "runtime": "generated",
-    "intelligence": "injected",
-    "operations": "generated",
-    "validation": "ready",
+    "runtime": "implemented",
+    "intelligence": "defined",
+    "operations": "defined",
+    "validation": "in_progress",
     "evolution": "enabled"
   },
-  "status": "orchestrated"
+  "status": "implementation_in_progress"
 }
