@@ -4,11 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'products/verticals/legal/**'
-      - '.github/workflows/legal-vertical-ci.yml'
+      - "products/verticals/legal/**"
+      - ".github/workflows/legal-vertical-ci.yml"
   pull_request:
+    branches: [main]
     paths:
-      - 'products/verticals/legal/**'
+      - "products/verticals/legal/**"
+      - ".github/workflows/legal-vertical-ci.yml"
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -21,6 +24,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: products/verticals/legal/package.json
       - run: npm install
       - run: npm test
       - run: npm run build
+      - name: Verify production artifacts
+        run: |
+          test -f dist/index.html
+          test -f PRODUCT_CONSTITUTION.md
+          echo "Legal vertical CI: PASS"
