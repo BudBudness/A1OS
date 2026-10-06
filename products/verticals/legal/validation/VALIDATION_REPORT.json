@@ -1,16 +1,14 @@
 {
-  "product": "legal-os",
-  "factory_version": "1.8",
-  "validation_time": "2026-08-02T06:48:41.804385",
+  "product": "barya-byamugisha-legal-practice-platform",
+  "internal_id": "legal-os",
   "checks": {
     "architecture": true,
     "dependencies": true,
-    "api": true,
-    "security": true,
-    "operations": true,
-    "recovery": true
+    "api": false,
+    "security": false,
+    "operations": false,
+    "recovery": false
   },
-  "issues": [],
-  "repair_plan": [],
-  "status": "healthy"
+  "issues": ["Production database and deployment E2E remain to be connected and verified."],
+  "status": "in_progress"
 }
