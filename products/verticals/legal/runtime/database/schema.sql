@@ -1,155 +1,154 @@
--- Barya, Byamugisha & Co. Advocates production schema
+-- Barya, Byamugisha & Co. Advocates internal practice platform
 create extension if not exists pgcrypto;
+create schema if not exists legal;
 
-create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+create table if not exists legal.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null,
   role text not null check (role in ('partner','advocate','clerk','finance','administrator','client')),
-  created_at timestamptz not null default now()
-);
-alter table public.profiles enable row level security;
-
-create table if not exists public.clients (
-  id uuid primary key default gen_random_uuid(), name text not null,
-  client_type text not null default 'individual' check (client_type in ('individual','company','government','ngo','other')),
-  phone text, email text, address text, notes text, created_by uuid references auth.users(id),
-  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
-);
-alter table public.clients enable row level security;
-
-create table if not exists public.matters (
-  id uuid primary key default gen_random_uuid(), matter_number text not null unique, title text not null,
-  client_id uuid not null references public.clients(id),
-  practice_area text not null check (practice_area in ('litigation','commercial','labour','conveyancing','advisory','family','other')),
-  status text not null default 'intake' check (status in ('intake','conflict_check','active','pending','closed','archived')),
-  description text, opened_at timestamptz, closed_at timestamptz, created_by uuid references auth.users(id),
-  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
-);
-alter table public.matters enable row level security;
-
-create table if not exists public.matter_members (
-  matter_id uuid not null references public.matters(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  access_level text not null default 'member' check (access_level in ('owner','member','viewer')),
-  created_at timestamptz not null default now(), primary key (matter_id,user_id)
-);
-alter table public.matter_members enable row level security;
-
-create table if not exists public.tasks (
-  id uuid primary key default gen_random_uuid(), matter_id uuid not null references public.matters(id) on delete cascade,
-  title text not null, description text, assigned_to uuid references auth.users(id),
-  status text not null default 'open' check (status in ('open','in_progress','blocked','done')),
-  due_at timestamptz, created_by uuid references auth.users(id), created_at timestamptz not null default now(),
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-alter table public.tasks enable row level security;
-
-create table if not exists public.deadlines (
-  id uuid primary key default gen_random_uuid(), matter_id uuid not null references public.matters(id) on delete cascade,
-  title text not null, due_at timestamptz not null, status text not null default 'open' check (status in ('open','completed','missed')),
-  created_by uuid references auth.users(id), created_at timestamptz not null default now()
+create table if not exists legal.clients (
+  id uuid primary key default gen_random_uuid(), client_number text not null unique,
+  client_type text not null, legal_name text not null, phone text, email text, address text, notes text,
+  status text not null default 'active', created_by uuid references auth.users(id),
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
-alter table public.deadlines enable row level security;
-
-create table if not exists public.documents (
-  id uuid primary key default gen_random_uuid(), matter_id uuid not null references public.matters(id) on delete cascade,
-  title text not null, document_type text not null default 'other', storage_path text, version integer not null default 1,
-  uploaded_by uuid references auth.users(id), created_at timestamptz not null default now()
+create table if not exists legal.matters (
+  id uuid primary key default gen_random_uuid(), matter_number text not null unique, title text not null,
+  client_id uuid not null references legal.clients(id), practice_area text not null, matter_type text,
+  status text not null default 'intake', confidentiality text not null default 'restricted',
+  description text, opened_at date, closed_at date, created_by uuid references auth.users(id),
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
-alter table public.documents enable row level security;
-
-create table if not exists public.evidence (
-  id uuid primary key default gen_random_uuid(), matter_id uuid not null references public.matters(id) on delete cascade,
-  title text not null, description text, storage_path text, evidence_type text not null default 'document',
-  captured_at timestamptz, created_by uuid references auth.users(id), created_at timestamptz not null default now()
+create table if not exists legal.matter_members (
+  matter_id uuid not null references legal.matters(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  assignment_role text not null, created_at timestamptz not null default now(),
+  primary key (matter_id,user_id)
 );
-alter table public.evidence enable row level security;
-
-create table if not exists public.billing_items (
-  id uuid primary key default gen_random_uuid(), matter_id uuid not null references public.matters(id) on delete cascade,
-  description text not null, amount numeric(18,2) not null check (amount >= 0), currency text not null default 'UGX',
-  status text not null default 'unbilled' check (status in ('unbilled','invoiced','paid','waived')),
-  created_by uuid references auth.users(id), created_at timestamptz not null default now()
+create table if not exists legal.parties (
+  id uuid primary key default gen_random_uuid(), matter_id uuid not null references legal.matters(id) on delete cascade,
+  name text not null, party_type text not null, contact text, notes text, created_at timestamptz not null default now()
 );
-alter table public.billing_items enable row level security;
-
-create table if not exists public.research_records (
-  id uuid primary key default gen_random_uuid(), matter_id uuid references public.matters(id) on delete cascade,
-  source text not null, citation text, query text, summary text, url text,
-  created_by uuid references auth.users(id), created_at timestamptz not null default now()
+create table if not exists legal.tasks (
+  id uuid primary key default gen_random_uuid(), matter_id uuid references legal.matters(id) on delete cascade,
+  title text not null, description text, assigned_to uuid references auth.users(id),
+  status text not null default 'open', priority text not null default 'normal', due_at timestamptz,
+  completed_at timestamptz, created_by uuid references auth.users(id),
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
-alter table public.research_records enable row level security;
-
-create table if not exists public.audit_events (
-  id uuid primary key default gen_random_uuid(), actor_id uuid references auth.users(id),
-  matter_id uuid references public.matters(id) on delete set null, action text not null,
-  entity_type text not null, entity_id uuid, metadata jsonb not null default '{}'::jsonb,
+create table if not exists legal.deadlines (
+  id uuid primary key default gen_random_uuid(), matter_id uuid not null references legal.matters(id) on delete cascade,
+  title text not null, deadline_at timestamptz not null, source text,
+  status text not null default 'open', owner_id uuid references auth.users(id), notes text,
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create table if not exists legal.documents (
+  id uuid primary key default gen_random_uuid(), matter_id uuid not null references legal.matters(id) on delete cascade,
+  title text not null, document_type text not null, storage_path text, mime_type text,
+  version integer not null default 1, checksum text, uploaded_by uuid references auth.users(id),
   created_at timestamptz not null default now()
 );
-alter table public.audit_events enable row level security;
+create table if not exists legal.evidence (
+  id uuid primary key default gen_random_uuid(), matter_id uuid not null references legal.matters(id) on delete cascade,
+  reference text not null, description text not null, source text, storage_path text,
+  exhibit_number text, collected_at timestamptz, recorded_by uuid references auth.users(id),
+  created_at timestamptz not null default now()
+);
+create table if not exists legal.invoices (
+  id uuid primary key default gen_random_uuid(), matter_id uuid not null references legal.matters(id) on delete cascade,
+  invoice_number text not null unique, amount numeric(14,2) not null check (amount >= 0),
+  currency text not null default 'UGX', status text not null default 'draft',
+  due_date date, issued_at timestamptz, created_by uuid references auth.users(id),
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+create table if not exists legal.payments (
+  id uuid primary key default gen_random_uuid(), invoice_id uuid not null references legal.invoices(id) on delete cascade,
+  amount numeric(14,2) not null check (amount > 0), currency text not null default 'UGX',
+  method text, reference text, paid_at timestamptz not null default now(),
+  recorded_by uuid references auth.users(id), created_at timestamptz not null default now()
+);
+create table if not exists legal.audit_events (
+  id uuid primary key default gen_random_uuid(), actor_id uuid references auth.users(id),
+  matter_id uuid references legal.matters(id) on delete set null, action text not null,
+  entity_type text not null, entity_id text, metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
 
-create index if not exists matters_client_idx on public.matters(client_id);
-create index if not exists matter_members_user_idx on public.matter_members(user_id);
-create index if not exists tasks_matter_due_idx on public.tasks(matter_id,due_at);
-create index if not exists deadlines_due_idx on public.deadlines(due_at,status);
-create index if not exists documents_matter_idx on public.documents(matter_id);
-create index if not exists evidence_matter_idx on public.evidence(matter_id);
-create index if not exists billing_matter_idx on public.billing_items(matter_id);
-create index if not exists research_matter_idx on public.research_records(matter_id);
-create index if not exists audit_matter_idx on public.audit_events(matter_id,created_at);
+create index if not exists legal_clients_created_by_idx on legal.clients(created_by);
+create index if not exists legal_matters_client_idx on legal.matters(client_id);
+create index if not exists legal_matters_created_by_idx on legal.matters(created_by);
+create index if not exists legal_members_user_idx on legal.matter_members(user_id);
+create index if not exists legal_parties_matter_idx on legal.parties(matter_id);
+create index if not exists legal_tasks_matter_idx on legal.tasks(matter_id);
+create index if not exists legal_tasks_assigned_to_idx on legal.tasks(assigned_to);
+create index if not exists legal_tasks_created_by_idx on legal.tasks(created_by);
+create index if not exists legal_deadlines_matter_idx on legal.deadlines(matter_id);
+create index if not exists legal_deadlines_owner_idx on legal.deadlines(owner_id);
+create index if not exists legal_documents_matter_idx on legal.documents(matter_id);
+create index if not exists legal_documents_uploaded_by_idx on legal.documents(uploaded_by);
+create index if not exists legal_evidence_matter_idx on legal.evidence(matter_id);
+create index if not exists legal_evidence_recorded_by_idx on legal.evidence(recorded_by);
+create index if not exists legal_invoices_matter_idx on legal.invoices(matter_id);
+create index if not exists legal_invoices_created_by_idx on legal.invoices(created_by);
+create index if not exists legal_payments_invoice_idx on legal.payments(invoice_id);
+create index if not exists legal_payments_recorded_by_idx on legal.payments(recorded_by);
+create index if not exists legal_audit_matter_idx on legal.audit_events(matter_id);
+create index if not exists legal_audit_actor_idx on legal.audit_events(actor_id);
 
-create or replace function public.has_matter_access(target_matter uuid)
-returns boolean language sql stable security invoker as $$
-  select exists (select 1 from public.matter_members mm where mm.matter_id = target_matter and mm.user_id = (select auth.uid()))
-  or coalesce((select auth.jwt()->'app_metadata'->>'role'), '') in ('partner','administrator');
-$$;
+create or replace function legal.is_staff() returns boolean language sql stable security definer set search_path=legal,public
+as $$ select exists(select 1 from legal.profiles p where p.user_id=(select auth.uid()) and p.active and p.role <> 'client') $$;
+create or replace function legal.is_manager() returns boolean language sql stable security definer set search_path=legal,public
+as $$ select exists(select 1 from legal.profiles p where p.user_id=(select auth.uid()) and p.active and p.role in ('partner','administrator')) $$;
+create or replace function legal.has_matter_access(p_matter uuid) returns boolean language sql stable security definer set search_path=legal,public
+as $$ select legal.is_manager() or exists(select 1 from legal.matter_members mm join legal.profiles p on p.user_id=mm.user_id where mm.matter_id=p_matter and mm.user_id=(select auth.uid()) and p.active) $$;
 
-create policy profiles_self on public.profiles for select to authenticated
-using (id = (select auth.uid()) or coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','administrator'));
+alter table legal.profiles enable row level security;
+alter table legal.clients enable row level security;
+alter table legal.matters enable row level security;
+alter table legal.matter_members enable row level security;
+alter table legal.parties enable row level security;
+alter table legal.tasks enable row level security;
+alter table legal.deadlines enable row level security;
+alter table legal.documents enable row level security;
+alter table legal.evidence enable row level security;
+alter table legal.invoices enable row level security;
+alter table legal.payments enable row level security;
+alter table legal.audit_events enable row level security;
 
-create policy clients_staff_select on public.clients for select to authenticated
-using (coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','advocate','clerk','finance','administrator'));
-create policy clients_staff_insert on public.clients for insert to authenticated
-with check (coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','advocate','clerk','administrator'));
-create policy clients_staff_update on public.clients for update to authenticated
-using (coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','advocate','clerk','administrator'))
-with check (coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','advocate','clerk','administrator'));
+drop policy if exists profiles_self on legal.profiles;
+create policy profiles_self on legal.profiles for select to authenticated using ((select auth.uid())=user_id or legal.is_manager());
+drop policy if exists clients_staff on legal.clients;
+create policy clients_staff on legal.clients for all to authenticated using (legal.is_staff()) with check (legal.is_staff());
+drop policy if exists matters_access on legal.matters;
+create policy matters_access on legal.matters for select to authenticated using (legal.has_matter_access(id));
+drop policy if exists matters_manager_write on legal.matters;
+create policy matters_manager_write on legal.matters for all to authenticated using (legal.is_manager()) with check (legal.is_manager());
+drop policy if exists members_access on legal.matter_members;
+create policy members_access on legal.matter_members for select to authenticated using (legal.has_matter_access(matter_id));
+drop policy if exists members_manager_write on legal.matter_members;
+create policy members_manager_insert on legal.matter_members for insert to authenticated with check (legal.is_manager());
+create policy members_manager_update on legal.matter_members for update to authenticated using (legal.is_manager()) with check (legal.is_manager());
+create policy members_manager_delete on legal.matter_members for delete to authenticated using (legal.is_manager());
+drop policy if exists parties_access on legal.parties;
+create policy parties_access on legal.parties for all to authenticated using (legal.has_matter_access(matter_id)) with check (legal.has_matter_access(matter_id));
+drop policy if exists tasks_access on legal.tasks;
+create policy tasks_access on legal.tasks for all to authenticated using (matter_id is null or legal.has_matter_access(matter_id)) with check (matter_id is null or legal.has_matter_access(matter_id));
+drop policy if exists deadlines_access on legal.deadlines;
+create policy deadlines_access on legal.deadlines for all to authenticated using (legal.has_matter_access(matter_id)) with check (legal.has_matter_access(matter_id));
+drop policy if exists documents_access on legal.documents;
+create policy documents_access on legal.documents for all to authenticated using (legal.has_matter_access(matter_id)) with check (legal.has_matter_access(matter_id));
+drop policy if exists evidence_access on legal.evidence;
+create policy evidence_access on legal.evidence for all to authenticated using (legal.has_matter_access(matter_id)) with check (legal.has_matter_access(matter_id));
+drop policy if exists invoices_access on legal.invoices;
+create policy invoices_access on legal.invoices for all to authenticated using (legal.has_matter_access(matter_id)) with check (legal.has_matter_access(matter_id));
+drop policy if exists payments_access on legal.payments;
+create policy payments_access on legal.payments for all to authenticated using (legal.has_matter_access((select i.matter_id from legal.invoices i where i.id=invoice_id))) with check (legal.has_matter_access((select i.matter_id from legal.invoices i where i.id=invoice_id)));
+drop policy if exists audit_access on legal.audit_events;
+create policy audit_access on legal.audit_events for select to authenticated using (matter_id is null or legal.has_matter_access(matter_id));
 
-create policy matters_select on public.matters for select to authenticated using (public.has_matter_access(id));
-create policy matters_insert on public.matters for insert to authenticated
-with check (coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','advocate','administrator'));
-create policy matters_update on public.matters for update to authenticated
-using (public.has_matter_access(id)) with check (public.has_matter_access(id));
-
-create policy matter_members_select on public.matter_members for select to authenticated
-using (user_id=(select auth.uid()) or public.has_matter_access(matter_id));
-create policy matter_members_manage on public.matter_members for all to authenticated
-using (coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','administrator'))
-with check (coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','administrator'));
-
-create policy tasks_select on public.tasks for select to authenticated using (public.has_matter_access(matter_id));
-create policy tasks_insert on public.tasks for insert to authenticated with check (public.has_matter_access(matter_id));
-create policy tasks_update on public.tasks for update to authenticated using (public.has_matter_access(matter_id)) with check (public.has_matter_access(matter_id));
-
-create policy deadlines_select on public.deadlines for select to authenticated using (public.has_matter_access(matter_id));
-create policy deadlines_insert on public.deadlines for insert to authenticated with check (public.has_matter_access(matter_id));
-create policy deadlines_update on public.deadlines for update to authenticated using (public.has_matter_access(matter_id)) with check (public.has_matter_access(matter_id));
-
-create policy documents_select on public.documents for select to authenticated using (public.has_matter_access(matter_id));
-create policy documents_insert on public.documents for insert to authenticated with check (public.has_matter_access(matter_id));
-create policy documents_update on public.documents for update to authenticated using (public.has_matter_access(matter_id)) with check (public.has_matter_access(matter_id));
-
-create policy evidence_select on public.evidence for select to authenticated using (public.has_matter_access(matter_id));
-create policy evidence_insert on public.evidence for insert to authenticated with check (public.has_matter_access(matter_id));
-
-create policy billing_select on public.billing_items for select to authenticated using (public.has_matter_access(matter_id));
-create policy billing_insert on public.billing_items for insert to authenticated with check (public.has_matter_access(matter_id));
-
-create policy research_select on public.research_records for select to authenticated using (matter_id is null or public.has_matter_access(matter_id));
-create policy research_insert on public.research_records for insert to authenticated with check (matter_id is null or public.has_matter_access(matter_id));
-
-create policy audit_select on public.audit_events for select to authenticated
-using (coalesce((select auth.jwt()->'app_metadata'->>'role'),'') in ('partner','administrator') or actor_id=(select auth.uid()));
-create policy audit_insert on public.audit_events for insert to authenticated with check (actor_id=(select auth.uid()));
-
-revoke all on all tables in schema public from anon;
+revoke all on schema legal from anon;
+grant usage on schema legal to authenticated;
