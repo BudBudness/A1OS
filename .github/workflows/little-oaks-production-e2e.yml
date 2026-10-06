@@ -1,0 +1,90 @@
+name: Little Oaks Production E2E
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  browser-enquiry-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: products/verticals/little-oaks/package-lock.json
+
+      - name: Install dependencies
+        working-directory: products/verticals/little-oaks
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: products/verticals/little-oaks
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify production enquiry flow
+        env:
+          LITTLE_OAKS_URL: https://little-oaks-one.vercel.app
+        working-directory: products/verticals/little-oaks
+        run: |
+          cat > production-e2e.mjs <<'EOF'
+          import { chromium } from 'playwright';
+
+          const base = process.env.LITTLE_OAKS_URL;
+          const browser = await chromium.launch({ headless: true });
+          const page = await browser.newPage();
+
+          let enquiryResponse = null;
+          page.on('response', response => {
+            if (response.url().includes('/rest/v1/enquiries') && response.request().method() === 'POST') {
+              enquiryResponse = response;
+            }
+          });
+
+          await page.goto(base, { waitUntil: 'networkidle', timeout: 120000 });
+          await page.locator('form.enquiry-form').scrollIntoViewIfNeeded();
+
+          const marker = `E2E-${Date.now()}`;
+          await page.getByLabel('Parent / guardian').fill(`Production E2E ${marker}`);
+          await page.getByLabel('Child’s name').fill('E2E Child');
+          await page.getByLabel('Child’s age').fill('4 years');
+          await page.getByLabel('Programme').selectOption({ label: 'Montessori Nursery' });
+          await page.getByLabel('Phone / WhatsApp').fill('+256700000001');
+          await page.getByLabel('Message').fill(`Little Oaks production E2E ${marker}`);
+
+          const [response] = await Promise.all([
+            page.waitForResponse(r => r.url().includes('/rest/v1/enquiries') && r.request().method() === 'POST', { timeout: 30000 }),
+            page.getByRole('button', { name: 'Send enquiry on WhatsApp' }).click()
+          ]);
+
+          if (!response.ok()) {
+            throw new Error(`Supabase enquiry POST failed: ${response.status()} ${await response.text()}`);
+          }
+
+          await page.getByRole('status').waitFor({ state: 'visible', timeout: 15000 });
+          const success = await page.getByRole('status').textContent();
+          if (!success?.includes('Enquiry saved')) {
+            throw new Error(`Success state missing: ${success}`);
+          }
+
+          console.log(JSON.stringify({
+            status: 'PASS',
+            site: base,
+            enquiry_http_status: response.status(),
+            success_state: success.trim(),
+            marker
+          }));
+
+          await browser.close();
+          EOF
+          node production-e2e.mjs
+
+      - name: Build verification
+        working-directory: products/verticals/little-oaks
+        run: npm run build
