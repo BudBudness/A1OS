@@ -10,24 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: products/verticals/little-oaks/package-lock.json
-
       - name: Install dependencies
         working-directory: products/verticals/little-oaks
         run: npm ci
-
       - name: Install Chromium
         working-directory: products/verticals/little-oaks
         run: npx playwright install --with-deps chromium
-
       - name: Verify production enquiry flow
         env:
           LITTLE_OAKS_URL: https://little-oaks-one.vercel.app
@@ -35,21 +29,16 @@ jobs:
         run: |
           cat > production-e2e.mjs <<'EOF'
           import { chromium } from 'playwright';
-
           const base = process.env.LITTLE_OAKS_URL;
           const browser = await chromium.launch({ headless: true });
           const page = await browser.newPage();
-
-          let enquiryResponse = null;
-          page.on('response', response => {
-            if (response.url().includes('/rest/v1/enquiries') && response.request().method() === 'POST') {
-              enquiryResponse = response;
-            }
-          });
-
-          await page.goto(base, { waitUntil: 'networkidle', timeout: 120000 });
-          await page.locator('form.enquiry-form').scrollIntoViewIfNeeded();
-
+          page.on('console', msg => console.log('[browser-console]', msg.type(), msg.text()));
+          page.on('pageerror', error => console.log('[page-error]', error.message));
+          page.on('requestfailed', request => console.log('[request-failed]', request.url(), request.failure()?.errorText));
+          const response = await page.goto(base, { waitUntil: 'domcontentloaded', timeout: 120000 });
+          console.log(JSON.stringify({ page_status: response?.status() ?? null, final_url: page.url(), title: await page.title() }));
+          if (!response || !response.ok()) throw new Error(`Production page failed: HTTP ${response?.status() ?? 'NO_RESPONSE'} at ${page.url()}`);
+          await page.locator('form.enquiry-form').waitFor({ state: 'visible', timeout: 30000 });
           const marker = `E2E-${Date.now()}`;
           await page.getByLabel('Parent / guardian').fill(`Production E2E ${marker}`);
           await page.getByLabel('Child’s name').fill('E2E Child');
@@ -57,34 +46,22 @@ jobs:
           await page.getByLabel('Programme').selectOption({ label: 'Montessori Nursery' });
           await page.getByLabel('Phone / WhatsApp').fill('+256700000001');
           await page.getByLabel('Message').fill(`Little Oaks production E2E ${marker}`);
-
-          const [response] = await Promise.all([
+          const [enquiryResponse] = await Promise.all([
             page.waitForResponse(r => r.url().includes('/rest/v1/enquiries') && r.request().method() === 'POST', { timeout: 30000 }),
             page.getByRole('button', { name: 'Send enquiry on WhatsApp' }).click()
           ]);
-
-          if (!response.ok()) {
-            throw new Error(`Supabase enquiry POST failed: ${response.status()} ${await response.text()}`);
-          }
-
-          await page.getByRole('status').waitFor({ state: 'visible', timeout: 15000 });
-          const success = await page.getByRole('status').textContent();
-          if (!success?.includes('Enquiry saved')) {
-            throw new Error(`Success state missing: ${success}`);
-          }
-
-          console.log(JSON.stringify({
-            status: 'PASS',
-            site: base,
-            enquiry_http_status: response.status(),
-            success_state: success.trim(),
-            marker
-          }));
-
+          const body = await enquiryResponse.text();
+          console.log(JSON.stringify({ enquiry_http_status: enquiryResponse.status(), enquiry_response: body }));
+          if (!enquiryResponse.ok()) throw new Error(`Supabase enquiry POST failed: ${enquiryResponse.status()}`);
+          const success = page.getByRole('status');
+          await success.waitFor({ state: 'visible', timeout: 15000 });
+          const successText = (await success.textContent())?.trim();
+          if (!successText?.includes('Enquiry saved')) throw new Error(`Success state missing: ${successText}`);
+          console.log(JSON.stringify({ status: 'PASS', site: base, success_state: successText, marker }));
           await browser.close();
           EOF
           node production-e2e.mjs
-
       - name: Build verification
+        if: success()
         working-directory: products/verticals/little-oaks
         run: npm run build
