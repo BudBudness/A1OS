@@ -1,0 +1,18 @@
+create index if not exists legal_clients_created_by_idx on legal.clients(created_by);
+create index if not exists legal_matters_created_by_idx on legal.matters(created_by);
+create index if not exists legal_tasks_assigned_to_idx on legal.tasks(assigned_to);
+create index if not exists legal_tasks_created_by_idx on legal.tasks(created_by);
+create index if not exists legal_deadlines_owner_idx on legal.deadlines(owner_id);
+create index if not exists legal_documents_uploaded_by_idx on legal.documents(uploaded_by);
+create index if not exists legal_evidence_recorded_by_idx on legal.evidence(recorded_by);
+create index if not exists legal_invoices_created_by_idx on legal.invoices(created_by);
+create index if not exists legal_payments_recorded_by_idx on legal.payments(recorded_by);
+create index if not exists legal_audit_actor_idx on legal.audit_events(actor_id);
+create index if not exists legal_parties_matter_idx on legal.parties(matter_id);
+create index if not exists legal_payments_invoice_idx on legal.payments(invoice_id);
+drop policy if exists profiles_self on legal.profiles;
+create policy profiles_self on legal.profiles for select to authenticated using ((select auth.uid())=user_id or legal.is_manager());
+drop policy if exists members_manager_write on legal.matter_members;
+create policy members_manager_insert on legal.matter_members for insert to authenticated with check (legal.is_manager());
+create policy members_manager_update on legal.matter_members for update to authenticated using (legal.is_manager()) with check (legal.is_manager());
+create policy members_manager_delete on legal.matter_members for delete to authenticated using (legal.is_manager());
