@@ -22,7 +22,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: products/verticals/legal/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npm test
       - run: npm run build
 
@@ -37,7 +37,7 @@ jobs:
           node-version: 22
       - name: Install app dependencies
         working-directory: products/verticals/legal
-        run: npm ci
+        run: npm install
       - name: Install Playwright
         run: npm install --no-save playwright@1.63.0
       - name: Build
