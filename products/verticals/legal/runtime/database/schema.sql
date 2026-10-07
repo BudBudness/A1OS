@@ -124,7 +124,12 @@ create policy clients_staff on public.legal_clients for all to authenticated usi
 drop policy if exists matters_access on public.legal_matters;
 create policy matters_access on public.legal_matters for select to authenticated using (public.legal_has_matter_access(id));
 drop policy if exists matters_manager_write on public.legal_matters;
-create policy matters_manager_write on public.legal_matters for all to authenticated using (public.legal_is_manager()) with check (public.legal_is_manager());
+drop policy if exists matters_manager_insert on public.legal_matters;
+drop policy if exists matters_manager_update on public.legal_matters;
+drop policy if exists matters_manager_delete on public.legal_matters;
+create policy matters_manager_insert on public.legal_matters for insert to authenticated with check (public.legal_is_manager());
+create policy matters_manager_update on public.legal_matters for update to authenticated using (public.legal_is_manager()) with check (public.legal_is_manager());
+create policy matters_manager_delete on public.legal_matters for delete to authenticated using (public.legal_is_manager());
 drop policy if exists members_access on public.legal_matter_members;
 create policy members_access on public.legal_matter_members for select to authenticated using (public.legal_has_matter_access(matter_id));
 drop policy if exists members_manager_write on public.legal_matter_members;
