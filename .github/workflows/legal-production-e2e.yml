@@ -20,8 +20,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: products/verticals/legal/package-lock.json
       - run: npm install
       - run: npm test
       - run: npm run build
@@ -52,6 +50,8 @@ jobs:
       - name: Browser smoke
         env:
           LEGAL_URL: http://127.0.0.1:4173
+          VITE_SUPABASE_URL: https://prqbeocaycxqsremxvmb.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_PVS7tsfzFOSwbRxfsv6plg_eK0nAynL
         run: |
           node --input-type=module <<'NODE'
           import { chromium } from "playwright";
