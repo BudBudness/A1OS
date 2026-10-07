@@ -1,6 +1,5 @@
 import React,{useEffect,useMemo,useState}from"react";
-import{createClient}from"@supabase/supabase-js";
-const supabase=createClient(import.meta.env.VITE_SUPABASE_URL,import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
+import{supabase}from"./lib/supabase.js";
 const nav=["Command Center","Matters","Clients","Diary","Documents","Billing","Research","Audit"];
 const areas=["Litigation","Commercial","Labour","Conveyancing","Advisory"];
 export function App(){
