@@ -267,6 +267,22 @@ export function App() {
                 </a>
               </div>
 
+              <div className="map-block">
+                <span>FIND LITTLE OAKS</span>
+                <div style={{ overflow: "hidden", borderRadius: "14px", marginTop: "12px" }}>
+                  <iframe
+                    title="Little Oaks Montessori Nursery & Kindergarten on Google Maps"
+                    src="https://www.google.com/maps?q=Little+Oaks+Montessori+Nursery+Kindergarten+Nyamitanga+Mbarara+Uganda&output=embed"
+                    width="100%"
+                    height="260"
+                    style={{ border: 0, display: "block" }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+                <a href="https://www.google.com/maps/search/?api=1&query=Little%20Oaks%20Montessori%20Nursery%20Kindergarten%20Nyamitanga%20Mbarara%20Uganda" target="_blank" rel="noreferrer">Open in Google Maps →</a>
+              </div>
+
               <a
                 className="button primary full"
                 href="https://wa.me/256762023393"
