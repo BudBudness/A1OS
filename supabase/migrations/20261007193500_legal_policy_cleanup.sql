@@ -1,0 +1,10 @@
+drop table if exists public.legal_billing_entries cascade;
+drop policy if exists matters_access on legal.matters;
+drop policy if exists matters_manager_write on legal.matters;
+drop policy if exists matters_manager_insert on legal.matters;
+drop policy if exists matters_manager_update on legal.matters;
+drop policy if exists matters_manager_delete on legal.matters;
+create policy matters_access on legal.matters for select to authenticated using (legal.has_matter_access(id));
+create policy matters_manager_insert on legal.matters for insert to authenticated with check (legal.is_manager());
+create policy matters_manager_update on legal.matters for update to authenticated using (legal.is_manager()) with check (legal.is_manager());
+create policy matters_manager_delete on legal.matters for delete to authenticated using (legal.is_manager());
