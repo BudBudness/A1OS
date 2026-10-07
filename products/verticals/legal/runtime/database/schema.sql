@@ -150,3 +150,15 @@ create table if not exists public.legal_audit_events (
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+create table if not exists public.legal_research (
+  id uuid primary key default gen_random_uuid(),
+  matter_id uuid references public.legal_matters(id) on delete cascade,
+  title text not null,
+  source text not null,
+  citation text,
+  url text,
+  notes text,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default now()
+);
