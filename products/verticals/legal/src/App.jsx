@@ -34,11 +34,11 @@ export function App() {
 
   async function loadWorkspace(userId) {
     setLoading(true); setError("");
-    const { data: p, error: pe } = await supabase.schema("legal").from("profiles").select("user_id,full_name,role,active").eq("user_id", userId).maybeSingle();
+    const { data: p, error: pe } = await supabase.from("legal_profiles").select("user_id,full_name,role,active").eq("user_id", userId).maybeSingle();
     if (pe) { setError(pe.message); setLoading(false); return; }
     setProfile(p);
     if (!p || !p.active) { setLoading(false); return; }
-    const { data, error: me } = await supabase.schema("legal").from("matters").select("id,matter_number,title,practice_area,status,created_at,clients(legal_name),matter_members(assignment_role,profiles(full_name))").order("created_at", { ascending: false });
+    const { data, error: me } = await supabase.from("legal_matters").select("id,matter_number,title,practice_area,status,created_at,clients(legal_name),matter_members(assignment_role,profiles(full_name))").order("created_at", { ascending: false });
     if (me) setError(me.message); else setMatters(data || []);
     setLoading(false);
   }
@@ -51,21 +51,21 @@ export function App() {
     event.preventDefault(); setError("");
     const form = new FormData(event.currentTarget);
     const clientName = String(form.get("client")).trim();
-    const { data: existing, error: ce } = await supabase.schema("legal").from("clients").select("id").eq("legal_name", clientName).maybeSingle();
+    const { data: existing, error: ce } = await supabase.from("legal_clients").select("id").eq("legal_name", clientName).maybeSingle();
     if (ce) { setError(ce.message); return; }
     let clientId = existing?.id;
     if (!clientId) {
-      const { data: created, error: cte } = await supabase.schema("legal").from("clients").insert({ client_number: `CL-${Date.now()}`, client_type: "individual", legal_name: clientName, created_by: session.user.id }).select("id").single();
+      const { data: created, error: cte } = await supabase.from("legal_clients").insert({ client_number: `CL-${Date.now()}`, client_type: "individual", legal_name: clientName, created_by: session.user.id }).select("id").single();
       if (cte) { setError(cte.message); return; }
       clientId = created.id;
     }
-    const { data: matter, error: me } = await supabase.schema("legal").from("matters").insert({
+    const { data: matter, error: me } = await supabase.from("legal_matters").insert({
       matter_number: `MAT-${new Date().getFullYear()}-${String(matters.length + 1).padStart(4, "0")}`,
       title: form.get("title"), client_id: clientId, practice_area: form.get("type"),
       status: "intake", confidentiality: "restricted", created_by: session.user.id
     }).select("id").single();
     if (me) { setError(me.message); return; }
-    const { error: ae } = await supabase.schema("legal").from("matter_members").insert({ matter_id: matter.id, user_id: session.user.id, assignment_role: "lead_advocate" });
+    const { error: ae } = await supabase.from("legal_matter_members").insert({ matter_id: matter.id, user_id: session.user.id, assignment_role: "lead_advocate" });
     if (ae) { setError(ae.message); return; }
     setShowNew(false); event.currentTarget.reset(); await loadWorkspace(session.user.id);
   }
