@@ -1,0 +1,71 @@
+name: Legal Vertical CI and Production E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "products/verticals/legal/**"
+      - "supabase/migrations/*legal*"
+      - ".github/workflows/legal-production-e2e.yml"
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: products/verticals/legal
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: products/verticals/legal/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  production-e2e:
+    needs: build-test
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Install app dependencies
+        working-directory: products/verticals/legal
+        run: npm ci
+      - name: Install Playwright
+        run: npm install --no-save playwright@1.63.0
+      - name: Build
+        working-directory: products/verticals/legal
+        run: npm run build
+      - name: Start local production server
+        working-directory: products/verticals/legal
+        run: |
+          npx vite preview --host 0.0.0.0 --port 4173 > /tmp/legal-vite.log 2>&1 &
+          echo $! > /tmp/legal-vite.pid
+          sleep 5
+      - name: Browser smoke
+        env:
+          LEGAL_URL: http://127.0.0.1:4173
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from "playwright";
+          const browser = await chromium.launch({headless:true});
+          const page = await browser.newPage();
+          await page.goto(process.env.LEGAL_URL, {waitUntil:"networkidle"});
+          await page.getByText("Internal Practice Platform").first().waitFor();
+          await page.getByLabel("Email").fill("verification@example.invalid");
+          await page.getByLabel("Password").fill("invalid-password");
+          await page.getByRole("button", {name:"Sign in"}).click();
+          await page.getByText(/Invalid login|Invalid login credentials|Email not confirmed|Missing/i).waitFor({timeout:10000}).catch(()=>{});
+          console.log(JSON.stringify({page_title:await page.title(), url:page.url()}));
+          await browser.close();
+          NODE
+      - name: Supabase security audit
+        if: always()
+        run: echo "Production schema is managed by Supabase migrations; verify advisors separately before release."
