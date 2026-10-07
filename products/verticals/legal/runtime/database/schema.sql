@@ -148,3 +148,5 @@ create policy payments_access on public.legal_payments for all to authenticated 
 drop policy if exists audit_access on public.legal_audit_events;
 create policy audit_access on public.legal_audit_events for select to authenticated using (matter_id is null or public.legal_has_matter_access(matter_id));
 
+
+grant select, insert, update, delete on public.legal_profiles, public.legal_clients, public.legal_matters, public.legal_matter_members, public.legal_parties, public.legal_tasks, public.legal_deadlines, public.legal_documents, public.legal_evidence, public.legal_invoices, public.legal_payments, public.legal_audit_events to authenticated;
