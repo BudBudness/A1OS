@@ -8,14 +8,14 @@ export function App(){
  useEffect(()=>{if(session)load();else setLoading(false)},[session]);
  async function load(){setLoading(true);setError("");
   const results=await Promise.all([
-   supabase.from("legal_matters").select("id,matter_number,title,practice_area,status,opened_at,client_id,legal_clients(legal_name)").order("created_at",{ascending:false}),
-   supabase.from("legal_clients").select("id,client_number,legal_name,client_type,status,phone,email").order("created_at",{ascending:false}),
-   supabase.from("legal_deadlines").select("id,matter_id,title,deadline_at,status,source").eq("status","open").order("deadline_at"),
-   supabase.from("legal_tasks").select("id,matter_id,title,status,priority,due_at").neq("status","completed").order("due_at"),
-   supabase.from("legal_documents").select("id,matter_id,title,document_type,version,created_at").order("created_at",{ascending:false}),
-   supabase.from("legal_invoices").select("id,matter_id,invoice_number,amount,currency,status,due_date").order("created_at",{ascending:false}),
-   supabase.from("legal_research").select("id,matter_id,title,source,citation,url,created_at").order("created_at",{ascending:false}),
-   supabase.from("legal_audit_events").select("id,actor_id,matter_id,action,entity_type,created_at").order("created_at",{ascending:false}).limit(50),
+   supabase.schema("legal").from("matters").select("id,matter_number,title,practice_area,status,opened_at,client_id,legal_clients(legal_name)").order("created_at",{ascending:false}),
+   supabase.schema("legal").from("clients").select("id,client_number,legal_name,client_type,status,phone,email").order("created_at",{ascending:false}),
+   supabase.schema("legal").from("deadlines").select("id,matter_id,title,deadline_at,status,source").eq("status","open").order("deadline_at"),
+   supabase.schema("legal").from("tasks").select("id,matter_id,title,status,priority,due_at").neq("status","completed").order("due_at"),
+   supabase.schema("legal").from("documents").select("id,matter_id,title,document_type,version,created_at").order("created_at",{ascending:false}),
+   supabase.schema("legal").from("invoices").select("id,matter_id,invoice_number,amount,currency,status,due_date").order("created_at",{ascending:false}),
+   supabase.schema("legal").from("research").select("id,matter_id,title,source,citation,url,created_at").order("created_at",{ascending:false}),
+   supabase.schema("legal").from("audit_events").select("id,actor_id,matter_id,action,entity_type,created_at").order("created_at",{ascending:false}).limit(50),
    supabase.from("legal_profiles").select("full_name,role,active").eq("user_id",session.user.id).maybeSingle()
   ]);
   const bad=results.find(x=>x.error);if(bad){setError(bad.error.message);setLoading(false);return}
@@ -23,8 +23,8 @@ export function App(){
  }
  async function signIn(e){e.preventDefault();setError("");const f=new FormData(e.currentTarget),r=await supabase.auth.signInWithPassword({email:f.get("email"),password:f.get("password")});if(r.error)setError(r.error.message)}
  async function signOut(){await supabase.auth.signOut();setSession(null)}
- async function createMatter(e){e.preventDefault();setError("");const f=new FormData(e.currentTarget),r=await supabase.schema("legal").from("matters").insert({matter_number:f.get("matter_number"),title:f.get("title"),practice_area:f.get("practice_area"),matter_type:f.get("matter_type"),status:"intake",client_id:f.get("client_id"),description:f.get("description"),created_by:session.user.id}).select("id").single();if(r.error){setError(r.error.message);return}await supabase.from("legal_audit_events").insert({actor_id:session.user.id,matter_id:r.data.id,action:"matter_created",entity_type:"matters",entity_id:r.data.id});setShowNew(false);await load()}
- async function createClient(e){e.preventDefault();setError("");const f=new FormData(e.currentTarget),r=await supabase.from("legal_clients").insert({client_number:f.get("client_number")||null,legal_name:f.get("legal_name"),client_type:f.get("client_type"),phone:f.get("phone")||null,email:f.get("email")||null,address:f.get("address")||null,status:"active",created_by:session.user.id});if(r.error){setError(r.error.message);return}setShowClient(false);await load()}
+ async function createMatter(e){e.preventDefault();setError("");const f=new FormData(e.currentTarget),r=await supabase.schema("legal").from("matters").insert({matter_number:f.get("matter_number"),title:f.get("title"),practice_area:f.get("practice_area"),matter_type:f.get("matter_type"),status:"intake",client_id:f.get("client_id"),description:f.get("description"),created_by:session.user.id}).select("id").single();if(r.error){setError(r.error.message);return}await supabase.schema("legal").from("audit_events").insert({actor_id:session.user.id,matter_id:r.data.id,action:"matter_created",entity_type:"matters",entity_id:r.data.id});setShowNew(false);await load()}
+ async function createClient(e){e.preventDefault();setError("");const f=new FormData(e.currentTarget),r=await supabase.schema("legal").from("clients").insert({client_number:f.get("client_number")||`BB-C-${Date.now()}`,legal_name:f.get("legal_name"),client_type:f.get("client_type"),phone:f.get("phone")||null,email:f.get("email")||null,address:f.get("address")||null,status:"active",created_by:session.user.id});if(r.error){setError(r.error.message);return}setShowClient(false);await load()}
  const filtered=useMemo(()=>matters.filter(m=>Object.values(m).join(" ").toLowerCase().includes(query.toLowerCase())),[matters,query]);
  if(!session)return <Login error={error} onSubmit={signIn}/>;
  if(loading)return <div className="loading">Loading governed practice data…</div>;
