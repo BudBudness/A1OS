@@ -205,6 +205,8 @@ def run_cloud_worker():
         return jsonify({"detail": "Worker authentication failed"}), 401
 
     body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return jsonify({"detail": "JSON object body required"}), 422
     try:
         limit = max(1, min(int(body.get("limit", 3)), 5))
     except (TypeError, ValueError):
