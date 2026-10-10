@@ -10,12 +10,11 @@ def _cloud_store():
     """Return the Supabase store only for configured Vercel production requests."""
     if not os.environ.get("VERCEL"):
         return None
-    try:
-        from core.persistence.supabase_tasks import store
+    from core.persistence.supabase_tasks import store
 
-        return store if store.configured else None
-    except Exception:
-        return None
+    if not store.configured:
+        raise RuntimeError("Vercel task execution requires configured Supabase persistence")
+    return store
 
 
 class DurableQueue:
