@@ -26,36 +26,16 @@ class SupabaseTaskStore:
             "Content-Type": "application/json",
         }
 
-    def insert_task(
-        self,
-        task_id: str,
-        target: str,
-        role: str,
-        action: str,
-        data: Any,
-    ) -> None:
+    def insert_task(self, task_id: str, target: str, role: str, action: str, data: Any) -> None:
         response = httpx.post(
             f"{self.url}/rest/v1/a1os_tasks",
             headers={**self._headers(), "Prefer": "return=minimal"},
-            json={
-                "task_id": task_id,
-                "target": target,
-                "role": role,
-                "action": action,
-                "payload": data,
-            },
+            json={"task_id": task_id, "target": target, "role": role, "action": action, "payload": data},
             timeout=10.0,
         )
         response.raise_for_status()
 
-    def enqueue(
-        self,
-        target: str,
-        role: str,
-        action: str,
-        data: Any,
-        task_id: str | None = None,
-    ) -> str:
+    def enqueue(self, target: str, role: str, action: str, data: Any, task_id: str | None = None) -> str:
         task_id = task_id or str(uuid.uuid4())
         self.insert_task(task_id, target, role, action, data)
         return task_id
@@ -99,12 +79,11 @@ class SupabaseTaskStore:
                 if scheduled <= now:
                     ready.append(row)
             except (TypeError, ValueError):
-                # Fail closed on malformed retry timestamps rather than executing early.
                 continue
         return ready
 
     def claim_task(self, task_id: str) -> bool:
-        """Atomically transition a due task to running using a PostgreSQL RPC."""
+        """Atomically claim a due task through a PostgreSQL function."""
         response = httpx.post(
             f"{self.url}/rest/v1/rpc/a1os_claim_task",
             headers=self._headers(),
@@ -192,7 +171,8 @@ class SupabaseTaskStore:
         max_attempts = int(current.get("max_attempts") or 3)
         message = str(error).replace("\n", " ")[:1000]
         now = datetime.now(timezone.utc)
-        if error.__class__.__name__ == "ApprovalDenied" or attempts >= max_attempts:
+        approval_denied = message.startswith("ApprovalDenied:")
+        if approval_denied or attempts >= max_attempts:
             body = {
                 "status": "failed",
                 "error": message,
