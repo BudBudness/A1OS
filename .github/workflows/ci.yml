@@ -14,3 +14,4 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - run: python -m compileall .
+      - run: python -m pytest -q tests/test_supabase_task_store.py tests/test_cloud_worker_auth.py
