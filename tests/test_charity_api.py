@@ -13,8 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 API_DIR = ROOT / "platform" / "a1os-platform-api" / "api"
 TEMP_ROOT = tempfile.TemporaryDirectory(prefix="a1os-charity-api-")
 os.environ["A1OS_PLATFORM_DB"] = str(Path(TEMP_ROOT.name) / "platform.db")
-sys.path.insert(0, str(API_DIR))
-platform_app = importlib.import_module("app")
+spec = importlib.util.spec_from_file_location(
+    "a1os_platform_charity_test_app", API_DIR / "app.py"
+)
+platform_app = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = platform_app
+spec.loader.exec_module(platform_app)
 
 
 class CharityApiTests(unittest.TestCase):
