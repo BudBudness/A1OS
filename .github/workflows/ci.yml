@@ -16,3 +16,18 @@ jobs:
       - run: python -m pip install fastapi httpx
       - run: python -m compileall .
       - run: python -m pytest -q tests/test_supabase_task_store.py tests/test_cloud_worker_auth.py tests/test_charity_schema_migration.py tests/test_charity_api.py
+
+  charity-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: products/verticals/charity/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: products/verticals/charity/frontend/package.json
+      - run: npm install
+      - run: npm run build
