@@ -33,7 +33,7 @@ Backend files:
 - `backend/app/settings.py` — SHA `00de1c25959416b2e10b21838aa05c9969200974`
 - `backend/app/serializers.py` — SHA `c9c51e0318791d2b2aad9e81f4820bb0001ccfbc`
 - `backend/app/data.py` — SHA `9eed8863e4d11bb998f579fd6ae19254213f0bd1`
-- `backend/requirements.txt` — SHA `58ffc6fac990c6b0f1349c7c3f7b1be80fb92b`
+- `backend/requirements.txt` — SHA `58ffc6fac990c6b0f1349c3cb3f7b1be80fb92b`
 
 Other files:
 - `frontend/package.json` — SHA `c68c0e6f31a4370b4ac9c7f344a89a65593cc992`
