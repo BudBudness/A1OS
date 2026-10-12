@@ -2,14 +2,15 @@
 
 **Purpose:** consolidate Stramos Wisdom Charity under A1OS without losing source, data, or deployment capability.
 
-**Status:** migration assessment recorded; implementation and production verification are NOT complete. Do not delete the standalone repository yet.
+**Status:** initial source snapshot, tenant-scoped schema, and authenticated create/list API are implemented on the migration branch. Full workflow coverage, production verification, data cutover, and deployment checks are NOT complete. Do not delete the standalone repository yet.
 
 ## Repositories
 
 - A1OS: https://github.com/BudBudness/A1OS
 - Standalone source: https://github.com/BudBudness/StramosWisdomCharityOrg
 - Standalone default branch: `main`
-- Standalone commit used for this inspection: latest accessible files as of 2026-10-12. Record an exact full commit SHA before final archival/deletion.
+- Standalone source commit snapshotted into A1OS: `cf9eb3270c3dd1b77da8f90647d5ca5f8a78439c` (21 tracked files).
+- Snapshot commit in A1OS migration branch: `5f128a75c540355bd3b02d776a235b5783489654`.
 
 ## Current A1OS footprint
 
@@ -63,6 +64,17 @@ Source links:
 | Donor management | A1OS descriptor only; no dedicated donor model/workflow verified | Implement explicitly; do not equate donors with donation intents |
 | Aid and case management | A1OS descriptor only; not verified in standalone implementation | Define workflows, roles, approvals, audit trail and tests |
 
+## Migration implementation added on branch
+
+- Source snapshot: `products/verticals/charity/migration-source/StramosWisdomCharityOrg/`.
+- Additive schema: `migrations/001_charity_schema.sql`, loaded by platform API startup when present.
+- API: authenticated `GET` and `POST /v1/charity/{resource}` for `programs`, `beneficiaries`, `cases`, `aid-allocations`, `donors`, `donation-intents`, `volunteers`, `partnerships`, and `outreach-reports`.
+- Tenant ID comes from the authenticated actor; cross-tenant foreign references are rejected; create operations are audited.
+- Donation intent status is server-defaulted to `intent`; clients cannot submit payment confirmation fields.
+- Tests: `tests/test_charity_schema_migration.py` and `tests/test_charity_api.py`; both are included in CI. The initial schema-only CI run passed. The API integration suite is being verified after adding its FastAPI test dependencies.
+
+These are initial intake/list capabilities, not a finished charity application. Update/approval/disbursement flows, payment provider reconciliation, frontend integration, and production cutover remain outstanding.
+
 ## Blocking risks before deletion
 
 1. **Authorization:** inspected standalone list endpoints for volunteers, partners, donations and outreach reports show no route-level authentication/authorization dependency. Verify the deployment and implement server-side authorization before production.
@@ -76,7 +88,7 @@ Source links:
 
 ## Required acceptance evidence
 
-- [ ] Full source snapshot and exact source commit SHA recorded.
+- [x] Full source snapshot and exact source commit SHA recorded.
 - [ ] All relevant frontend/backend behavior mapped to A1OS-owned modules.
 - [ ] No duplicate independent auth, tenancy, or audit implementation remains.
 - [ ] Authorization and cross-tenant isolation tests pass.
