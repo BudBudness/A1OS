@@ -49,6 +49,12 @@ def _init_db():
     conn = db()
     schema = SCHEMA_PATH.read_text()
     conn.executescript(schema)
+    charity_schema_path = (
+        ROOT / "products" / "verticals" / "charity" / "migrations"
+        / "001_charity_schema.sql"
+    )
+    if charity_schema_path.is_file():
+        conn.executescript(charity_schema_path.read_text(encoding="utf-8"))
     conn.commit()
 
     org = conn.execute("SELECT id FROM organizations LIMIT 1").fetchone()
@@ -171,6 +177,24 @@ DEFAULT_ROLE_PERMISSIONS = {
         "audit:read",
         "notifications:read",
         "notifications:write",
+        "charity:programs:read",
+        "charity:programs:write",
+        "charity:beneficiaries:read",
+        "charity:beneficiaries:write",
+        "charity:cases:read",
+        "charity:cases:write",
+        "charity:aid:read",
+        "charity:aid:write",
+        "charity:donors:read",
+        "charity:donors:write",
+        "charity:donations:read",
+        "charity:donations:write",
+        "charity:volunteers:read",
+        "charity:volunteers:write",
+        "charity:partnerships:read",
+        "charity:partnerships:write",
+        "charity:reports:read",
+        "charity:reports:write",
     },
     "user": {
         "organizations:read",
@@ -2666,6 +2690,209 @@ def list_audit_logs(request: Request):
             params + page_params,
         ).fetchall()
         return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+# ============================================================
+# CHARITY VERTICAL — TENANT-SCOPED INTAKE AND LIST API
+# ============================================================
+
+CHARITY_RESOURCES = {
+    "programs": {
+        "table": "charity_programs",
+        "read_permission": "charity:programs:read",
+        "write_permission": "charity:programs:write",
+        "fields": ("code", "name", "description", "status", "start_date", "end_date"),
+        "required": ("code", "name"),
+        "refs": {},
+    },
+    "beneficiaries": {
+        "table": "charity_beneficiaries",
+        "read_permission": "charity:beneficiaries:read",
+        "write_permission": "charity:beneficiaries:write",
+        "fields": ("party_id", "beneficiary_ref", "household_ref", "vulnerability_category",
+                   "status", "consent_status", "consent_recorded_at", "restricted_attributes_json"),
+        "required": ("beneficiary_ref", "vulnerability_category"),
+        "refs": {"party_id": "parties"},
+    },
+    "cases": {
+        "table": "charity_cases",
+        "read_permission": "charity:cases:read",
+        "write_permission": "charity:cases:write",
+        "fields": ("case_ref", "beneficiary_id", "program_id", "assigned_to", "case_type",
+                   "priority", "status", "summary", "restricted_notes"),
+        "required": ("case_ref", "beneficiary_id", "case_type", "summary"),
+        "refs": {"beneficiary_id": "charity_beneficiaries", "program_id": "charity_programs",
+                 "assigned_to": "users"},
+    },
+    "aid-allocations": {
+        "table": "charity_aid_allocations",
+        "read_permission": "charity:aid:read",
+        "write_permission": "charity:aid:write",
+        "fields": ("allocation_ref", "beneficiary_id", "case_id", "program_id", "aid_type",
+                   "description", "quantity", "amount_ugx", "status", "evidence_ref"),
+        "required": ("allocation_ref", "beneficiary_id", "aid_type", "description"),
+        "refs": {"beneficiary_id": "charity_beneficiaries", "case_id": "charity_cases",
+                 "program_id": "charity_programs"},
+    },
+    "donors": {
+        "table": "charity_donors",
+        "read_permission": "charity:donors:read",
+        "write_permission": "charity:donors:write",
+        "fields": ("party_id", "donor_ref", "donor_type", "consent_to_contact", "status"),
+        "required": ("donor_ref",),
+        "refs": {"party_id": "parties"},
+    },
+    "donation-intents": {
+        "table": "charity_donation_intents",
+        "read_permission": "charity:donations:read",
+        "write_permission": "charity:donations:write",
+        "fields": ("intent_ref", "donor_id", "program_id", "amount_ugx", "channel", "idempotency_key"),
+        "required": ("intent_ref", "amount_ugx"),
+        "refs": {"donor_id": "charity_donors", "program_id": "charity_programs"},
+    },
+    "volunteers": {
+        "table": "charity_volunteers",
+        "read_permission": "charity:volunteers:read",
+        "write_permission": "charity:volunteers:write",
+        "fields": ("party_id", "volunteer_ref", "skills_json", "availability_json",
+                   "status", "screening_status"),
+        "required": ("volunteer_ref",),
+        "refs": {"party_id": "parties"},
+    },
+    "partnerships": {
+        "table": "charity_partnerships",
+        "read_permission": "charity:partnerships:read",
+        "write_permission": "charity:partnerships:write",
+        "fields": ("party_id", "partnership_ref", "partnership_type", "status",
+                   "agreement_ref", "start_date", "end_date", "notes"),
+        "required": ("partnership_ref", "partnership_type"),
+        "refs": {"party_id": "parties"},
+    },
+    "outreach-reports": {
+        "table": "charity_outreach_reports",
+        "read_permission": "charity:reports:read",
+        "write_permission": "charity:reports:write",
+        "fields": ("report_ref", "program_id", "event_name", "event_date", "location",
+                   "people_reached", "summary", "evidence_refs_json", "status"),
+        "required": ("report_ref", "event_name", "event_date", "summary"),
+        "refs": {"program_id": "charity_programs"},
+    },
+}
+
+
+def _charity_resource(resource: str):
+    config = CHARITY_RESOURCES.get(resource)
+    if config is None:
+        raise HTTPException(status_code=404, detail="Unknown charity resource")
+    return config
+
+
+@app.get("/v1/charity/{resource}")
+def charity_list(resource: str, request: Request):
+    config = _charity_resource(resource)
+    actor = _require_permission(request, config["read_permission"])
+    limit, offset = _page_params(request, default_limit=100, max_limit=200)
+    status_filter = (request.query_params.get("status") or "").strip()
+    table = config["table"]
+    conn = db()
+    try:
+        where = ["organization_id = ?"]
+        params = [actor["organization_id"]]
+        if status_filter and "status" in config["fields"]:
+            where.append("status = ?")
+            params.append(status_filter)
+        where_sql = "WHERE " + " AND ".join(where)
+        total = conn.execute(
+            f"SELECT COUNT(*) AS total FROM {table} {where_sql}", params
+        ).fetchone()["total"]
+        page_sql, page_params = _pagination_sql(limit, offset)
+        rows = conn.execute(
+            f"SELECT * FROM {table} {where_sql} ORDER BY id DESC {page_sql}",
+            params + page_params,
+        ).fetchall()
+        return {
+            "count": total,
+            "limit": limit,
+            "offset": offset,
+            "items": [dict(row) for row in rows],
+        }
+    finally:
+        conn.close()
+
+
+@app.post("/v1/charity/{resource}", status_code=201)
+def charity_create(resource: str, payload: dict, request: Request):
+    config = _charity_resource(resource)
+    actor = _require_permission(request, config["write_permission"])
+    allowed = set(config["fields"])
+    supplied = set(payload)
+    unsupported = sorted(supplied - allowed)
+    if unsupported:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Unsupported fields", "fields": unsupported},
+        )
+    missing = [
+        field for field in config["required"]
+        if payload.get(field) is None or payload.get(field) == ""
+    ]
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Required fields missing", "fields": missing},
+        )
+
+    table = config["table"]
+    organization_id = actor["organization_id"]
+    conn = db()
+    try:
+        # Foreign references must belong to the same organization.
+        for field, ref_table in config["refs"].items():
+            ref_id = payload.get(field)
+            if ref_id is None:
+                continue
+            if isinstance(ref_id, bool) or not str(ref_id).isdigit():
+                raise HTTPException(status_code=422, detail=f"{field} must be an integer ID")
+            ref = conn.execute(
+                f"SELECT id FROM {ref_table} WHERE id = ? AND organization_id = ?",
+                (int(ref_id), organization_id),
+            ).fetchone()
+            if not ref:
+                raise HTTPException(status_code=404, detail=f"{field} not found in this organization")
+
+        for field in ("restricted_attributes_json", "skills_json",
+                      "availability_json", "evidence_refs_json"):
+            if field in payload:
+                value = payload[field]
+                try:
+                    json.loads(value if isinstance(value, str) else json.dumps(value))
+                except (TypeError, ValueError):
+                    raise HTTPException(status_code=422, detail=f"{field} must contain valid JSON")
+                if not isinstance(value, str):
+                    payload[field] = json.dumps(value)
+
+        fields = list(payload)
+        values = [payload[field] for field in fields]
+        insert_fields = ["organization_id"] + fields
+        insert_values = [organization_id] + values
+        if "created_by" in {
+            row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()
+        }:
+            insert_fields.append("created_by")
+            insert_values.append(actor["id"])
+        placeholders = ", ".join("?" for _ in insert_fields)
+        columns = ", ".join(insert_fields)
+        cur = conn.execute(
+            f"INSERT INTO {table} ({columns}) VALUES ({placeholders})",
+            insert_values,
+        )
+        record_id = cur.lastrowid
+        _audit(conn, actor, table, record_id, "created", {"fields": fields})
+        return {"status": "created", "resource": resource, "id": record_id}
+    except sqlite3.IntegrityError as exc:
+        raise HTTPException(status_code=409, detail="Record conflicts with a uniqueness or validation constraint") from exc
     finally:
         conn.close()
 
