@@ -71,7 +71,7 @@ Source links:
 - API: authenticated `GET` and `POST /v1/charity/{resource}` for `programs`, `beneficiaries`, `cases`, `aid-allocations`, `donors`, `donation-intents`, `volunteers`, `partnerships`, and `outreach-reports`.
 - Tenant ID comes from the authenticated actor; cross-tenant foreign references are rejected; create operations are audited.
 - Donation intent status is server-defaulted to `intent`; clients cannot submit payment confirmation fields.
-- Tests: `tests/test_charity_schema_migration.py` and `tests/test_charity_api.py`; both are included in CI. The initial schema-only CI run passed. The API integration suite is being verified after adding its FastAPI test dependencies.
+- Tests: `tests/test_charity_schema_migration.py` and `tests/test_charity_api.py`; both are included in CI. GitHub Actions CI passed with the schema migration tests and API integration/security tests; the factory Definition of Done and A1OS CI/CD unittest workflow also passed.
 
 These are initial intake/list capabilities, not a finished charity application. Update/approval/disbursement flows, payment provider reconciliation, frontend integration, and production cutover remain outstanding.
 
