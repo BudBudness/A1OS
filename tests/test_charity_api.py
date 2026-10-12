@@ -119,6 +119,29 @@ class CharityApiTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 422)
 
+    def test_aid_intake_cannot_bypass_approval_or_disbursement(self):
+        beneficiary = self.client.post(
+            "/v1/charity/beneficiaries",
+            headers=self.auth(),
+            json={
+                "beneficiary_ref": "B-APPROVAL",
+                "vulnerability_category": "widow_support",
+            },
+        )
+        self.assertEqual(beneficiary.status_code, 201, beneficiary.text)
+        response = self.client.post(
+            "/v1/charity/aid-allocations",
+            headers=self.auth(),
+            json={
+                "allocation_ref": "AID-1",
+                "beneficiary_id": beneficiary.json()["id"],
+                "aid_type": "food",
+                "description": "Food package",
+                "status": "disbursed",
+            },
+        )
+        self.assertEqual(response.status_code, 422)
+
     def test_donation_intent_defaults_to_intent_not_paid(self):
         response = self.client.post(
             "/v1/charity/donation-intents",
