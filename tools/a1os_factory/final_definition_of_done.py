@@ -45,6 +45,12 @@ def main() -> int:
             findings.append(f"missing-vertical:{product}")
         elif not any((path / candidate).exists() for candidate in candidates):
             findings.append(f"missing-product-evidence:{product}")
+    charity_schema = ROOT / "products" / "verticals" / "charity" / "migrations" / "001_charity_schema.sql"
+    charity_test = ROOT / "tests" / "test_charity_schema_migration.py"
+    if not charity_schema.is_file():
+        findings.append("missing:charity-schema-migration")
+    if not charity_test.is_file():
+        findings.append("missing:charity-schema-migration-test")
     control = (ROOT / "core/control_plane/app.py").read_text(encoding="utf-8", errors="ignore")
     if '"bash"' in control or "bash -lc" in control:
         findings.append("unsafe-shell-executor")
