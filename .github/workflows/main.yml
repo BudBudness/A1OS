@@ -6,6 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: pip install -r requirements.txt fastapi
+      - run: pip install -r requirements.txt fastapi httpx
       - run: python -m unittest discover tests
 
