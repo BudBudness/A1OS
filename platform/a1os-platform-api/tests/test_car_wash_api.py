@@ -95,3 +95,73 @@ def test_invalid_vehicle_and_unconfigured_service_fail_closed():
             },
         )
         assert invalid.status_code == 422
+
+
+def test_parking_intake_and_checkout():
+    with TestClient(app) as client:
+        headers = {"Cookie": "a1os_session=token-one"}
+        created = client.post(
+            "/api/car-wash/parking",
+            headers=headers,
+            json={
+                "registration": "UAA 456B",
+                "customerName": "Parking Customer",
+                "customerPhone": "+256700111222",
+                "parkingType": "overnight",
+            },
+        )
+        assert created.status_code == 201
+        parking_id = created.json()["id"]
+
+        listed = client.get("/api/car-wash/parking?status=active", headers=headers)
+        assert listed.status_code == 200
+        assert any(item["id"] == parking_id for item in listed.json()["items"])
+
+        checkout = client.patch(
+            f"/api/car-wash/parking/{parking_id}",
+            headers=headers,
+            json={"status": "checked_out"},
+        )
+        assert checkout.status_code == 200
+        assert checkout.json()["status"] == "checked_out"
+
+
+def test_payment_is_recorded_and_overpayment_is_rejected():
+    with TestClient(app) as client:
+        headers = {"Cookie": "a1os_session=token-one"}
+        service = client.post(
+            "/api/car-wash/services",
+            headers=headers,
+            json={"id": "payment-test-wash", "name": "Payment test wash", "price": 12000},
+        )
+        assert service.status_code == 201
+
+        vehicle = client.post(
+            "/api/car-wash/vehicles",
+            headers=headers,
+            json={
+                "registration": "UBB 789C",
+                "customer": {"name": "Payment Customer", "phone": "+256700111222"},
+                "serviceId": "payment-test-wash",
+            },
+        )
+        assert vehicle.status_code == 201
+        vehicle_id = vehicle.json()["id"]
+
+        payment = client.post(
+            "/api/car-wash/payments",
+            headers=headers,
+            json={"vehicleId": vehicle_id, "amount": 5000, "method": "mobile_money", "reference": "TEST-001"},
+        )
+        assert payment.status_code == 201
+
+        overpayment = client.post(
+            "/api/car-wash/payments",
+            headers=headers,
+            json={"vehicleId": vehicle_id, "amount": 8000, "method": "cash"},
+        )
+        assert overpayment.status_code == 422
+
+        listed = client.get("/api/car-wash/payments", headers=headers)
+        assert listed.status_code == 200
+        assert any(item["vehicle_id"] == vehicle_id and item["amount"] == 5000 for item in listed.json()["items"])
