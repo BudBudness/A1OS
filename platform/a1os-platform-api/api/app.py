@@ -171,6 +171,8 @@ DEFAULT_ROLE_PERMISSIONS = {
         "audit:read",
         "notifications:read",
         "notifications:write",
+        "car_wash:read",
+        "car_wash:write",
     },
     "user": {
         "organizations:read",
@@ -181,6 +183,7 @@ DEFAULT_ROLE_PERMISSIONS = {
         "inventory:read",
         "ledger:read",
         "notifications:read",
+        "car_wash:read",
     },
 }
 
@@ -2729,3 +2732,9 @@ async def websocket_endpoint(websocket: WebSocket):
         room = WS_ROOMS.get(organization_id, [])
         if websocket in room:
             room.remove(websocket)
+
+
+# Car-wash resources use the platform's existing session, RBAC, tenant and audit controls.
+from .car_wash import build_car_wash_router
+
+app.include_router(build_car_wash_router(db, _require_permission, _audit))
