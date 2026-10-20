@@ -1,11 +1,6 @@
 name: Car Wash Platform API CI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "platform/a1os-platform-api/**"
-      - ".github/workflows/car-wash-platform-api.yml"
   pull_request:
     branches: [main]
     paths:
