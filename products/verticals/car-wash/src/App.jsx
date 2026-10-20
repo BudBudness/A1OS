@@ -4,6 +4,7 @@ import { api, getErrorMessage } from "./api/client.js";
 const navItems = [
   ["overview", "Overview"],
   ["queue", "Vehicle queue"],
+  ["services", "Wash services"],
   ["parking", "Parking"],
   ["customers", "Customers"],
   ["payments", "Payments & receipts"],
@@ -23,6 +24,8 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showIntake, setShowIntake] = useState(false);
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [serviceForm, setServiceForm] = useState({ id: "standard-wash", name: "Standard wash", price: "" });
   const [vehicle, setVehicle] = useState(blankVehicle);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
@@ -77,6 +80,30 @@ export function App() {
     }
   }
 
+  async function submitService(event) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      const id = serviceForm.id.trim().toLowerCase();
+      const name = serviceForm.name.trim();
+      const price = Number(serviceForm.price);
+      if (!/^[a-z0-9][a-z0-9-]{1,47}$/.test(id) || !name || !Number.isFinite(price) || price <= 0) {
+        throw new Error("Enter a valid service code, name and positive price.");
+      }
+      await api.post("/car-wash/services", { id, name, price });
+      setShowServiceForm(false);
+      setServiceForm({ id: "", name: "", price: "" });
+      setNotice("Wash service saved to the A1OS Platform.");
+      await loadData();
+    } catch (e) {
+      setError(e?.message === "AUTH_REQUIRED" || e?.message === "ACCESS_DENIED" ? getErrorMessage(e) : e?.message || getErrorMessage(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const money = (value) => new Intl.NumberFormat("en-UG", {
     style: "currency", currency: "UGX", maximumFractionDigits: 0
   }).format(Number(value || 0));
@@ -120,6 +147,7 @@ export function App() {
           <div className="panel"><div className="panel-head"><div><p className="eyebrow">PARKING</p><h3>On site now</h3></div><button className="text-button" onClick={() => setSection("parking")}>View parking →</button></div><ParkingList items={parking.slice(0, 5)} /></div></section>
         </>}
 
+        {section === "services" && <section className="panel"><div className="panel-head"><div><p className="eyebrow">PRICE LIST</p><h3>Wash services</h3></div><button className="btn primary" onClick={() => { setServiceForm({ id: "", name: "", price: "" }); setShowServiceForm(true); }}>+ Add service</button></div>{services.length === 0 ? <div className="empty"><span>¤</span><strong>No wash services configured</strong><p>Add the actual service names and prices before accepting vehicle intake.</p></div> : <div className="table-wrap"><table><thead><tr><th>Service</th><th>Service code</th><th>Price (UGX)</th></tr></thead><tbody>{services.map(s => <tr key={s.id}><td><strong>{s.name}</strong></td><td>{s.id}</td><td>{money(s.price)}</td></tr>)}</tbody></table></div>}</section>}
         {section === "queue" && <section className="panel"><div className="panel-head"><div><p className="eyebrow">WASH FLOOR</p><h3>Vehicle queue</h3></div><button className="btn primary" onClick={() => setShowIntake(true)}>+ Vehicle intake</button></div><QueueTable items={queue} money={money} /></section>}
         {section === "parking" && <section className="panel"><div className="panel-head"><div><p className="eyebrow">DAY & OVERNIGHT</p><h3>Parking register</h3></div></div><ParkingList items={parking} /></section>}
         {["customers", "payments", "inventory", "expenses", "reports"].includes(section) && <section className="panel coming"><span className="coming-mark">A1</span><p className="eyebrow">PLATFORM INTEGRATION REQUIRED</p><h3>{navItems.find(([id]) => id === section)?.[1]}</h3><p>This module becomes operational when its authorized A1OS Platform API resource is connected. No demo or fabricated records are shown.</p></section>}
@@ -128,6 +156,7 @@ export function App() {
         <footer><span>Jere's Car Wash & Parking</span><span>Nsambya Road Railway Grounds, Kampala, Uganda</span><span>© {new Date().getFullYear()} · A1OS Platform</span></footer>
       </main>
 
+      {showServiceForm && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowServiceForm(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="service-title"><div className="modal-head"><div><p className="eyebrow">SERVICE CATALOGUE</p><h2 id="service-title">Configure wash service</h2></div><button className="icon-button" onClick={() => setShowServiceForm(false)} aria-label="Close service form">×</button></div><form onSubmit={submitService}><label>Service code<input required maxLength="48" pattern="[a-z0-9][a-z0-9-]{1,47}" value={serviceForm.id} onChange={e => setServiceForm({ ...serviceForm, id: e.target.value })} placeholder="e.g. standard-wash" /><small>Use lowercase letters, numbers and hyphens.</small></label><label>Service name<input required maxLength="100" value={serviceForm.name} onChange={e => setServiceForm({ ...serviceForm, name: e.target.value })} placeholder="e.g. Standard wash" /></label><label>Price (UGX)<input required type="number" min="1" step="1" value={serviceForm.price} onChange={e => setServiceForm({ ...serviceForm, price: e.target.value })} placeholder="Enter actual price" /></label><p className="form-note">Prices are saved per A1OS organization. Only configured services can be used for new vehicle intake.</p><div className="modal-actions"><button type="button" className="btn secondary" onClick={() => setShowServiceForm(false)}>Cancel</button><button className="btn primary" type="submit" disabled={saving}>{saving ? "Saving…" : "Save service"}</button></div></form></section></div>}
       {showIntake && <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowIntake(false); }}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="intake-title"><div className="modal-head"><div><p className="eyebrow">NEW RECORD</p><h2 id="intake-title">Vehicle intake</h2></div><button className="icon-button" onClick={() => setShowIntake(false)} aria-label="Close intake">×</button></div>
         <form onSubmit={submitIntake}><label>Registration number<input required maxLength="16" value={vehicle.registration} onChange={e => setVehicle({ ...vehicle, registration: e.target.value })} placeholder="e.g. UBA 123X" /></label><div className="form-row"><label>Customer name<input required maxLength="120" value={vehicle.customerName} onChange={e => setVehicle({ ...vehicle, customerName: e.target.value })} /></label><label>Phone number<input required maxLength="24" inputMode="tel" value={vehicle.phone} onChange={e => setVehicle({ ...vehicle, phone: e.target.value })} placeholder="+256…" /></label></div><label>Service<select value={vehicle.service} onChange={e => setVehicle({ ...vehicle, service: e.target.value })}><option value="standard-wash">Standard wash</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} — {money(s.price)}</option>)}</select></label><label>Notes (optional)<textarea rows="3" maxLength="500" value={vehicle.notes} onChange={e => setVehicle({ ...vehicle, notes: e.target.value })} /></label><p className="form-note">Records are saved to the A1OS Platform API. They are not stored locally.</p><div className="modal-actions"><button type="button" className="btn secondary" onClick={() => setShowIntake(false)}>Cancel</button><button className="btn primary" type="submit" disabled={saving || loading}>{saving ? "Saving…" : "Save intake"}</button></div></form></section></div>}
     </div>
