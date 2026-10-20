@@ -1,0 +1,30 @@
+{
+  "name": "jeres-car-wash",
+  "displayName": "Jere's Car Wash and Parking",
+  "type": "frontend-vertical",
+  "backend": "a1os-platform-api",
+  "deployment": { "mode": "managed" },
+  "ownership": {
+    "pages": "vertical",
+    "components": "vertical",
+    "workflows": "vertical",
+    "forms": "vertical",
+    "state": "vertical",
+    "integrations": "a1os-platform",
+    "styles": "vertical",
+    "tests": "vertical",
+    "authentication": "a1os-core",
+    "tenancy": "a1os-core",
+    "authorization": "a1os-core",
+    "rbac": "a1os-core",
+    "persistence": "a1os-platform",
+    "infrastructure": "a1os-platform"
+  },
+  "scope": {
+    "branches": 1,
+    "services": ["car-wash", "day-parking", "overnight-parking"],
+    "washCapacity": 4,
+    "staffCount": 13,
+    "expectedVehiclesPerDay": "25-50"
+  }
+}
