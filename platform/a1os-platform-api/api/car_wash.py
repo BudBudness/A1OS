@@ -227,6 +227,7 @@ def build_car_wash_router(db, require_permission, audit):
             raise HTTPException(status_code=422, detail="Unsupported vehicle status")
         conn = db()
         try:
+            conn.execute("BEGIN IMMEDIATE")
             row = conn.execute(
                 """SELECT id, status FROM car_wash_vehicles
                    WHERE id = ? AND organization_id = ?""",
@@ -243,7 +244,6 @@ def build_car_wash_router(db, require_permission, audit):
             }
             if next_status not in allowed[row["status"]]:
                 raise HTTPException(status_code=409, detail="Invalid vehicle status transition")
-            conn.execute("BEGIN IMMEDIATE")
             conn.execute(
                 "UPDATE car_wash_vehicles SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND organization_id = ?",
                 (next_status, vehicle_id, actor["organization_id"]),
@@ -310,6 +310,7 @@ def build_car_wash_router(db, require_permission, audit):
             raise HTTPException(status_code=422, detail="Only checkout is supported")
         conn = db()
         try:
+            conn.execute("BEGIN IMMEDIATE")
             row = conn.execute(
                 """SELECT id, status FROM car_wash_parking
                    WHERE id = ? AND organization_id = ?""",
@@ -319,7 +320,6 @@ def build_car_wash_router(db, require_permission, audit):
                 raise HTTPException(status_code=404, detail="Parking record not found")
             if row["status"] != "active":
                 raise HTTPException(status_code=409, detail="Parking record is already checked out")
-            conn.execute("BEGIN IMMEDIATE")
             conn.execute(
                 """UPDATE car_wash_parking SET status = 'checked_out',
                    checked_out_at = CURRENT_TIMESTAMP
@@ -372,6 +372,7 @@ def build_car_wash_router(db, require_permission, audit):
             raise HTTPException(status_code=422, detail="Payment reference must be 120 characters or fewer")
         conn = db()
         try:
+            conn.execute("BEGIN IMMEDIATE")
             vehicle = conn.execute(
                 """SELECT id, registration, service_price FROM car_wash_vehicles
                    WHERE id = ? AND organization_id = ?""",
@@ -386,7 +387,6 @@ def build_car_wash_router(db, require_permission, audit):
             ).fetchone()["total"]
             if amount > float(vehicle["service_price"]) - float(paid):
                 raise HTTPException(status_code=422, detail="Payment exceeds the outstanding wash balance")
-            conn.execute("BEGIN IMMEDIATE")
             cur = conn.execute(
                 """INSERT INTO car_wash_payments
                    (organization_id, vehicle_id, amount, method, reference, created_by)
