@@ -72,10 +72,7 @@ async def process_once() -> int:
             continue
         payload = _row_payload(row)
         try:
-            if str(payload["target"]).lower() == "a1os":
-                result = await _execute_payload(task_id, payload)
-            else:
-                result = await _execute_payload(task_id, payload)
+            result = await _execute_payload(task_id, payload)
             if result.get("status") == "completed":
                 supabase_tasks.complete_task(task_id)
             else:
