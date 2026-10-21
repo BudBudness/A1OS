@@ -210,7 +210,8 @@ class Runtime:
                 )
 
             else:
-                DurableQueue.complete(task_id)
+                if manage_queue:
+                    DurableQueue.complete(task_id)
 
             return result
 
