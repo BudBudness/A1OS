@@ -251,5 +251,12 @@ def run_cloud_worker():
 
 @app.errorhandler(Exception)
 def handle_unexpected_error(error):
+    # Preserve intentional HTTP errors (including normal 404s) instead of
+    # converting them into misleading 500 responses.
+    from werkzeug.exceptions import HTTPException
+
+    if isinstance(error, HTTPException):
+        return jsonify({"detail": error.description}), error.code
+
     app.logger.exception("A1OS API error", exc_info=error)
     return jsonify({"detail": "Internal server error"}), 500
