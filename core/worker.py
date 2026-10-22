@@ -63,8 +63,9 @@ async def _execute_payload(task_id: str, payload: dict[str, Any]) -> dict[str, A
         manage_queue=False,
     )
 
-async def process_once() -> int:
-    rows = supabase_tasks.pending_tasks(limit=BATCH_SIZE)
+async def process_once(limit: int | None = None) -> int:
+    batch_limit = BATCH_SIZE if limit is None else max(1, min(int(limit), 5))
+    rows = supabase_tasks.pending_tasks(limit=batch_limit)
     processed = 0
     for row in rows:
         task_id = str(row["task_id"])
