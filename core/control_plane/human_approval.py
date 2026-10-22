@@ -27,8 +27,9 @@ class HumanApprovalController:
     """
 
     def __init__(self, state_dir: str = "runtime/approvals") -> None:
+        # Defer filesystem writes: serverless deployments may be read-only.
+        # Approval requests still fail closed if durable storage is unavailable.
         self.state_dir = Path(state_dir)
-        self.state_dir.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def _canonical(data: dict[str, Any]) -> str:
@@ -114,6 +115,7 @@ class HumanApprovalController:
 
         record["record_hash"] = self._hash(record)
 
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         path = self.state_dir / f"{approval_id}.json"
         path.write_text(
             json.dumps(record, indent=2, sort_keys=True),
