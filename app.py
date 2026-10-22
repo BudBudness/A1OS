@@ -191,14 +191,19 @@ def execute_task():
         return jsonify({"detail": "Execution backend unavailable"}), 503
 
 
-@app.post("/v1/worker/run")
+@app.route("/v1/worker/run", methods=["GET", "POST"])
 def run_cloud_worker():
-    """Process a bounded batch of cloud tasks; intended for an authenticated scheduler."""
+    """Process a bounded Supabase task batch; authenticated for Vercel Cron."""
     if not _production_cloud_store():
         return jsonify({"detail": "Cloud task store is not configured"}), 503
 
-    secret = os.environ.get("A1OS_WORKER_SECRET")
+    # Vercel Cron sends Authorization: Bearer $CRON_SECRET.
+    # The custom header remains available for manually triggered workers.
+    secret = os.environ.get("CRON_SECRET") or os.environ.get("A1OS_WORKER_SECRET")
+    authorization = request.headers.get("Authorization", "")
     supplied = request.headers.get("X-A1OS-Worker-Token", "")
+    if authorization.startswith("Bearer "):
+        supplied = authorization[7:].strip()
     if not secret:
         return jsonify({"detail": "Worker authentication is not configured"}), 503
     if not supplied or not hmac.compare_digest(supplied, secret):
@@ -213,33 +218,9 @@ def run_cloud_worker():
         return jsonify({"detail": "limit must be an integer from 1 to 5"}), 422
 
     try:
-        from core.state import system
-
-        runtime = getattr(system, "runtime", None)
-        if runtime is None:
-            return jsonify({"detail": "A1OS runtime is unavailable"}), 503
-
-        results = []
-        for row in DurableQueue.pending(limit=limit):
-            task_id = str(row["task_id"])
-            payload = {
-                "target": row["target"],
-                "role": row["role"],
-                "action": row["action"],
-            }
-            data = row.get("payload", {})
-            if isinstance(data, str):
-                try:
-                    data = json.loads(data)
-                except ValueError:
-                    data = {}
-            if isinstance(data, dict):
-                payload.update(data)
-
-            result = asyncio.run(runtime.execute(task_id=task_id, payload=payload))
-            results.append(result)
-
-        return jsonify({"status": "processed", "count": len(results), "results": results})
+        from core.worker import process_once
+        processed = asyncio.run(process_once(limit=limit))
+        return jsonify({"status": "processed", "count": processed}), 200
     except Exception as error:
         app.logger.error(
             "A1OS cloud worker failed: error_type=%s error=%s",
