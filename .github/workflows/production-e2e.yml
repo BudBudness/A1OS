@@ -131,10 +131,10 @@ jobs:
               "select": "task_id,target,action,status,attempts,error,completed_at",
           })
           url = f"{os.environ['SUPABASE_URL'].rstrip('/')}/rest/v1/a1os_tasks?{query}"
-          headers = {
-              "apikey": os.environ["SUPABASE_SECRET_KEY"],
-              "Authorization": f"Bearer {os.environ['SUPABASE_SECRET_KEY']}",
-          }
+          key = os.environ["SUPABASE_SECRET_KEY"]
+          headers = {"apikey": key}
+          if not key.startswith("sb_secret_"):
+              headers["Authorization"] = f"Bearer {key}"
           deadline = time.time() + 120
           last = None
           while time.time() < deadline:
@@ -202,10 +202,10 @@ jobs:
               "select": "task_id,target,action,status,attempts,error,completed_at,payload",
           })
           url = f"{os.environ['SUPABASE_URL'].rstrip('/')}/rest/v1/a1os_tasks?{query}"
-          headers = {
-              "apikey": os.environ["SUPABASE_SECRET_KEY"],
-              "Authorization": f"Bearer {os.environ['SUPABASE_SECRET_KEY']}",
-          }
+          key = os.environ["SUPABASE_SECRET_KEY"]
+          headers = {"apikey": key}
+          if not key.startswith("sb_secret_"):
+              headers["Authorization"] = f"Bearer {key}"
           deadline = time.time() + 120
           last = None
           while time.time() < deadline:
