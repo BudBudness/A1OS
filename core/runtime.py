@@ -70,11 +70,18 @@ class Runtime:
                 print(f"[A1OS] Durable worker error: {exc}")
                 await asyncio.sleep(2)
 
-    async def execute(self, task_id: str, payload: Dict[str, Any]):
+    async def execute(
+        self,
+        task_id: str,
+        payload: Dict[str, Any],
+        *,
+        already_claimed: bool = False,
+        manage_queue: bool = True,
+    ):
         target = str(payload.get("target", "default")).lower()
         action = payload.get("action", "default")
 
-        claimed = DurableQueue.claim(task_id)
+        claimed = already_claimed or DurableQueue.claim(task_id)
 
         if not claimed:
             return {
@@ -134,7 +141,8 @@ class Runtime:
                         output = await output
 
                     result["result"] = output
-                    DurableQueue.complete(task_id)
+                    if manage_queue:
+                        DurableQueue.complete(task_id)
 
                     await system.bus.publish(
                         "task.completed",
@@ -190,7 +198,8 @@ class Runtime:
 
                 result["result"] = output
 
-                DurableQueue.complete(task_id)
+                if manage_queue:
+                    DurableQueue.complete(task_id)
 
                 await system.bus.publish(
                     "task.completed",
@@ -201,7 +210,8 @@ class Runtime:
                 )
 
             else:
-                DurableQueue.complete(task_id)
+                if manage_queue:
+                    DurableQueue.complete(task_id)
 
             return result
 
@@ -209,7 +219,8 @@ class Runtime:
             result["status"] = "failed"
             result["error"] = str(exc)
 
-            DurableQueue.fail(task_id, exc)
+            if manage_queue:
+                DurableQueue.fail(task_id, exc)
 
             if system is not None:
                 await system.bus.publish(

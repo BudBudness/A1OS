@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from core.persistence.supabase_tasks import store as supabase_tasks
-from core.queue.durable import DurableQueue
 from core.state import system
 
 POLL_SECONDS = float(os.environ.get("A1OS_WORKER_POLL_SECONDS", "2"))
@@ -57,10 +56,16 @@ async def _execute_payload(task_id: str, payload: dict[str, Any]) -> dict[str, A
             **{key: value for key, value in payload.items() if key not in {"target", "role", "action"}},
         )
         return {"task_id": task_id, "status": "completed", "result": output}
-    return await system.runtime.execute(task_id=task_id, payload=payload)
+    return await system.runtime.execute(
+        task_id=task_id,
+        payload=payload,
+        already_claimed=True,
+        manage_queue=False,
+    )
 
-async def process_once() -> int:
-    rows = supabase_tasks.pending_tasks(limit=BATCH_SIZE)
+async def process_once(limit: int | None = None) -> int:
+    batch_limit = BATCH_SIZE if limit is None else max(1, min(int(limit), 5))
+    rows = supabase_tasks.pending_tasks(limit=batch_limit)
     processed = 0
     for row in rows:
         task_id = str(row["task_id"])
@@ -68,17 +73,7 @@ async def process_once() -> int:
             continue
         payload = _row_payload(row)
         try:
-            if str(payload["target"]).lower() == "a1os":
-                result = await _execute_payload(task_id, payload)
-            else:
-                DurableQueue.enqueue(
-                    target=payload["target"],
-                    role=payload["role"],
-                    action=payload["action"],
-                    data={key: value for key, value in payload.items() if key not in {"target", "role", "action"}},
-                    task_id=task_id,
-                )
-                result = await _execute_payload(task_id, payload)
+            result = await _execute_payload(task_id, payload)
             if result.get("status") == "completed":
                 supabase_tasks.complete_task(task_id)
             else:
