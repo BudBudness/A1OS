@@ -139,6 +139,7 @@ jobs:
                   last = rows[0]
                   print(json.dumps(last, sort_keys=True))
                   if last["status"] == "completed":
+                      assert last["attempts"] >= 1, last
                       assert last["error"] is None, last
                       assert last["completed_at"], last
                       raise SystemExit(0)
@@ -210,6 +211,7 @@ jobs:
                   last = rows[0]
                   print(json.dumps(last, sort_keys=True))
                   if last["status"] == "completed":
+                      assert last["attempts"] >= 1, last
                       assert last["error"] is None, last
                       assert last["completed_at"], last
                       raise SystemExit(0)
