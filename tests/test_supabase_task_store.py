@@ -173,3 +173,20 @@ def test_pending_tasks_excludes_future_retry(monkeypatch):
     )
     rows = store.pending_tasks()
     assert [row["task_id"] for row in rows] == ["ready"]
+
+
+
+def test_new_supabase_secret_key_is_not_sent_as_bearer(monkeypatch):
+    store = configured_store()
+    store.key = "sb_secret_example"
+    headers = store._headers()
+    assert headers["apikey"] == "sb_secret_example"
+    assert "Authorization" not in headers
+
+
+def test_legacy_service_role_key_is_sent_as_bearer():
+    store = configured_store()
+    store.key = "eyJlegacy-service-role"
+    headers = store._headers()
+    assert headers["apikey"] == store.key
+    assert headers["Authorization"] == f"Bearer {store.key}"

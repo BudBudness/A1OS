@@ -20,11 +20,16 @@ class SupabaseTaskStore:
     def _headers(self) -> dict[str, str]:
         if not self.configured:
             raise RuntimeError("Supabase production persistence is not configured")
-        return {
+        headers = {
             "apikey": self.key,
-            "Authorization": f"Bearer {self.key}",
             "Content-Type": "application/json",
         }
+        # Supabase's new sb_secret_* keys are opaque API keys, not JWTs.
+        # Sending one as a Bearer token causes 401 responses. Legacy service_role
+        # keys are JWTs and still require the Authorization header.
+        if not self.key.startswith("sb_secret_"):
+            headers["Authorization"] = f"Bearer {self.key}"
+        return headers
 
     def insert_task(self, task_id: str, target: str, role: str, action: str, data: Any) -> None:
         response = httpx.post(
