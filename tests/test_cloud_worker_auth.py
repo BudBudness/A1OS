@@ -26,3 +26,29 @@ def test_cloud_worker_rejects_invalid_limit_body(monkeypatch):
     )
     assert response.status_code == 422
     assert response.get_json()["detail"] == "JSON object body required"
+
+
+def test_vercel_cron_runs_bounded_batch_with_bearer_secret(monkeypatch):
+    import app as api
+    from core import worker
+
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setenv("CRON_SECRET", "cron-secret")
+    monkeypatch.setattr(api.supabase_tasks, "url", "https://example.supabase.co")
+    monkeypatch.setattr(api.supabase_tasks, "key", "test-key")
+    calls = []
+
+    async def fake_process_once(limit):
+        calls.append(limit)
+        return 2
+
+    monkeypatch.setattr(worker, "process_once", fake_process_once)
+
+    response = api.app.test_client().get(
+        "/v1/worker/run",
+        headers={"Authorization": "Bearer cron-secret"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == {"status": "processed", "count": 2}
+    assert calls == [3]

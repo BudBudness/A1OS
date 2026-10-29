@@ -2,6 +2,7 @@ import asyncio
 import fcntl
 import json
 import os
+import signal
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
@@ -65,6 +66,9 @@ async def _execute_payload(task_id: str, payload: dict[str, Any]) -> dict[str, A
 
 async def process_once(limit: int | None = None) -> int:
     batch_limit = BATCH_SIZE if limit is None else max(1, min(int(limit), 5))
+    recovered = supabase_tasks.recover_stale_tasks(STALE_SECONDS)
+    if recovered:
+        _log("stale_tasks_recovered", count=recovered)
     rows = supabase_tasks.pending_tasks(limit=batch_limit)
     processed = 0
     for row in rows:
@@ -78,6 +82,17 @@ async def process_once(limit: int | None = None) -> int:
                 supabase_tasks.complete_task(task_id)
             else:
                 supabase_tasks.fail_task(task_id, result.get("error", "Task execution failed"))
+        except asyncio.CancelledError:
+            try:
+                supabase_tasks.fail_task(task_id, "Worker cancelled during task execution")
+            except Exception as exc:
+                _log(
+                    "task_cancellation_record_failed",
+                    task_id=task_id,
+                    error_type=type(exc).__name__,
+                    error=str(exc)[:500],
+                )
+            raise
         except Exception as exc:
             _log("task_failed", task_id=task_id, error_type=type(exc).__name__, error=str(exc)[:500])
             supabase_tasks.fail_task(task_id, str(exc))
@@ -86,20 +101,32 @@ async def process_once(limit: int | None = None) -> int:
         _log("batch_processed", processed=processed)
     return processed
 
-async def run_worker() -> None:
+async def run_worker(stop_event: asyncio.Event | None = None) -> None:
+    stop_event = stop_event or asyncio.Event()
     with _single_worker_lock():
         _log("worker_online", poll_seconds=POLL_SECONDS, batch_size=BATCH_SIZE, stale_seconds=STALE_SECONDS)
-        recovered = supabase_tasks.recover_stale_tasks(STALE_SECONDS)
-        if recovered:
-            _log("stale_tasks_recovered", count=recovered)
-        while True:
+        while not stop_event.is_set():
             try:
                 await process_once()
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
                 _log("worker_loop_error", error_type=type(exc).__name__, error=str(exc)[:500])
-            await asyncio.sleep(POLL_SECONDS)
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=POLL_SECONDS)
+            except asyncio.TimeoutError:
+                pass
 
 if __name__ == "__main__":
-    asyncio.run(run_worker())
+    async def _run_until_signal() -> None:
+        stop_event = asyncio.Event()
+        loop = asyncio.get_running_loop()
+        for handled_signal in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(handled_signal, stop_event.set)
+        try:
+            await run_worker(stop_event)
+        finally:
+            for handled_signal in (signal.SIGINT, signal.SIGTERM):
+                loop.remove_signal_handler(handled_signal)
+
+    asyncio.run(_run_until_signal())

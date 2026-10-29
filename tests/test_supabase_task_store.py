@@ -62,6 +62,7 @@ def test_stale_running_task_is_recovered_only_when_update_changed_row(monkeypatc
     monkeypatch.setattr(httpx, "patch", fake_patch)
     assert store.recover_stale_tasks(stale_after_seconds=1) == 1
     assert captured["params"]["status"] == "eq.running"
+    assert captured["params"]["updated_at"].startswith("lt.")
     assert captured["json"]["status"] == "retry"
     assert captured["json"]["next_attempt_at"] is not None
 
@@ -104,6 +105,58 @@ def test_approval_denial_is_terminal_in_cloud_store(monkeypatch):
 
     monkeypatch.setattr(httpx, "patch", fake_patch)
     store.fail_task("t1", "ApprovalDenied: explicit approval required")
+    assert captured["json"]["status"] == "failed"
+    assert captured["json"]["next_attempt_at"] is None
+
+
+def test_task_failure_is_scheduled_for_retry(monkeypatch):
+    store = configured_store()
+    monkeypatch.setattr(
+        store,
+        "get_task",
+        lambda task_id: {
+            "task_id": task_id,
+            "status": "running",
+            "attempts": 1,
+            "max_attempts": 3,
+        },
+    )
+    captured = {}
+
+    def fake_patch(*args, **kwargs):
+        captured.update(kwargs)
+        return FakeResponse([])
+
+    monkeypatch.setattr(httpx, "patch", fake_patch)
+    store.fail_task("t1", "temporary failure")
+
+    assert captured["params"]["status"] == "eq.running"
+    assert captured["json"]["status"] == "retry"
+    assert captured["json"]["error"] == "temporary failure"
+    assert captured["json"]["next_attempt_at"] is not None
+
+
+def test_task_failure_is_terminal_at_max_attempts(monkeypatch):
+    store = configured_store()
+    monkeypatch.setattr(
+        store,
+        "get_task",
+        lambda task_id: {
+            "task_id": task_id,
+            "status": "running",
+            "attempts": 3,
+            "max_attempts": 3,
+        },
+    )
+    captured = {}
+
+    def fake_patch(*args, **kwargs):
+        captured.update(kwargs)
+        return FakeResponse([])
+
+    monkeypatch.setattr(httpx, "patch", fake_patch)
+    store.fail_task("t1", "permanent failure")
+
     assert captured["json"]["status"] == "failed"
     assert captured["json"]["next_attempt_at"] is None
 

@@ -136,7 +136,11 @@ class SupabaseTaskStore:
             patch = httpx.patch(
                 f"{self.url}/rest/v1/a1os_tasks",
                 headers={**self._headers(), "Prefer": "return=representation"},
-                params={"task_id": f"eq.{task_id}", "status": "eq.running"},
+                params={
+                    "task_id": f"eq.{task_id}",
+                    "status": "eq.running",
+                    "updated_at": f"lt.{cutoff.isoformat()}",
+                },
                 json=body,
                 timeout=10.0,
             )
