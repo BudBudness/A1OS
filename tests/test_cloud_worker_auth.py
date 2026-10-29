@@ -11,6 +11,21 @@ def test_cloud_worker_requires_secret(monkeypatch):
     assert response.get_json()["detail"] == "Worker authentication failed"
 
 
+def test_cloud_worker_fails_closed_when_secret_is_not_configured(monkeypatch):
+    import app as api
+
+    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.delenv("CRON_SECRET", raising=False)
+    monkeypatch.delenv("A1OS_WORKER_SECRET", raising=False)
+    monkeypatch.setattr(api.supabase_tasks, "url", "https://example.supabase.co")
+    monkeypatch.setattr(api.supabase_tasks, "key", "test-key")
+
+    response = api.app.test_client().get("/v1/worker/run")
+
+    assert response.status_code == 503
+    assert response.get_json()["detail"] == "Worker authentication is not configured"
+
+
 def test_cloud_worker_rejects_invalid_limit_body(monkeypatch):
     import app as api
 

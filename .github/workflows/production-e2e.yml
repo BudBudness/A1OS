@@ -51,6 +51,17 @@ jobs:
           assert ping == {"ping": "pong"}, ping
           print("A1OS production smoke: PASS")
           PY
+          worker_status="$(curl --silent --show-error --max-time 15 \
+            --output worker-auth.json --write-out '%{http_code}' \
+            https://a1-os.vercel.app/v1/worker/run)"
+          test "$worker_status" = "401"
+          python - <<'PY'
+          import json
+          with open("worker-auth.json") as response:
+              body = json.load(response)
+          assert body == {"detail": "Worker authentication failed"}, body
+          print("A1OS production worker auth configuration: PASS")
+          PY
 
   production-queue:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
