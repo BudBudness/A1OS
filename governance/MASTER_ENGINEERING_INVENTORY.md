@@ -142,3 +142,20 @@ Acceptance gates before selecting A1OS:
 3. Complete GitHub Actions audit: inspect all 29 workflow files, repository/org Actions permissions, environments and protection rules, deployment records, secret/variable names (names only), token scopes, branch protection and recent failure logs.
 4. Diagnose PyongLive production E2E and Dexta pipeline failures; review SMC long-running workflow limits.
 5. Complete A1OS host acceptance gates before implementation.
+
+
+### Full workflow-file inspection addendum — 2026-11-05
+
+All **29 workflow YAML files** discovered in the seven visible repositories were fetched and inspected (workflow directory listings plus individual file reads). This completes file-level workflow discovery for the seven visible repositories; it does not complete account/org-wide policy and environment discovery.
+
+Additional findings:
+- A1OS production E2E references `A1OS_SUPABASE_URL`, `A1OS_SUPABASE_SECRET_KEY` and `A1OS_EXECUTE_SECRET`. Several production/E2E workflows omit explicit top-level `permissions`; effective default token permissions and job-level overrides must be verified in GitHub settings and workflow execution context.
+- A1OS contains pinned action SHAs in some workflows, while others use version tags; standardize supply-chain controls only after reviewing all workflow behavior.
+- PyongLive has dedicated Cloudflare audit, D1 schema, operations-agent and Stream smoke workflows. These reference `CLOUDFLARE_API_TOKEN`, `CF_ACCOUNT_ID` and `CF_STREAM_EDIT_TOKEN` by name. The deployment and E2E workflows use additional token names documented above. Values were not accessed.
+- PyongLive production deployment has a non-canceling concurrency group, explicit `contents: read`, token verification, remote D1 migration, Worker deploy and HTTP health/events/webhook checks. Production E2E is separately triggered after deployment; latest sampled E2E failed even though deployment and CI succeeded.
+- Dexta `pipeline.yml` is an hourly scheduled writer with `contents: write` and a direct push to the checked-out branch. Latest sampled pipeline runs repeatedly failed; investigate before granting broader write capability.
+- SMC `long-history-mtf.yml` is a six-hour scheduled research pipeline with `contents: write` and release uploads. The other SMC workflows include dashboard validation, real-data processing and test validation.
+- GUZA GURA, Stramos Wisdom Charity and Ether Tours each have one primary CI workflow. GUZA and Ether workflows run typecheck/lint/build; Stramos separates backend tests and frontend build.
+- Actions run histories sampled: A1OS 2,628; PyongLive 208; GUZA GURA 4; Stramos Wisdom Charity 25; SMC Agent 475; Dexta Buyer Signal 423; Ether Tours 56. Counts are the API-reported totals at discovery time and may include repeated runs.
+
+**Still outstanding:** GitHub org/account Actions policy, repository Actions permission settings, environment names and reviewer gates, environment secrets/variables metadata, branch protection/rulesets, deployment environment records, reusable workflow dependencies, artifact retention and complete historical failure analysis. The available connector rejected direct reads of Actions permissions/workflow-list endpoints; no secrets values were accessed.
