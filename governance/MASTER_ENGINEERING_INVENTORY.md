@@ -219,3 +219,19 @@ Implementation requirements:
 - No Google IdP connection, Access application, policy, service token or Cloudflare account setting has been created or changed by recording this decision.
 
 **Next implementation gate:** verify authenticated Cloudflare account access and identify the exact Google identity/tenant to bind. Then configure a narrowly scoped, initially non-production Access application, test owner login and denial for an unauthorized identity, and only then extend policy to agent/admin endpoints.
+
+
+### Google owner identity — confirmed 2026-11-05
+
+**Owner-provided identity:** `eddiebillions85@gmail.com`  
+**Account type:** Personal Google account (consumer Gmail), not Google Workspace.
+
+Access implementation requirements:
+- Use this exact address as the sole initial owner allowlist for the canonical control-plane Access application.
+- Configure Google as the Cloudflare Zero Trust identity provider using the supported consumer Google sign-in/OIDC flow; do not depend on Workspace-only groups or domain restrictions.
+- Require Google 2-Step Verification and verify the authenticated subject/email claim equals this exact address before enabling enforcement.
+- Keep machine service tokens and Cloudflare API tokens separate from this human identity.
+- Before enforcing Access on any live endpoint, verify owner login, unauthorized-user denial, recovery path and administrative session revocation.
+- This identity decision is recorded only. No Cloudflare IdP, Access application, policy, service token, API token or account configuration has been created or changed.
+
+**Implementation blocker:** the current execution session has no authenticated Cloudflare management connector/tool. Cloudflare configuration cannot be safely inspected or changed until an authenticated management surface is available. Do not claim deployment or access enforcement is active.
