@@ -202,10 +202,6 @@ Baseline:
 - No Cloudflare management connector/tool is exposed in the current execution session. Live account discovery and implementation are therefore blocked pending a working authenticated Cloudflare management surface.
 - Cloudflare remote MCP endpoint previously identified: `https://mcp.cloudflare.com/mcp`. Its account binding, authentication, available tools and permission scope must be verified from an authenticated client; endpoint existence alone is not proof of connection or access.
 
-### Human identity provider decision — superseded 2026-11-05
-
-The previous Google identity-provider selection and personal Gmail allowlist are withdrawn at the owner's direction. Do not configure Google for this control plane.
-
 ### Human identity provider — GitHub approved 2026-11-05
 
 **Owner decision:** Use the owner's existing GitHub identity as the human sign-in provider for the canonical control plane.
