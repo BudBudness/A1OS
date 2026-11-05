@@ -159,3 +159,48 @@ Additional findings:
 - Actions run histories sampled: A1OS 2,628; PyongLive 208; GUZA GURA 4; Stramos Wisdom Charity 25; SMC Agent 475; Dexta Buyer Signal 423; Ether Tours 56. Counts are the API-reported totals at discovery time and may include repeated runs.
 
 **Still outstanding:** GitHub org/account Actions policy, repository Actions permission settings, environment names and reviewer gates, environment secrets/variables metadata, branch protection/rulesets, deployment environment records, reusable workflow dependencies, artifact retention and complete historical failure analysis. The available connector rejected direct reads of Actions permissions/workflow-list endpoints; no secrets values were accessed.
+
+
+## Cloudflare access architecture decision — approved 2026-11-05
+
+**Owner decision:** implement both Cloudflare Zero Trust Access and scoped Cloudflare API/MCP authorization. They are separate security layers.
+
+### Layer A — Cloudflare Zero Trust Access (human and service ingress)
+Protect:
+- canonical control-plane web interface and administrative routes;
+- remote agent gateways and any private operational endpoints;
+- sensitive dashboards and internal tooling.
+
+Baseline:
+- default-deny application policies;
+- human access through a verified identity provider with MFA;
+- distinct policy groups for owner/admin, operator and read-only auditor;
+- short-lived sessions and explicit re-authentication for privileged actions;
+- service-auth policies for machine-to-machine callers, using dedicated service tokens and rotation;
+- no public administrative endpoint without an Access policy;
+- log access decisions and administrative events.
+
+### Layer B — Cloudflare API/MCP authorization (resource operations)
+- Use dedicated API tokens per automation domain and environment; do not use a Global API Key.
+- Start with account/resource read-only inventory permissions.
+- Separate write tokens by project and environment (for example PyongLive production versus staging); never share a broad token across unrelated projects.
+- Scope tokens to only the necessary account and resource permissions (Workers, D1, R2, Stream, DNS, Access, etc. as required by each registered operation).
+- Keep token material in the approved secret manager/GitHub Actions secrets; never in Git, workflow logs, inventory documents or agent prompts.
+- Require policy tier checks, target registration, preflight validation, audit evidence and recovery/rollback for writes.
+- Treat Access authentication as ingress protection, not as a substitute for Cloudflare API token scopes.
+
+### Identity and trust boundaries
+- Human owner identity, human operator identity and machine workload identity must be distinct.
+- Access service tokens must not be reused as Cloudflare API credentials.
+- API tokens must not be used as interactive login credentials.
+- Every request must resolve to a registered project, account, resource and environment before mutation.
+- Production and destructive actions remain subject to EB-CAEIO-001 risk tiers.
+
+### Current implementation state
+- Architecture decision is approved; no Cloudflare policy, application, service token, API token or resource configuration has been created or changed.
+- ChatGPT plugin discovery was performed for Cloudflare account/Access/API management; no eligible Cloudflare plugin was returned.
+- No Cloudflare management connector/tool is exposed in the current execution session. Live account discovery and implementation are therefore blocked pending a working authenticated Cloudflare management surface.
+- Cloudflare remote MCP endpoint previously identified: `https://mcp.cloudflare.com/mcp`. Its account binding, authentication, available tools and permission scope must be verified from an authenticated client; endpoint existence alone is not proof of connection or access.
+
+### Required identity decision before Access configuration
+Select the human identity provider to enforce for Zero Trust Access (for example Google Workspace, GitHub, or another supported OIDC/SAML provider). Do not infer the user's identity provider from GitHub repository ownership.
