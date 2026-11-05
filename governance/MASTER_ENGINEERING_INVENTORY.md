@@ -202,36 +202,34 @@ Baseline:
 - No Cloudflare management connector/tool is exposed in the current execution session. Live account discovery and implementation are therefore blocked pending a working authenticated Cloudflare management surface.
 - Cloudflare remote MCP endpoint previously identified: `https://mcp.cloudflare.com/mcp`. Its account binding, authentication, available tools and permission scope must be verified from an authenticated client; endpoint existence alone is not proof of connection or access.
 
-### Required identity decision before Access configuration
-Select the human identity provider to enforce for Zero Trust Access (for example Google Workspace, GitHub, or another supported OIDC/SAML provider). Do not infer the user's identity provider from GitHub repository ownership.
+### Human identity provider decision — superseded 2026-11-05
 
+The previous Google identity-provider selection and personal Gmail allowlist are withdrawn at the owner's direction. Do not configure Google for this control plane.
 
-### Human identity provider decision — approved 2026-11-05
+### Human identity provider — GitHub approved 2026-11-05
 
-**Owner decision:** Google is the selected human identity provider for Cloudflare Zero Trust Access because it is the user's most-used identity provider.
+**Owner decision:** Use the owner's existing GitHub identity as the human sign-in provider for the canonical control plane.
 
 Implementation requirements:
-- Configure Google as the human IdP only after verifying the exact Google account/tenant intended for owner access and confirming supported OIDC integration in Cloudflare Zero Trust.
-- Enforce MFA through Google account security and Cloudflare Access policy; verify the owner identity before enabling enforcement.
-- Keep human Google identity separate from machine service tokens and Cloudflare API tokens.
-- Do not assume Google Workspace exists; determine whether this is a consumer Google account or managed Workspace tenant before selecting group-based authorization.
-- Preserve a tested recovery/break-glass path that does not weaken default-deny access; document owner recovery and session revocation.
-- No Google IdP connection, Access application, policy, service token or Cloudflare account setting has been created or changed by recording this decision.
+- Use Cloudflare Zero Trust's GitHub identity-provider integration.
+- Register a GitHub OAuth App. Configure the Cloudflare Zero Trust team domain as the application homepage and use `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/callback` as the callback URL.
+- Store the OAuth Client ID and Client Secret only in Cloudflare Zero Trust's identity-provider configuration. Never commit or log them.
+- Allow only the verified owner GitHub identity in the initial Access policy. GitHub sign-in alone must not grant access to other users.
+- Require GitHub 2FA and test owner login, unauthorized-user denial, recovery and session revocation before enforcement.
+- Keep human GitHub identity separate from GitHub Actions credentials, Cloudflare Access service tokens and Cloudflare API tokens.
 
-**Next implementation gate:** verify authenticated Cloudflare account access and identify the exact Google identity/tenant to bind. Then configure a narrowly scoped, initially non-production Access application, test owner login and denial for an unauthorized identity, and only then extend policy to agent/admin endpoints.
+### Agent authorization — account-wide Cloudflare scope requested 2026-11-05
 
+**Owner request:** Authorize the canonical engineering agents to inspect and operate all resources in the connected Cloudflare account, across registered projects and environments, subject to EB-CAEIO-001.
 
-### Google owner identity — confirmed 2026-11-05
+Implementation requirements:
+- Use dedicated Cloudflare API tokens for machine workloads, not the Global API Key.
+- Grant the Cloudflare agent account-level read and write permissions for the required resource families across the account, including Workers, Pages, D1, R2, KV, Queues, Durable Objects, Stream, DNS and Zero Trust Access where supported.
+- Separate read-only discovery credentials from write-capable credentials; isolate production and non-production credentials where feasible.
+- Keep credentials in a secure secret store or protected GitHub Actions secrets; never expose them in Git, logs, prompts or inventory.
+- Apply EB-CAEIO-001 risk gates: routine authorized work may proceed autonomously; destructive, irreversible, externally consequential and security-sensitive changes require explicit owner approval and verified recovery.
+- GitHub repository permissions and Cloudflare account permissions are separate authorization grants. Do not infer one from the other.
 
-**Owner-provided identity:** `eddiebillions85@gmail.com`  
-**Account type:** Personal Google account (consumer Gmail), not Google Workspace.
-
-Access implementation requirements:
-- Use this exact address as the sole initial owner allowlist for the canonical control-plane Access application.
-- Configure Google as the Cloudflare Zero Trust identity provider using the supported consumer Google sign-in/OIDC flow; do not depend on Workspace-only groups or domain restrictions.
-- Require Google 2-Step Verification and verify the authenticated subject/email claim equals this exact address before enabling enforcement.
-- Keep machine service tokens and Cloudflare API tokens separate from this human identity.
-- Before enforcing Access on any live endpoint, verify owner login, unauthorized-user denial, recovery path and administrative session revocation.
-- This identity decision is recorded only. No Cloudflare IdP, Access application, policy, service token, API token or account configuration has been created or changed.
+**Implementation state:** The GitHub identity decision and account-wide Cloudflare authorization request are recorded. No OAuth App or Cloudflare identity provider, Access application, policy, API token, account permission or resource configuration has been created or changed. The current execution session exposes GitHub repository tools but no authenticated Cloudflare account-management tool; therefore Cloudflare account authorization cannot be provisioned from this session. Do not claim the agents have Cloudflare access until credentials, scopes and live account access are independently verified.
 
 **Implementation blocker:** the current execution session has no authenticated Cloudflare management connector/tool. Cloudflare configuration cannot be safely inspected or changed until an authenticated management surface is available. Do not claim deployment or access enforcement is active.
