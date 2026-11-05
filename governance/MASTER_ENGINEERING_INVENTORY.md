@@ -204,3 +204,18 @@ Baseline:
 
 ### Required identity decision before Access configuration
 Select the human identity provider to enforce for Zero Trust Access (for example Google Workspace, GitHub, or another supported OIDC/SAML provider). Do not infer the user's identity provider from GitHub repository ownership.
+
+
+### Human identity provider decision — approved 2026-11-05
+
+**Owner decision:** Google is the selected human identity provider for Cloudflare Zero Trust Access because it is the user's most-used identity provider.
+
+Implementation requirements:
+- Configure Google as the human IdP only after verifying the exact Google account/tenant intended for owner access and confirming supported OIDC integration in Cloudflare Zero Trust.
+- Enforce MFA through Google account security and Cloudflare Access policy; verify the owner identity before enabling enforcement.
+- Keep human Google identity separate from machine service tokens and Cloudflare API tokens.
+- Do not assume Google Workspace exists; determine whether this is a consumer Google account or managed Workspace tenant before selecting group-based authorization.
+- Preserve a tested recovery/break-glass path that does not weaken default-deny access; document owner recovery and session revocation.
+- No Google IdP connection, Access application, policy, service token or Cloudflare account setting has been created or changed by recording this decision.
+
+**Next implementation gate:** verify authenticated Cloudflare account access and identify the exact Google identity/tenant to bind. Then configure a narrowly scoped, initially non-production Access application, test owner login and denial for an unauthorized identity, and only then extend policy to agent/admin endpoints.
