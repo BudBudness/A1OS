@@ -26,14 +26,16 @@
         "Supabase"
       ],
       "target": [
-        "Cloudflare Workers",
-        "Cloudflare D1",
-        "Cloudflare R2",
-        "GitHub Actions"
+        "GitHub Actions",
+        "Termux local runtime where appropriate",
+        "Cloudflare Workers for edge/API components",
+        "Cloudflare D1 where relational migration is justified",
+        "Cloudflare R2 for object/artifact storage",
+        "Cloudflare Tunnel where existing local services are retained"
       ],
       "status": "DISCOVERY_REQUIRED",
       "priority": "P0",
-      "notes": "Isolate control-plane workspace; map task queue, cron, secrets, verticals and data."
+      "notes": "Preserve Termux as an approved execution environment; classify local runtime vs Cloudflare edge vs GitHub CI. Reconcile documented tunnel API port 3012 against ops/services.json platform-api port 3013; replace Vercel cron and Supabase task persistence only after parity and recovery tests."
     },
     {
       "id": "little-oaks",
@@ -100,7 +102,7 @@
       ],
       "status": "DISCOVERY_REQUIRED",
       "priority": "P2",
-      "notes": "Inspect Convex schema/functions/auth/jobs/storage and redesign identity."
+      "notes": "Committed TanStack/Vite webapp depends directly on Convex and Convex Auth; verify complete UI source export from Macaly and inventory Convex schemas/functions/auth/jobs/storage."
     },
     {
       "id": "smc-agent",
@@ -116,7 +118,7 @@
       ],
       "status": "DISCOVERY_REQUIRED",
       "priority": "P2",
-      "notes": "Benchmark time-series workload; preserve lineage and reproducibility."
+      "notes": "Next.js plus Python pandas/NumPy/Streamlit research stack and Vercel Python API; separate compute compatibility workstream, benchmark historical data and avoid assuming a direct Workers/D1 port."
     },
     {
       "id": "stramos-wisdom-charity",
@@ -133,7 +135,7 @@
       ],
       "status": "DISCOVERY_REQUIRED",
       "priority": "P2",
-      "notes": "Inspect backend, schema, attachments, tenant isolation, audit and retention; no unchanged Docker assumption."
+      "notes": "FastAPI/PostgreSQL/Next.js via Docker Compose; inspect backend/schema/attachments/tenant isolation; remove embedded local-dev password and use ignored local env plus separate generated production credentials."
     },
     {
       "id": "pyonglive",
@@ -153,7 +155,7 @@
       ],
       "status": "CLOUDFLARE_ALIGNED_HARDENING_REQUIRED",
       "priority": "P0",
-      "notes": "Keep production resources isolated; harden broadcast/replay, security, observability and costs."
+      "notes": "Wrangler binds production pyonglive-db and pyonglive-assets; deployment workflow applies remote D1 migrations before Worker deploy and runs production checks. Never reuse these bindings for staging."
     }
   ],
   "lifecycle": [
@@ -186,5 +188,40 @@
     "Dedicated least-privilege deployment identity",
     "Staging owner, independent approver, budget and access boundary",
     "Product data retention, recovery and cutover ownership"
+  ],
+  "evidence_updates": [
+    {
+      "date": "2026-11-06",
+      "repository": "BudBudness/A1OS",
+      "evidence": [
+        "AGENTS.md",
+        "ops/services.json",
+        "vercel.json",
+        ".github/workflows/production-e2e.yml"
+      ],
+      "finding": "Termux local runtime, Cloudflare Tunnel ingress, local SQLite, reconciliation and backup operations coexist with legacy Vercel cron/Supabase task persistence.",
+      "risk": "Documented tunnel API port 3012 conflicts with tracked platform-api port 3013; verify live Termux configuration before cutover."
+    },
+    {
+      "date": "2026-11-06",
+      "repository": "BudBudness/StramosWisdomCharityOrg",
+      "evidence": [
+        "docker-compose.yml",
+        "backend/requirements.txt"
+      ],
+      "finding": "FastAPI/PostgreSQL/Next.js Compose stack; embedded local-development database password in tracked Compose config.",
+      "risk": "Credential hygiene; verify no reuse in production."
+    },
+    {
+      "date": "2026-11-06",
+      "repository": "BudBudness/SMC-Agent-",
+      "evidence": [
+        "package.json",
+        "pyproject.toml",
+        "vercel.json"
+      ],
+      "finding": "Next.js plus pandas/NumPy/Streamlit research stack and Vercel Python API.",
+      "risk": "Workers/D1 compatibility and large time-series performance unproven."
+    }
   ]
 }
