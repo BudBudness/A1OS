@@ -126,6 +126,20 @@
     ],
     "mcp_tool_availability_is_not_authorization": true
   },
+  "persistence_and_validation": {
+    "inventory_commit_sha": "bbbd1c37c89a8861394389c37dc84a2bbf98256d",
+    "branch": "fix/pytest-platform-api-import-isolation",
+    "remote": "origin",
+    "remote_ref": "refs/heads/fix/pytest-platform-api-import-isolation",
+    "remote_sha_verified": "bbbd1c37c89a8861394389c37dc84a2bbf98256d",
+    "json_validation": "passed",
+    "staged_paths": [
+      "cloudflare-inventory/cloudflare-inventory.json",
+      "cloudflare-inventory/cloudflare-inventory.md"
+    ],
+    "secret_scan": "no bearer credentials, private keys, or credential assignments found",
+    "write_test": "not run; no registered isolated non-production target with confirmed owner and rollback procedure"
+  },
   "live_resources": {
     "workers": {
       "status": "verified",

@@ -39,6 +39,13 @@ These are observed list results, not a complete inventory of all Cloudflare prod
 - **Non-production target: none verified.** The current resource lists show PyongLive Worker/D1/R2 resources, which are excluded from testing. The repository architecture-gap document discusses an isolated staging deployment as a future step, but provides no existing target identifier, isolation proof, target ownership, or rollback procedure.
 - Consequently, write testing stopped before any mutation. A suitable target requires a specifically registered non-production resource with owner confirmation, isolation from production, and a documented cleanup/rollback path.
 
+## Persistence and validation
+
+- Initial verified inventory commit: `bbbd1c37c89a8861394389c37dc84a2bbf98256d` on `fix/pytest-platform-api-import-isolation`.
+- Push verification: GitHub remote `origin` reported the same SHA for `refs/heads/fix/pytest-platform-api-import-isolation`.
+- Validation: JSON parsing passed; staged inventory diff contained only the JSON and Markdown inventory files; credential scan found no bearer credentials, private keys, or credential assignments.
+- Authorization-test result: **not run** because no registered isolated non-production target, owner confirmation, and rollback procedure were available. No production resource was used.
+
 ## Requested Little Oaks live inventory
 
 | Category | Result |
