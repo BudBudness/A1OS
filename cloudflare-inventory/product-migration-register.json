@@ -1,0 +1,190 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-11-06",
+  "approved_platforms": [
+    "GitHub",
+    "Cloudflare",
+    "Termux"
+  ],
+  "excluded_runtime_providers": [
+    "Vercel",
+    "Supabase",
+    "Convex",
+    "Macaly-hosted runtime",
+    "other unapproved providers"
+  ],
+  "status": "DISCOVERY_BASELINE",
+  "production_migrations_completed": 0,
+  "legacy_resources_deleted": 0,
+  "production_infrastructure_modified": false,
+  "products": [
+    {
+      "id": "a1os",
+      "repository": "BudBudness/A1OS",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "GitHub Actions"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P0",
+      "notes": "Isolate control-plane workspace; map task queue, cron, secrets, verticals and data."
+    },
+    {
+      "id": "little-oaks",
+      "repository": "A1OS vertical / Vercel project little-oaks / Supabase project little-oaks",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "Cloudflare Access where suitable"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P1",
+      "notes": "Confirm canonical code location, live records, users, roles, backups and domain."
+    },
+    {
+      "id": "guza-gura",
+      "repository": "BudBudness/GUZA_GURA-",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P1",
+      "notes": "Port PWA, auth, listings, sellers, enquiries, images and moderation."
+    },
+    {
+      "id": "ether-tours-travel",
+      "repository": "BudBudness/Ether_Tours-Travel",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "Cloudflare Access where suitable"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P2",
+      "notes": "Port catalogue/enquiries and authorization equivalent to existing RLS."
+    },
+    {
+      "id": "dexta-buyer-signal",
+      "repository": "BudBudness/Dexta_Buyer_Signal",
+      "observed_dependencies": [
+        "Macaly-hosted UI/workspace",
+        "Convex",
+        "Vercel"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P2",
+      "notes": "Inspect Convex schema/functions/auth/jobs/storage and redesign identity."
+    },
+    {
+      "id": "smc-agent",
+      "repository": "BudBudness/SMC-Agent-",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1 for bounded metadata",
+        "Cloudflare R2 for datasets/artifacts"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P2",
+      "notes": "Benchmark time-series workload; preserve lineage and reproducibility."
+    },
+    {
+      "id": "stramos-wisdom-charity",
+      "repository": "BudBudness/StramosWisdomCharityOrg",
+      "observed_dependencies": [
+        "FastAPI",
+        "PostgreSQL",
+        "Docker Compose"
+      ],
+      "target": [
+        "Cloudflare Workers after compatibility assessment",
+        "Cloudflare D1",
+        "Cloudflare R2"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P2",
+      "notes": "Inspect backend, schema, attachments, tenant isolation, audit and retention; no unchanged Docker assumption."
+    },
+    {
+      "id": "pyonglive",
+      "repository": "BudBudness/PyongLive",
+      "observed_dependencies": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "Cloudflare Stream",
+        "GitHub Actions"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "Cloudflare Stream subject to cost controls"
+      ],
+      "status": "CLOUDFLARE_ALIGNED_HARDENING_REQUIRED",
+      "priority": "P0",
+      "notes": "Keep production resources isolated; harden broadcast/replay, security, observability and costs."
+    }
+  ],
+  "lifecycle": [
+    "DISCOVER",
+    "SPECIFY",
+    "ARCHITECT",
+    "PLAN",
+    "BUILD",
+    "VERIFY",
+    "RELEASE",
+    "OPERATE",
+    "DECOMMISSION"
+  ],
+  "global_gates": [
+    "Complete source and destination inventory",
+    "Verified backup and tested restore",
+    "Schema/data reconciliation",
+    "R2 object checksums and access controls",
+    "Authentication and authorization tests",
+    "Protected secrets and least privilege",
+    "Workflow/cron/webhook coverage",
+    "Approved budget and usage alerts",
+    "Production end-to-end verification",
+    "Separate explicit decommission approval"
+  ],
+  "blockers": [
+    "Complete repository/branch/workflow inventory",
+    "Live provider data volumes, storage, auth and schema inventory",
+    "Cloudflare plans, quotas and cost envelopes",
+    "Dedicated least-privilege deployment identity",
+    "Staging owner, independent approver, budget and access boundary",
+    "Product data retention, recovery and cutover ownership"
+  ]
+}
