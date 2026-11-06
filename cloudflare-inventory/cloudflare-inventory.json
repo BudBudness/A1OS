@@ -1,0 +1,256 @@
+{
+  "captured_at": "2026-11-06T08:23:00Z",
+  "requested_zone": "littleoaksmontessori.ug",
+  "inventory_status": "oauth_authenticated_selected_account_resources_verified_read_only",
+  "scope": {
+    "read_only": true,
+    "resources_modified": false,
+    "dns_changed": false,
+    "production_data_touched": false
+  },
+  "authentication": {
+    "method": "oauth",
+    "endpoint": "https://mcp.cloudflare.com/mcp",
+    "active_transport": "http",
+    "credential_values_inspected_or_exposed": false,
+    "oauth_session_present": true,
+    "oauth_session_usable": true,
+    "verification_evidence": {
+      "mcp_whoami": {
+        "status": "success",
+        "user_id": "b47ebe061689f9d470d8105c041a36a5",
+        "email": "eddiebillions85@gmail.com"
+      },
+      "account_resource_listing": "success",
+      "oauth_diagnostic": "Copilot log recorded successful Cloudflare OAuth authentication and subsequent MCP client initialization."
+    },
+    "api_token_verification": "not_applicable_oauth_session",
+    "write_authorization_tested": false,
+    "oauth_write_scope_metadata": {
+      "present": [
+        "workers-scripts.write",
+        "d1.write",
+        "workers-r2.write",
+        "stream.write",
+        "access.write",
+        "access-policy.write",
+        "access-service-token.write",
+        "account-settings.write",
+        "dns.write"
+      ],
+      "exact_pages_write_scope": "pages.write not present; page.write is a distinct cached label",
+      "meaning": "Cached OAuth scope metadata only; not a successful write test or proof of endpoint authorization."
+    },
+    "wrangler_installed": false,
+    "cloudflare_remote_mcp_available": true
+  },
+  "account": {
+    "id": "d9be8d8a7f91cb703d7c6210ef413c6a",
+    "name": "Eddie Billions",
+    "type": "standard",
+    "plan": null,
+    "entitlements": null,
+    "status": "authenticated_read_only_verified",
+    "membership": {
+      "email": "eddiebillions85@gmail.com",
+      "status": "accepted",
+      "role": "Super Administrator - All Privileges",
+      "note": "Role evidence is not a mutation test; write and delete operations were not attempted."
+    }
+  },
+  "zone": {
+    "name": "littleoaksmontessori.ug",
+    "id": "3da119c31e8a70fd020ea11d67beb5e4",
+    "status": "pending",
+    "nameservers": null,
+    "dns_records": null,
+    "note": "Previously observed in the account's read-only zone list; DNS records and zone configuration were not queried in the current inventory update."
+  },
+  "observed_account_resources": {
+    "evidence_type": "successful_read_only_account_resource_list_calls",
+    "workers": {
+      "status": "verified",
+      "resources": [
+        "pyonglive-api"
+      ]
+    },
+    "pages_projects": {
+      "status": "verified",
+      "resources": [],
+      "total_count": 0
+    },
+    "d1_databases": {
+      "status": "verified",
+      "resources": [
+        "pyonglive-db"
+      ]
+    },
+    "r2_buckets": {
+      "status": "verified",
+      "resources": [
+        "pyonglive-assets"
+      ]
+    },
+    "stream_videos": {
+      "status": "verified",
+      "resources": [],
+      "total_count": 0
+    },
+    "zero_trust_access": {
+      "applications": [
+        "wispy-base-31b4 - Cloudflare Workers"
+      ],
+      "application_count": 1,
+      "reusable_policy_count": 3,
+      "status": "verified"
+    }
+  },
+  "authorization_gaps": {
+    "account_wide_membership_role": "Super Administrator - All Privileges",
+    "observed_read_access": "Read/list requests succeeded for account, membership, Workers, Pages, D1, R2, Stream, Access applications, and Access policies.",
+    "write_delete": "Not tested; no mutation request was made.",
+    "write_capability_discovery": {
+      "api_write_tools_exposed": true,
+      "evidence": "Cloudflare API OpenAPI metadata lists write operations and their required permission groups; tool exposure does not prove authorization.",
+      "non_production_test_target": "none verified",
+      "reason": "Live resources observed are PyongLive resources and excluded from testing. The repository mentions a future isolated staging deployment but has no existing target identifier, isolation proof, target owner, or rollback procedure.",
+      "write_test_action": "stopped before mutation",
+      "write_permissions_actually_tested": [],
+      "prerequisite": "Register an isolated non-production resource, confirm its owner, and document a rollback/cleanup path."
+    },
+    "unqueried_inventory": [
+      "Account plan and entitlements",
+      "DNS records and current zone configuration",
+      "Worker bindings, routes, and environment configuration",
+      "Other product resource lists"
+    ],
+    "mcp_tool_availability_is_not_authorization": true
+  },
+  "persistence_and_validation": {
+    "inventory_commit_sha": "bbbd1c37c89a8861394389c37dc84a2bbf98256d",
+    "branch": "fix/pytest-platform-api-import-isolation",
+    "remote": "origin",
+    "remote_ref": "refs/heads/fix/pytest-platform-api-import-isolation",
+    "remote_sha_verified": "bbbd1c37c89a8861394389c37dc84a2bbf98256d",
+    "json_validation": "passed",
+    "staged_paths": [
+      "cloudflare-inventory/cloudflare-inventory.json",
+      "cloudflare-inventory/cloudflare-inventory.md"
+    ],
+    "secret_scan": "no bearer credentials, private keys, or credential assignments found",
+    "write_test": "not run; no registered isolated non-production target with confirmed owner and rollback procedure"
+  },
+  "live_resources": {
+    "workers": {
+      "status": "verified",
+      "resources": [
+        "pyonglive-api"
+      ]
+    },
+    "d1_databases": {
+      "status": "verified",
+      "resources": [
+        "pyonglive-db"
+      ]
+    },
+    "d1_migrations": {
+      "status": "unverified",
+      "resources": null
+    },
+    "queues": {
+      "status": "unverified",
+      "resources": null
+    },
+    "queue_consumers": {
+      "status": "unverified",
+      "resources": null
+    },
+    "r2_buckets": {
+      "status": "verified",
+      "resources": [
+        "pyonglive-assets"
+      ]
+    },
+    "workflows": {
+      "status": "unverified",
+      "resources": null
+    },
+    "containers": {
+      "status": "unverified",
+      "availability": null,
+      "resources": null
+    },
+    "pages_projects": {
+      "status": "verified",
+      "resources": [],
+      "total_count": 0
+    },
+    "pages_deployments": {
+      "status": "unverified",
+      "resources": null
+    },
+    "worker_bindings_routes_environment": {
+      "status": "unverified",
+      "resources": null
+    }
+  },
+  "repository_evidence": {
+    "wrangler_config_count": 1,
+    "wrangler_config": {
+      "path": "cf-workers/a1os-health-checker/wrangler.jsonc",
+      "worker_name": "a1os-health-checker",
+      "entrypoint": "src/index.ts",
+      "cron": [
+        "*/5 * * * *"
+      ],
+      "kv_binding": {
+        "name": "HEALTH_STATE",
+        "namespace_id": "REPLACE_WITH_KV_NAMESPACE_ID",
+        "preview_id": "REPLACE_WITH_KV_NAMESPACE_ID"
+      },
+      "analytics_engine_binding": {
+        "name": "HEALTH_EVENTS",
+        "dataset": "A1OS_HEALTH_EVENTS"
+      },
+      "observability_enabled": true,
+      "deployed_status": "unverified"
+    },
+    "little_oaks": {
+      "deployment_config": "products/verticals/little-oaks/vercel.json",
+      "production_e2e_workflow": ".github/workflows/little-oaks-production-e2e.yml",
+      "e2e_host": "little-oaks-one.vercel.app",
+      "enquiry_client": "products/verticals/little-oaks/src/App.jsx",
+      "enquiry_backend": "Supabase REST endpoint /rest/v1/enquiries",
+      "deployment_contract": "products/verticals/little-oaks/A1OS_DEPLOYMENT.json",
+      "canonical_domain": "littleoaksmontessori.ug",
+      "cloudflare_worker_configured": false
+    },
+    "separate_tunnel_hostname_documented": "little-oaks.pyongcity.org"
+  },
+  "proposed_little_oaks_architecture_comparison": {
+    "static_site": {
+      "proposal": "Cloudflare Worker with Static Assets for the Little Oaks Vite build",
+      "live_resource_status": "unverified"
+    },
+    "api_and_enquiries": {
+      "proposal": "Use the A1OS platform API boundary and a tenant-authorized D1 persistence path for enquiries; remove direct browser-to-Supabase writes after verified migration",
+      "live_resource_status": "unverified"
+    },
+    "queue": {
+      "proposal": "Not required for the current synchronous enquiry save; introduce a queue only for a separately required asynchronous notification/processing step",
+      "live_resource_status": "unverified"
+    },
+    "r2": {
+      "proposal": "Not required by the inspected Little Oaks UI; revisit only if uploads or managed file storage are in scope",
+      "live_resource_status": "unverified"
+    },
+    "dns_and_routes": {
+      "proposal": "After account/zone verification and explicit approval, route the confirmed public domain to the chosen Cloudflare site/API entry point",
+      "live_resource_status": "unverified"
+    },
+    "plan_entitlements": {
+      "proposal": "Verify required Workers and D1 entitlements before provisioning; do not assume Containers, Queues, Workflows, or R2 availability",
+      "live_resource_status": "unverified"
+    }
+  }
+}
