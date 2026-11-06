@@ -84,3 +84,15 @@ These are separate, impact-assessed operations requiring explicit approval.
 - Next step: design and implement a provider-boundary CI guard scoped only to canonical control-plane paths; test it against intentionally prohibited references; then create the staging-only workflow. Do not rewrite product workflows or remove provider dependencies from product applications as part of that work.
 
 **Result:** The provider boundary is recorded and the first repository audit is complete at discovery level. The canonical control plane is not yet deployed or operational.
+
+## 8. Control-plane enforcement implementation
+
+After the discovery report, an isolated control-plane workspace and initial CI guard were committed on `fix/pytest-platform-api-import-isolation`:
+
+- `canonical-control-plane/README.md` — defines the isolated workspace and Cloudflare/GitHub/Termux boundary.
+- `scripts/control-plane/check_provider_boundary.py` — deterministic source/config scan for Vercel, Supabase and Convex references in the control-plane `src/`, `config/`, `infra/` and `workflows/` directories.
+- `.github/workflows/canonical-control-plane-policy.yml` — read-only GitHub Actions workflow with `contents: read`, path filters, guard self-test and provider-boundary enforcement.
+
+The guard self-test was executed in an isolated Python environment and passed, including a clean Cloudflare example and a deliberately prohibited Supabase import. The workflow and script were fetched back from GitHub at commit `cddbc2e2f83e599e9e073b22a9268b1895eb854d` and verified. The GitHub Actions workflow itself has **not yet run**; it is on the working branch and requires a PR/push event or authorized manual dispatch before CI evidence exists.
+
+This is an initial denylist for the currently identified excluded providers, not a general proof that arbitrary future providers are impossible. Extend the provider policy and tests whenever a new prohibited platform is identified. The guard scans only the isolated control-plane workspace; it deliberately does not scan or break product directories elsewhere in A1OS.
