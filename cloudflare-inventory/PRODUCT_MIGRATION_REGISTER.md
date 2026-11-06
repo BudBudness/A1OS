@@ -113,3 +113,29 @@ Every product follows the same sequence. Status cannot advance without evidence.
 **Production migrations completed:** `0`  
 **Legacy provider resources deleted:** `0`  
 **Production infrastructure modified by this register:** `false`
+
+
+## 8. Additional repository evidence — A1OS local runtime and product constraints
+
+The A1OS repository's `AGENTS.md` and `ops/services.json` establish that A1OS is not simply a Vercel-hosted application:
+
+- The documented operator environment is Termux on Android, with local Python services and a local SQLite database.
+- The documented Cloudflare Tunnel `a1os-prod` exposes `little-oaks.pyongcity.org` and routes API traffic to a local service; the remaining hostname traffic is routed to a local web service.
+- The tracked service registry lists `a1os-core` on local port 3011, `platform-api` on local port 3013, and an external Cloudflare edge observer.
+- The operator documentation describes scheduled reconciliation, health checks, database backups, notifications and backup transfer to a private GitHub repository.
+- The Vercel configuration separately defines a one-minute cron for `/v1/worker/run`; the production E2E workflow is still coupled to the Vercel URL and Supabase task persistence.
+
+**Architecture correction:** preserve Termux as an approved execution environment. Do not automatically rewrite every A1OS local service into a Worker. First classify each component as (a) local Termux operator/runtime service, (b) Cloudflare-hosted public edge/API service, or (c) GitHub-managed CI/release task. Replace Vercel cron and Supabase task persistence with an explicitly designed Cloudflare/GitHub workflow only after semantics, reliability and recovery are verified.
+
+**Unresolved topology discrepancy:** the operator guide describes an API route to local port 3012, while the tracked `ops/services.json` registers `platform-api` on port 3013. Reconcile the live Termux configuration, tunnel ingress, launchers and health checks before changing routes or deployment targets. The GitHub repository alone cannot verify the active local process or tunnel configuration.
+
+Additional product constraints found in repository manifests:
+
+- **GUZA GURA:** Next.js 15 / React 19 with Supabase SSR and JS SDKs; its CI currently runs typecheck, lint and build only. Its environment template includes a server-only service-role variable. Replace the integration with explicit Worker API contracts and never expose privileged keys to browser code.
+- **Ether Tours:** Next.js 15 / React 19 with Supabase SSR and JS SDKs; CI is typecheck/lint/build. The current environment template uses Supabase URL and publishable/anon key. Rebuild the data-access and authorization layer rather than mechanically replacing SDK imports.
+- **Dexta:** the committed webapp directly depends on Convex and Convex Auth; its CI tests, audits production dependencies and builds the Vite/TanStack application. The README's Macaly workspace is not evidence that all UI source is present in GitHub. Confirm source completeness and exportability before retiring Macaly.
+- **SMC Agent:** combines Next.js with a Python research/dashboard stack whose dependencies include pandas, NumPy and Streamlit; its Vercel configuration currently packages a Python API function. Treat the research compute and data plane as a separate compatibility/performance workstream; do not assume a direct Workers port or put large historical time-series into D1 without benchmarks.
+- **Stramos Charity:** its checked-in Compose file defines PostgreSQL, FastAPI and Next.js services. A local-development database password is embedded in the Compose configuration; rotate/remove any reuse, move development credentials to local ignored environment files, and ensure production credentials are generated separately. This is a configuration hygiene finding, not evidence that a production credential was exposed.
+- **PyongLive:** its Wrangler config binds the production Worker to `pyonglive-db` and `pyonglive-assets`; GitHub deployment workflow applies remote D1 migrations before deploying code and then runs production endpoint checks. Keep that production pipeline and resource binding isolated from any staging experiment.
+
+**Next A1OS verification:** inspect the live Termux checkout and Cloudflare Tunnel ingress read-only; compare them with `AGENTS.md`, `ops/services.json`, Vercel cron configuration and the GitHub workflows. Capture exact service/port ownership, current database state and backup/restore evidence before drafting the A1OS runtime migration.
