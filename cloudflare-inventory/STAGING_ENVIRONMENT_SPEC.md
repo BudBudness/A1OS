@@ -164,3 +164,45 @@ The following require owner or engineering decisions before provisioning:
 - A dedicated staging deployment identity and its exact account/resource scopes. Current inventory confirms reads but does not confirm write authorization; `pages.write` was not present as an exact cached OAuth scope label, and no mutation has been tested.
 
 Until these decisions are resolved, the specification is design-only: do not provision resources, deploy code, bind services, import data, or make DNS or permission changes.
+
+## 8. Owner-approved architecture decisions (2026-11-06)
+
+The project owner approved the **same-account isolation model** for staging within the verified Cloudflare account `d9be8d8a7f91cb703d7c6210ef413c6a`. This approval settles the account-boundary choice only. It is not provisioning approval, permission to incur spend, or authorization to alter production resources.
+
+### Canonical platform allowlist
+
+The canonical engineering control plane is limited to:
+
+- **Cloudflare** — infrastructure, runtime, data, storage, access, security, and observability services explicitly registered for the environment.
+- **GitHub** — source of truth, version control, review, CI/CD, release records, and audit-linked change history.
+- **Termux** — the operator's local execution and verification environment.
+
+No other platform is an approved dependency or execution target for this control plane unless the owner explicitly amends this specification.
+
+### Explicit exclusions
+
+- **Vercel: excluded.** No Vercel deployments, projects, integrations, build hooks, deployment targets, credentials, or control-plane dependencies.
+- **Supabase: excluded.** No Supabase projects, database/auth/storage/realtime services, SDKs, credentials, migrations, or runtime dependencies.
+- **Other unlisted hosting, database, identity, CI/CD, or infrastructure providers: excluded by default.** A new provider requires an explicit architecture change, documented reason, security and cost review, and owner approval before adoption.
+
+These exclusions govern the canonical control plane and its staging environment. They do **not** authorize deletion of existing Vercel/Supabase projects, deployments, databases, domains, data, credentials, or integrations belonging to other products. Any such decommissioning is a separate change requiring an inventory, impact assessment, recovery plan, and explicit approval.
+
+### Staging defaults
+
+- Environment purpose: isolated validation of the canonical control plane's Cloudflare inventory, deployment, policy checks, audit evidence, and rollback workflows.
+- Account boundary: the approved existing Cloudflare account, with strict resource-ID and credential separation from production.
+- Worker: one dedicated control-plane staging Worker; no production Worker reuse.
+- Data: dedicated D1 and private R2 resources; synthetic fixtures only.
+- KV: **not included initially**. Add only if a tested requirement demonstrates necessity and the owner approves the resulting resource/cost.
+- Stream: **not included**. No video ingest, playback, or recording test is in the initial staging scope.
+- Queues, Durable Objects, Pages, and other Cloudflare products: **not included** unless separately justified and approved.
+- Access: private/restricted staging access by default. Use a staging-only `workers.dev` endpoint for initial non-sensitive health and smoke tests only if Cloudflare account settings and security review confirm it is suitable; do not create or modify a custom-domain DNS record as part of this default.
+- Deployment: dedicated staging CI environment and a dedicated least-privilege deployment identity. Do not use a human Super Administrator credential for routine deployment.
+- Ownership: the account owner remains accountable. An independent approver is still required and must be named before provisioning; the requester cannot be treated as an independent reviewer by assumption.
+- Cost: no numeric budget or usage cap is implied. Current plan, limits, pricing, alert destination, and staging-only suspension mechanism must be verified and approved before any resource creation or paid use.
+
+### Immediate execution boundary
+
+Permitted next work: refine the registry, design the resource naming/ID allowlist, inspect existing GitHub workflows for excluded-provider dependencies, and prepare a staging-only CI design.
+
+Still blocked: creating Cloudflare resources, creating/rotating credentials, changing OAuth/API permissions, configuring DNS or Access, enabling paid features, deploying the Worker, importing data, or deleting existing Vercel/Supabase resources. Those actions require the relevant separate approvals and completed readiness gates.
