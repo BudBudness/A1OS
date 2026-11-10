@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "a1os-task-runtime-staging",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-11-10",
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": { "crons": ["* * * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "a1os-task-runtime-staging",
+      "database_id": "REPLACE_WITH_ISOLATED_STAGING_D1_ID"
+    }
+  ],
+  "observability": { "enabled": true, "traces": { "enabled": true } }
+}

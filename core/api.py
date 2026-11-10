@@ -32,6 +32,25 @@ async def health_check():
     snapshot["version"] = "1.0.0"
     return snapshot
 
+@app.post("/internal/d1-task-health", status_code=204)
+async def run_d1_task_health(
+    payload: ExecutePayload, x_a1os_executor_token: str = Header(default="")
+):
+    import hmac
+    import os
+
+    secret = os.environ.get("A1OS_D1_EXECUTOR_TOKEN")
+    if not secret:
+        raise HTTPException(status_code=503, detail="Staging executor is disabled")
+    if not hmac.compare_digest(x_a1os_executor_token.encode(), secret.encode()):
+        raise HTTPException(status_code=401, detail="Executor authentication failed")
+    if (payload.target, payload.role, payload.action) != ("a1os", "operator", "health"):
+        raise HTTPException(status_code=403, detail="Only staging health tasks are supported")
+    snapshot = await health_check()
+    if snapshot["status"] != "healthy":
+        raise HTTPException(status_code=503, detail="A1OS Core health check failed")
+
+
 @app.get("/v1/tasks/{task_id}")
 async def get_task(task_id: str):
     row = DurableQueue.get(task_id)
