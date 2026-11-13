@@ -11,8 +11,9 @@ import sqlite3
 
 COLUMNS = (
     "id", "parent_name", "child_name", "child_age",
-    "programme", "phone", "message", "created_at",
+    "programme", "phone", "message", "status", "created_at",
 )
+ARCHIVE_COLUMNS = (set(COLUMNS), set(COLUMNS) - {"status"})
 COPY_HEADER = re.compile(r"^COPY public\.enquiries \(([^)]+)\) FROM stdin;$")
 ESCAPES = re.compile(rb"\\([0-7]{1,3}|x[0-9a-fA-F]{1,2}|.)")
 CONTROL = dict(zip(b"bfnrtv", (b"\b", b"\f", b"\n", b"\r", b"\t", b"\v")))
@@ -44,7 +45,7 @@ def read_enquiries(source):
                 if rows is not None:
                     raise ValueError("Multiple enquiry COPY sections")
                 columns = tuple(part.strip() for part in header[1].split(","))
-                if len(columns) != len(COLUMNS) or set(columns) != set(COLUMNS):
+                if len(columns) != len(set(columns)) or set(columns) not in ARCHIVE_COLUMNS:
                     raise ValueError("Enquiry columns differ from the target schema")
                 rows = []
             elif columns is not None:
@@ -55,12 +56,9 @@ def read_enquiries(source):
                 if len(fields) != len(columns):
                     raise ValueError("Unexpected enquiry field count")
                 row = dict(zip(columns, map(decode_copy_field, fields), strict=True))
-                for column in ("programme", "message"):
-                    if row[column] is None:
-                        row[column] = ""
-                if any(row[column] is None for column in COLUMNS):
-                    raise ValueError("Null in a required enquiry field")
-                rows.append(tuple(row[column] for column in COLUMNS))
+                if row["id"] is None:
+                    raise ValueError("Null enquiry ID")
+                rows.append(tuple(row.get(column) for column in COLUMNS))
     if rows is None or columns is not None:
         raise ValueError("Missing or incomplete enquiry COPY section")
     return rows
@@ -85,9 +83,9 @@ def main():
         schema = Path(__file__).resolve().parents[1] / "migrations" / "0001_enquiries.sql"
         with sqlite3.connect(":memory:") as restored:
             restored.executescript(schema.read_text(encoding="utf-8"))
-            restored.executemany(
-                "INSERT INTO enquiries VALUES (?, ?, ?, ?, ?, ?, ?, ?)", rows,
-            )
+            names = ", ".join(COLUMNS)
+            placeholders = ", ".join("?" for _ in COLUMNS)
+            restored.executemany(f"INSERT INTO enquiries ({names}) VALUES ({placeholders})", rows)
             restored.commit()
             fd = os.open(args.output, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
             os.close(fd)
