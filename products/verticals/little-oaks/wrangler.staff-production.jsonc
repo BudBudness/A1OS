@@ -1,0 +1,14 @@
+{
+  "name": "little-oaks-staff",
+  "main": "worker/staff-production.mjs",
+  "compatibility_date": "2026-10-30",
+  "workers_dev": true,
+  "preview_urls": false,
+  "keep_vars": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "e4ff18c0-3015-407f-95ad-949b883d9461"
+    }
+  ]
+}
