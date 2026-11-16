@@ -161,3 +161,57 @@ This section supersedes any older default-branch SHA and open-PR observations ab
 ### Execution limitations
 
 This pass verified GitHub repository metadata, default branch refs, open PRs, changed-file lists, and combined commit statuses. It did not access the user's Termux filesystem or Cloudflare account resources. No deployment, data migration, DNS change, credential update, traffic cutover, or legacy service decommissioning is claimed. Overall mandate remains **PARTIALLY EXECUTED — NOT COMPLETE**.
+
+## 9. Latest execution and production-gate verification — 2026-11-16
+
+This update records the latest GitHub workflow evidence inspected after the portfolio inventory. Workflow status is commit-specific; a success on an older commit is not transferred to a newer commit.
+
+### A1OS and Little Oaks
+
+- Current A1OS main head: 3456fd8b84f54c1d5a9c3ca4498e0be1a7218d89.
+- Canonical control-plane baseline was refreshed and merged by PR #30 (feat/canonical-control-plane-refresh-20261116) as the above commit. The policy workflow, A1OS CI and Factory DoD all passed on this commit. The policy is explicitly a denylist for Vercel/Supabase/Convex, not a universal unknown-provider allowlist. The control-plane workspace is still design/development-only; no staging provisioning or production change is evidenced.
+- Older PR #23 remains open/draft and is superseded by #30; close it to avoid parallel control-plane baselines. PR #22 and #21 remain open; #21 is legacy Supabase queue recovery and is not the target architecture.
+- Little Oaks PR #26 merged into main at f130bc6c35b5a48aafe9a05a8a0b14125bfcc7e0; PR #25 closed unmerged. The merge adds the enquiry Worker, staging D1 config/migrations, restore rehearsal, and a staff Worker configuration.
+- Little Oaks is NOT production-migrated. The checked-in enquiry Wrangler config names little-oaks-enquiries-staging and a staging database ID; the staff Worker config names a separate D1 ID. No Cloudflare deployment evidence or custom-domain route is established by these files.
+- The latest Little Oaks production E2E runs failed before submitting data because https://little-oaks-one.vercel.app returned HTTP 402 with title Deployment Paused. The E2E workflow still expects the legacy Supabase /rest/v1/enquiries POST. The product build workflow passed. A1OS root production smoke likewise failed because https://a1-os.vercel.app returned HTTP 402; its assertions still require legacy Supabase persistence. Current post-merge E2E runs were observed in progress at the time of this update.
+- Required next gate: establish the approved Cloudflare staging/production hostname, deployment identity, bindings and Turnstile configuration; update E2E to the Worker contract; then prove synthetic submission, staff authorization, D1 persistence, backup/restore and rollback. Do not route DNS or deploy to production based only on the merged PR.
+
+### Dexta Buyer Signal
+
+- Current main head 4b9cf2f83037d875f2ed8884117aebff633ba196: latest Dexta Intelligence run #43839283769 passed. Its test suite passed 11 tests. Source adapter now requires authorization_status=approved plus explicit authorization and permission context, and copies those fields into SourceRecord.
+- Scheduled Buyer Pipeline run #43789805847 failed after tests passed (11/11) because no enabled approved public sources were configured. The registry contains only a disabled example.com placeholder. Discovery preserves existing output and exits rather than overwriting it with an empty file. This is a safe fail-closed state, not evidence of a valid lead-generation run.
+- Pipeline workflow currently writes generated artifacts only within the runner; no GitHub write permission or commit step is present in the inspected current workflow. Private evidence storage and access control remain outstanding.
+- PR #7 remains open and mergeable but is Convex-backed product work; it is not a Cloudflare migration approval.
+
+### PyongLive
+
+- Current main head bf6a0a4d71b71cb73c91e7871eb597bd3cf71643: CI and Worker deployment succeeded in the latest listed run. Production broadcast E2E failed on the same commit.
+- Failure evidence: FFmpeg synthetic RTMPS publishing to Cloudflare Stream was reset by the remote endpoint during stream publishing (TLS/connection reset). The workflow did not establish successful ingest/playback/replay on this current main head. An earlier passing E2E on another commit must not be treated as current acceptance.
+- Do not repeatedly rerun production publishing until the stream input/key lifecycle, endpoint configuration, limits and cleanup behavior are inspected. This requires Cloudflare account/resource access.
+
+### SMC-Agent-
+
+- Current main head ff029b088d50fc563e32d8845f7b35d970f02bf1: intelligence validation and real EURUSD research validation passed. Long-history MTF reconstruction was still in progress when inspected.
+- Production dashboard validation failed after the Next.js build succeeded; the external smc-agent.vercel.app API checks did not satisfy the expected research response contract. This is legacy Vercel production evidence, not a reason to promote the research-only system.
+- Maintain research-only scope; do not enable live trading or financial execution.
+
+### GUZA GURA, Ether Tours, CHARMD, Stramos
+
+- GUZA GURA current main CI passed on e4d01405e2406e941b7a300cd74928a05d2d770c (2026-10-20). Supabase integration remains in the repository; no Cloudflare runtime acceptance is established.
+- Ether Tours current main CI passed on 4b314eaef48afac25b93819ac012b5376c4e2437 (2026-10-20). PR #3 remains open/draft and includes a Supabase migration; no Cloudflare migration or production acceptance is established.
+- CHARMD current main remains G1 discovery. No Actions runs were returned for its main branch during this inspection; its only workflow is G1 discovery tests. Do not promote beyond G1 without feasibility evidence.
+- Stramos current main CI passed on b0ca1b159f587821ab35a0111d56f7fc43747aba (2026-11-16). This verifies the configured CI, not a production deployment, database migration or restore.
+
+### Portfolio status after this pass
+
+- GitHub inventory: completed for the eight listed repositories.
+- A1OS canonical control-plane baseline: merged; policy/CI gates pass; staging and production remain blocked.
+- Little Oaks Cloudflare code: merged; production migration not verified; legacy E2E blocked by HTTP 402.
+- Dexta deterministic validation: 11 tests pass; no authorized data source configured; scheduled pipeline correctly fails closed.
+- PyongLive: CI/deploy pass; current production broadcast E2E fails.
+- SMC: research validations pass; dashboard production validation fails; long-history run was in progress.
+- GUZA GURA, Ether Tours and Stramos: repository CI passes; Cloudflare migration and production acceptance remain outstanding.
+- CHARMD: G1 only; no current workflow run evidence.
+- Termux runtime, Cloudflare live bindings, production DNS, data backup/restore and rollback have not been verified in this session.
+
+Overall status: PARTIALLY EXECUTED — NOT COMPLETE. No production traffic cutover, DNS mutation, credential rotation, provider deletion, or financial execution was performed.
