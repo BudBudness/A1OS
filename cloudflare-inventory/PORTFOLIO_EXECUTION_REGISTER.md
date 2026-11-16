@@ -187,3 +187,53 @@ This update supersedes earlier open-PR states where applicable.
 ### Production and access boundary
 
 No production DNS, deployment, credential, permission, data migration, legacy-provider deletion or traffic cutover was performed in this progress batch. The connected GitHub integration is available for repository changes; Termux `~/A1OS_RESTORED` and live Cloudflare resource state remain unverified from this session.
+
+## 10. Commit-specific portfolio verification — 2026-11-16
+
+Latest evidence after the previous register sections; CI results are tied to the exact commit shown.
+
+### A1OS / Little Oaks
+- A1OS main head at this inspection: bd1fe2248660a37ba49fff647420ca3de07b1d15.
+- PR #30 merged the isolated Cloudflare/GitHub/Termux control-plane baseline. Provider-boundary, A1OS CI and Factory DoD workflows passed on its merge commit. The provider guard is a denylist for Vercel, Supabase and Convex, not a universal allowlist. No staging provisioning or production deployment is evidenced.
+- PR #23 was closed unmerged as superseded by #30. PR #22 was also closed unmerged; PR #21 remains open and is legacy Supabase queue-worker work.
+- Little Oaks PR #26 merged at f130bc6c35b5a48aafe9a05a8a0b14125bfcc7e0; PR #25 closed unmerged. The merged code includes an enquiry Worker, staging D1 configuration/migrations, restore rehearsal and a staff Worker.
+- Little Oaks is not production-migrated. The enquiry Wrangler config points to a staging database; no Cloudflare deployment or custom-domain route is verified. Production E2E runs fail before submitting data because little-oaks-one.vercel.app returns HTTP 402 Deployment Paused. The workflow still expects the legacy Supabase REST endpoint. Product build passed.
+- A1OS root production smoke also fails because a1-os.vercel.app returns HTTP 402; its health/readiness assertions still expect Supabase persistence. Current production E2E runs on the new main head were in progress when observed.
+- Next gate: verify Cloudflare staging/production hostname, identity, bindings and Turnstile configuration; update E2E to the Worker contract; test synthetic submission, staff authorization, D1 persistence, backup/restore and rollback. No DNS or production cutover without approval and evidence.
+
+### Dexta Buyer Signal
+- Current main head 4b9cf2f83037d875f2ed8884117aebff633ba196: latest Dexta Intelligence run #43839283769 passed; 11 tests passed. Public-source adapter requires approved authorization and permission context and preserves both in SourceRecord.
+- Scheduled pipeline run #43789805847 failed after tests passed because no enabled approved public source exists. The only registry entry is a disabled, unverified example.com placeholder. Discovery preserves existing output and exits rather than writing an empty file. This is fail-closed, not a successful lead-generation run.
+- Current pipeline writes only within the runner; no GitHub write permission or commit step was present in the inspected workflow. Private evidence storage/access control remain outstanding. PR #7 remains open and Convex-backed, not a Cloudflare migration approval.
+
+### PyongLive
+- Current main head bf6a0a4d71b71cb73c91e7871eb597bd3cf71643: CI and Worker deployment succeeded; production broadcast E2E failed on the same commit.
+- FFmpeg synthetic RTMPS publishing to Cloudflare Stream was reset by the remote endpoint during publishing (TLS/connection reset). Current main does not have verified ingest/playback/replay acceptance. An earlier pass on another commit is not transferable.
+- Do not repeatedly rerun production publishing until Stream input/key lifecycle, endpoint configuration, limits and cleanup are inspected through Cloudflare account access.
+
+### SMC-Agent-
+- Current main head ff029b088d50fc563e32d8845f7b35d970f02bf1: intelligence validation and real EURUSD research validation passed. Long-history MTF reconstruction was in progress at inspection.
+- Production dashboard validation failed after the Next.js build succeeded; external smc-agent.vercel.app API checks did not meet the expected research response contract. Keep SMC research-only; no live trading or financial execution.
+
+### GUZA GURA, Ether Tours, CHARMD, Stramos
+- GUZA GURA main CI passed on e4d01405e2406e941b7a300cd74928a05d2d770c (2026-10-20). Supabase remains in the repository; no Cloudflare runtime acceptance.
+- Ether Tours main CI passed on 4b314eaef48afac25b93819ac012b5376c4e2437 (2026-10-20). PR #3 remains draft and includes a Supabase migration; no Cloudflare migration acceptance.
+- CHARMD remains G1 discovery. No main-branch Actions runs were returned; only G1 discovery tests are configured.
+- Stramos main CI passed on b0ca1b159f587821ab35a0111d56f7fc43747aba (2026-11-16). This does not prove production deployment, migration or restore.
+
+### Portfolio status
+- GitHub repository inventory: complete for the eight visible BudBudness repositories.
+- A1OS control-plane baseline: merged; policy/CI pass; staging and production blocked.
+- Little Oaks Cloudflare source: merged; production routing and data migration unverified; legacy E2E blocked by HTTP 402.
+- Dexta: 11 tests pass; no authorized source configured; pipeline safely fails closed.
+- PyongLive: CI/deploy pass; current production broadcast E2E fails.
+- SMC: research validation passes; dashboard production validation fails; long-history run was in progress.
+- GUZA GURA, Ether Tours and Stramos: repository CI passes; Cloudflare migration/production acceptance outstanding.
+- CHARMD: G1 only.
+- Termux runtime, Cloudflare live bindings, DNS, backup/restore and rollback remain unverified in this session.
+
+Overall status: PARTIALLY EXECUTED — NOT COMPLETE. No production cutover, DNS mutation, credential rotation, provider deletion or financial execution was performed.
+
+### Repository protection posture
+
+- All eight discovered main branches returned GitHub branch metadata with protected=false. A1OS main also returned protection disabled and no required status-check contexts. This means the current repository branch protection layer is not enforcing the release gates documented above. No settings were changed; enabling branch protection/rulesets is a security-sensitive administrative change and remains an owner-approved action.
