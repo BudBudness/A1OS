@@ -237,3 +237,45 @@ Overall status: PARTIALLY EXECUTED — NOT COMPLETE. No production cutover, DNS 
 ### Repository protection posture
 
 - All eight discovered main branches returned GitHub branch metadata with protected=false. A1OS main also returned protection disabled and no required status-check contexts. This means the current repository branch protection layer is not enforcing the release gates documented above. No settings were changed; enabling branch protection/rulesets is a security-sensitive administrative change and remains an owner-approved action.
+
+
+## 8. Latest commit-specific verification — 2026-11-16
+
+This section supersedes earlier open-PR and default-branch observations. Workflow results apply only to the exact commits/runs listed.
+
+### Newly merged work and current heads
+
+- A1OS `main` includes PR #30 (control-plane baseline, `3456fd8b84f54c1d5a9c3ca4498e0be1a7218d89`), PR #31 (portfolio progress register, `b77e4e3c92a95c9c4900c07b42963f4e334b2ece`) and PR #32 (EB-CAEIO-001 governance/inventory, `bd1fe2248660a37ba49fff647420ca3de07b1d15`). The latest A1OS main merge in this batch is PR #32.
+- A1OS PRs #22 and #23 were closed unmerged as superseded by #32 and #30 respectively. Little Oaks PR #26 is merged; overlapping PR #25 is closed unmerged.
+- Dexta PR #9 merged at `4b9cf2f83037d875f2ed8884117aebff633ba196`. CI run #43839194113 passed the Python dependency installation and all 11 engine tests.
+- PyongLive PR #8 merged at `813c7c9eac9071aa92839fbd2043ab66ca69dfdb`. HLS manifest test run #43840039063 passed all five tests; CI run #43840039040 passed recording-index tests, MediaMTX configuration validation, live RTMP-to-HLS pipeline validation and TypeScript typecheck. PR #8 changed E2E verification only; it did not deploy the Worker or run a production broadcast.
+
+### Dexta scheduled-discovery gate
+
+- Scheduled pipeline run #43789805847 installed dependencies and passed all 11 tests, then failed at discovery because no enabled public source records were configured. It explicitly preserved the existing output rather than replacing it with an empty file. The registry contains only a disabled `example.com` placeholder with `authorization_status=unverified`.
+- The current pipeline workflow is read-only (`contents: read`) and no longer commits prospect JSONL to GitHub.
+- PR #10 (`ops/disable-unapproved-dexta-schedule-20261116`) removes the hourly schedule and retains manual dispatch behind two explicit gates: approved sources and verified private evidence storage. Its CI run #43840699532 was in progress at this register update; do not merge until it completes successfully.
+- No authorized provider or private evidence store is configured. No live discovery or prospect export is authorized by the current state.
+
+### PyongLive production acceptance
+
+- The stale `fix/stream-lifecycle` branch is 10 commits ahead and 17 behind current main; it omits newer main features and must not be merged wholesale.
+- The current main E2E workflow now follows HLS master playlists to media variants, and its unit tests pass. The last reported production broadcast E2E on earlier main commit `bf6a0a4d71b71cb73c91e7871eb597bd3cf71643` failed during synthetic RTMPS publishing with a remote connection/TLS reset. The HLS PR did not retest Stream ingest, playback or replay after merge.
+- Do not repeatedly publish synthetic broadcasts until Cloudflare Stream live-input state, ingest endpoint/key lifecycle, account limits and cleanup are inspected. Cloudflare account resource access is unavailable in this session.
+
+### Little Oaks and legacy Vercel evidence
+
+- Little Oaks Cloudflare enquiry/review/staff source code is merged. This does not establish a production Worker deployment, route, D1 binding, backup/restore drill or rollback.
+- A separate recorded production E2E attempt against `little-oaks-one.vercel.app` returned HTTP 402 / Deployment Paused before submitting the enquiry. The recorded E2E still targets the legacy Supabase REST endpoint, so it must be updated to the Cloudflare Worker contract before it can validate the new architecture.
+- A1OS root production smoke against `a1-os.vercel.app` also returned HTTP 402 in the recorded run. A Vercel bot comment reports the Hobby plan rejected the `* * * * *` cron expression because it runs more than once per day. These are legacy Vercel deployment blockers, not Cloudflare acceptance evidence.
+
+### Remaining product gates
+
+- SMC-Agent- remains research-only. A recorded dashboard production validation failed after the Next.js build succeeded; long-history MTF reconstruction was still running in the recorded snapshot. Do not enable live trading or financial execution.
+- GUZA GURA, Ether Tours and Stramos have repository CI evidence, but no Cloudflare production migration, data recovery or operational acceptance is established. Ether Tours PR #3 remains Supabase-backed and draft.
+- CHARMD remains G1 feasibility only.
+- Open PR queue after this reconciliation: A1OS #21, #12, #9, #8 and #1; Dexta #7 and #10; Ether Tours #3. Recheck before acting because this list is a dated snapshot.
+
+### Global execution boundary
+
+No Cloudflare production resource changes, DNS changes, credential changes, data migration, traffic cutover, legacy service deletion or financial execution were performed in this pass. Termux `~/A1OS_RESTORED` and live Cloudflare state remain unverified from this session. Overall status remains **PARTIALLY EXECUTED — NOT COMPLETE**.
