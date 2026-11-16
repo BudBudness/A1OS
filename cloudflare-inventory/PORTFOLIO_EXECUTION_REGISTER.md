@@ -120,3 +120,44 @@ The local Dexta branch `migration/macaly-vercel` was separately observed at `414
 - The GitHub integration provides repository read/write operations. No Cloudflare resource-management tool is exposed in this session, so no Cloudflare production resource state or write operation is claimed here.
 - No production deployment, DNS change, credential change, data migration, legacy provider deletion or traffic cutover was performed by this reconciliation.
 - Current release state remains **PARTIALLY EXECUTED — NOT COMPLETE**.
+
+
+## 7. Portfolio-wide live inventory — 2026-11-16 (second pass)
+
+This section supersedes any older default-branch SHA and open-PR observations above. Eight repositories were enumerated from the connected BudBudness account. All eight report GitHub admin/maintain/push permissions for this connection. The inventory is GitHub-only; it does not establish Termux or Cloudflare runtime state.
+
+| Repository | Default branch head | Open PRs | Current CI/status observation |
+|---|---|---|---|
+| A1OS | `f130bc6c35b5a48aafe9a05a8a0b14125bfcc7e0` | #23, #22, #21, #12, #9, #8, #1 | Main has four failing legacy Vercel status contexts. #23 is mergeable and draft; #22 and #21 mergeable; #12, #9 and #8 currently not mergeable; #1 targets `runtime-v2`. |
+| SMC-Agent- | `ff029b088d50fc563e32d8845f7b35d970f02bf1` | None | Main has failing legacy Vercel status contexts. |
+| Dexta_Buyer_Signal | `4b9cf2f83037d875f2ed8884117aebff633ba196` | #7 | Main has failing legacy Vercel status. #7 is mergeable but is a Convex-backed application branch, not yet reconciled with Cloudflare target architecture. |
+| PyongLive | `bf6a0a4d71b71cb73c91e7871eb597bd3cf71643` | None | No combined status contexts reported on main in this read. The previously passing production E2E run tested a different commit `2a8255c`; do not transfer that result to this current main head. |
+| Ether_Tours-Travel | `4b314eaef48afac25b93819ac012b5376c4e2437` | #3 | Main has one Vercel deployment failure and one success. #3 is draft and mergeable; changed files include a Supabase migration and Next.js enquiry workflow. |
+| GUZA_GURA- | `e4d01405e2406e941b7a300cd74928a05d2d770c` | None | No combined status contexts reported on main in this read. Root contains Supabase integration; no Cloudflare migration acceptance established. |
+| CHARMD | `cf653819d048bd8d8b39a7af9b5928e5d6ec401e` | None | G1 discovery baseline only; workflow inventory contains G1 discovery tests. |
+| StramosWisdomCharityOrg | `b0ca1b159f587821ab35a0111d56f7fc43747aba` | None | No combined status contexts reported on main in this read. PR #2 security hardening remains merged. |
+
+### Current workflow inventory
+
+- A1OS: CI, Factory DoD, Little Oaks build/production E2E, Legal CI/production E2E, product-specific workflows.
+- SMC-Agent-: dashboard validation, tests, real-data and long-history MTF workflows.
+- Dexta: intelligence validation, scheduled pipeline, webapp.
+- PyongLive: CI, Cloudflare audit, D1 smoke/schema, Worker deploy, production E2E, stream smoke and ops agent.
+- Ether Tours and GUZA GURA: CI only; GUZA still includes a `supabase/` directory.
+- CHARMD: G1 discovery tests only.
+- Stramos: CI only, with separate backend/frontend and Docker Compose.
+
+### Portfolio execution decisions
+
+1. Do not merge A1OS #23/#22/#21/#12/#9/#8/#1 or product PRs solely because GitHub reports mergeable. Their target architecture, branch base, changed-file scope, dependency graph, and release gates differ.
+2. A1OS #23 is the leading Cloudflare control-plane candidate; #24 is integrated into its feature branch, not main. Reconcile against current main and verify policy/CI before considering promotion.
+3. Little Oaks PR #26 remains the preferred candidate from the earlier detailed comparison, but current PR status and production acceptance must be rechecked before merge/cutover.
+4. Dexta #7 and Ether Tours #3 remain legacy-backend work. Preserve current production behavior while defining Cloudflare replacements and migration/recovery evidence; do not merge legacy backend dependencies as a target architecture decision.
+5. GUZA GURA requires a dedicated backend/deployment inventory before migration work.
+6. CHARMD remains G1 feasibility; do not expand to production DAW scope until feasibility evidence is accepted.
+7. SMC-Agent- remains research/intelligence scope; research-only restrictions continue to apply.
+8. Stramos remains an independent charity application; merged admin-token hardening does not prove full production security/recovery acceptance.
+
+### Execution limitations
+
+This pass verified GitHub repository metadata, default branch refs, open PRs, changed-file lists, and combined commit statuses. It did not access the user's Termux filesystem or Cloudflare account resources. No deployment, data migration, DNS change, credential update, traffic cutover, or legacy service decommissioning is claimed. Overall mandate remains **PARTIALLY EXECUTED — NOT COMPLETE**.
