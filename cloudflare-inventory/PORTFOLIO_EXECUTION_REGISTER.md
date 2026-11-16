@@ -67,3 +67,56 @@ This register update makes no deployment or production data changes. The linked 
 9. Expand the portfolio scope only when missing repository ownership/access is restored or the owner explicitly confirms revised scope.
 
 **Closure rule:** Do not close this mandate until each in-scope repository has commit-specific evidence for all applicable release gates, including deployment, rollback, data recovery, production acceptance and operational readiness.
+
+
+## 6. Live reconciliation — 2026-11-16
+
+This addendum supersedes historical PR/branch states above where they differ. It records a read-only GitHub inspection on 2026-11-16; it does not assert production acceptance.
+
+### Access and canonical head
+
+- The connected GitHub identity has `admin=true`, `maintain=true`, and `push=true` on all eight discovered portfolio repositories.
+- A1OS `main` is at `fc43a23a07324704cf30f338d50ac47192c40269`, the merge commit for PR #27. PR #27 is closed and merged.
+- A1OS PR #24 is closed and merged at `d8ddc5e6e394fc56c7ba4ebcc62127e4594839b2`, but its base was `feat/canonical-control-plane-isolated`, not `main`. That merge commit is the head of PR #23.
+
+### A1OS open pull requests
+
+| PR | Live state | Branch / evidence | Decision |
+|---|---|---|---|
+| #23 canonical control plane | Open, draft, mergeable | `feat/canonical-control-plane-isolated`; 8 commits ahead and 1 behind current `main`. Canonical provider-boundary workflow, A1OS CI and Factory DoD checks all completed successfully on its head. Four Vercel deployment statuses fail because the Vercel account reports deployment blocked. | Keep draft until branch is reconciled with current main and policy/spec review is complete. Do not treat Vercel failures as Cloudflare deployment evidence. |
+| #26 Little Oaks migration | Open, draft, mergeable | `migration/little-oaks-cloudflare-20261112-164414`; 3 ahead, 1 behind main. CI and Factory DoD passed on its head. Adds enquiry review migration, staff production Worker and staff-specific Wrangler config. | Preferred candidate over #25 for continued review; not approved for merge or production cutover yet. |
+| #25 Little Oaks migration | Open, draft, mergeable | `migration/little-oaks-cloudflare-20261112-155640`; 1 ahead, 1 behind main. Its branch diverges from #26. | Overlaps #26 and lacks the latter's review/staff-worker additions. Preserve until the replacement diff is fully reviewed; do not merge both. |
+| #21 Supabase queue recovery | Open, ready, mergeable | Legacy Supabase/Vercel recovery implementation; current head has Vercel deployment-blocked statuses. | Retain as legacy continuity work only; do not treat as target Cloudflare architecture. |
+| #22 canonical governance | Open, draft, mergeable | `feat/eddie-billions-canonical-control-plane`; 10 ahead, 1 behind main. Adds governance and master inventory documents. | Review for unique content and reconcile with #23; do not merge stale branch blindly. |
+| #12 Stramos integration | Open, draft, not mergeable | `integrate/stramos-charity-migration`; old base; A1OS Vercel check fails while other listed Vercel checks passed. | Rebase/reconcile and complete production security/recovery gates before merge. |
+| #9 Next.js/FastAPI baseline | Open, ready, not mergeable | Old base and legacy Vercel baseline. | Reassess against Cloudflare + Termux target before further integration. |
+| #8 Product Factory DoD | Open, ready, not mergeable | 111 commits, 59 changed files, 4,621 deletions; old base. | High-risk broad diff; inspect dependency and deletion changes before any merge. |
+| #1 capability/workflow layer | Open, ready, mergeable | Targets `runtime-v2`, not `main`. | Do not merge into main without explicit target-branch and architecture reconciliation. |
+
+### Verified merged PRs
+
+- A1OS #27 → `fc43a23a07324704cf30f338d50ac47192c40269` (main).
+- A1OS #24 → `d8ddc5e6e394fc56c7ba4ebcc62127e4594839b2` (feature branch only).
+- Dexta #8 → `e54ad5bdb55c66ff85d6060830ca29caefcffd2e` (main).
+- SMC-Agent- #1 → `ff029b088d50fc563e32d8845f7b35d970f02bf1` (main).
+- CHARMD #2 → `cf653819d048bd8d8b39a7af9b5928e5d6ec401e` (main).
+- StramosWisdomCharityOrg #2 → `b0ca1b159f587821ab35a0111d56f7fc43747aba` (main).
+
+### Other live open work
+
+- Ether Tours PR #3 remains open and draft. Its implementation depends on Supabase/Vercel and has no status checks reported on the inspected head.
+- Dexta PR #7 remains open and targets the Convex-backed application. Its Vercel status is successful, but that does not satisfy the approved target architecture.
+- PyongLive production E2E run #43718954095 passed on commit `2a8255c643667e075300dd497a2eb31db75b79bb`; integration into `main`, rollback and recovery remain unverified.
+- No open PR was returned for GUZA GURA. Its current main commit and runtime acceptance were not revalidated in this pass.
+- CHARMD remains G1 feasibility only. Its merged G1 bootstrap is not DAW production completion.
+
+### Dexta validation finding
+
+The local Dexta branch `migration/macaly-vercel` was separately observed at `4141a9d`. Validation run #43721402543 failed during collection because all five Python test modules raised `ModuleNotFoundError: No module named 'dexta'`. The identified correction is to set `PYTHONPATH: ${{ github.workspace }}/engine` in the validation workflow. This correction has not yet been applied or verified in that local branch. Do not enable the prospect-publishing workflow until an authorized provider and private evidence storage are verified.
+
+### Execution environment and production boundary
+
+- No Termux shell is connected in this session; `~/A1OS_RESTORED` worktree state, active services, local database, tunnel ingress and backups remain unverified.
+- The GitHub integration provides repository read/write operations. No Cloudflare resource-management tool is exposed in this session, so no Cloudflare production resource state or write operation is claimed here.
+- No production deployment, DNS change, credential change, data migration, legacy provider deletion or traffic cutover was performed by this reconciliation.
+- Current release state remains **PARTIALLY EXECUTED — NOT COMPLETE**.
