@@ -16,6 +16,7 @@ async def test_worker_executes_claimed_cloud_task_without_reclaiming_or_local_en
     lifecycle = []
     runtime_calls = []
 
+    monkeypatch.setattr(worker.supabase_tasks, "recover_stale_tasks", lambda stale: 0)
     monkeypatch.setattr(worker.supabase_tasks, "pending_tasks", lambda limit: [_task()])
     monkeypatch.setattr(
         worker.supabase_tasks,
@@ -55,6 +56,7 @@ async def test_worker_executes_claimed_cloud_task_without_reclaiming_or_local_en
 async def test_worker_records_runtime_failure_in_supabase(monkeypatch):
     lifecycle = []
 
+    monkeypatch.setattr(worker.supabase_tasks, "recover_stale_tasks", lambda stale: 0)
     monkeypatch.setattr(worker.supabase_tasks, "pending_tasks", lambda limit: [_task()])
     monkeypatch.setattr(worker.supabase_tasks, "claim_task", lambda task_id: True)
     monkeypatch.setattr(
@@ -77,6 +79,103 @@ async def test_worker_records_runtime_failure_in_supabase(monkeypatch):
 
     assert processed == 1
     assert lifecycle == [("fail", "cloud-task-1", "test failure")]
+
+
+async def test_worker_records_execution_exception_in_supabase(monkeypatch):
+    lifecycle = []
+    monkeypatch.setattr(worker.supabase_tasks, "recover_stale_tasks", lambda stale: 0)
+    monkeypatch.setattr(worker.supabase_tasks, "pending_tasks", lambda limit: [_task()])
+    monkeypatch.setattr(worker.supabase_tasks, "claim_task", lambda task_id: True)
+    monkeypatch.setattr(
+        worker.supabase_tasks,
+        "fail_task",
+        lambda task_id, error: lifecycle.append((task_id, error)),
+    )
+
+    async def fail_execution(task_id, payload):
+        raise RuntimeError("execution unavailable")
+
+    monkeypatch.setattr(worker, "_execute_payload", fail_execution)
+
+    assert await worker.process_once() == 1
+    assert lifecycle == [("cloud-task-1", "execution unavailable")]
+
+
+async def test_worker_recovers_stale_tasks_before_listing_pending(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        worker.supabase_tasks,
+        "recover_stale_tasks",
+        lambda stale: calls.append(("recover", stale)) or 0,
+    )
+    monkeypatch.setattr(
+        worker.supabase_tasks,
+        "pending_tasks",
+        lambda limit: calls.append(("pending", limit)) or [],
+    )
+
+    assert await worker.process_once(limit=2) == 0
+    assert calls == [
+        ("recover", worker.STALE_SECONDS),
+        ("pending", 2),
+    ]
+
+
+async def test_worker_does_not_execute_task_when_atomic_claim_is_lost(monkeypatch):
+    monkeypatch.setattr(worker.supabase_tasks, "recover_stale_tasks", lambda stale: 0)
+    monkeypatch.setattr(worker.supabase_tasks, "pending_tasks", lambda limit: [_task()])
+    monkeypatch.setattr(worker.supabase_tasks, "claim_task", lambda task_id: False)
+
+    async def unexpected_execution(*args, **kwargs):
+        raise AssertionError("unclaimed task must not execute")
+
+    monkeypatch.setattr(worker, "_execute_payload", unexpected_execution)
+
+    assert await worker.process_once() == 0
+
+
+async def test_worker_requeues_task_when_execution_is_cancelled(monkeypatch):
+    import asyncio
+    import pytest
+
+    lifecycle = []
+    monkeypatch.setattr(worker.supabase_tasks, "recover_stale_tasks", lambda stale: 0)
+    monkeypatch.setattr(worker.supabase_tasks, "pending_tasks", lambda limit: [_task()])
+    monkeypatch.setattr(worker.supabase_tasks, "claim_task", lambda task_id: True)
+    monkeypatch.setattr(
+        worker.supabase_tasks,
+        "fail_task",
+        lambda task_id, error: lifecycle.append((task_id, error)),
+    )
+
+    async def cancel_execution(task_id, payload):
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(worker, "_execute_payload", cancel_execution)
+
+    with pytest.raises(asyncio.CancelledError):
+        await worker.process_once()
+
+    assert lifecycle == [
+        ("cloud-task-1", "Worker cancelled during task execution"),
+    ]
+
+
+async def test_worker_exits_cleanly_when_shutdown_is_requested(tmp_path, monkeypatch):
+    import asyncio
+
+    stop_event = asyncio.Event()
+    calls = []
+    monkeypatch.setattr(worker, "LOCK_PATH", str(tmp_path / "worker.lock"))
+
+    async def finish_current_batch():
+        calls.append("finished")
+        stop_event.set()
+
+    monkeypatch.setattr(worker, "process_once", finish_current_batch)
+
+    await worker.run_worker(stop_event)
+    assert calls == ["finished"]
 
 
 async def test_runtime_does_not_touch_local_queue_for_already_claimed_cloud_task(monkeypatch):
