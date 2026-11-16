@@ -1,0 +1,36 @@
+name: Canonical Control Plane Provider Boundary
+
+on:
+  pull_request:
+    paths:
+      - "canonical-control-plane/**"
+      - "scripts/control-plane/check_provider_boundary.py"
+      - ".github/workflows/canonical-control-plane-policy.yml"
+  push:
+    branches: [main]
+    paths:
+      - "canonical-control-plane/**"
+      - "scripts/control-plane/check_provider_boundary.py"
+      - ".github/workflows/canonical-control-plane-policy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canonical-control-plane-policy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  provider-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Test guard
+        run: python scripts/control-plane/check_provider_boundary.py --self-test
+      - name: Enforce provider allowlist boundary
+        run: python scripts/control-plane/check_provider_boundary.py --root canonical-control-plane
