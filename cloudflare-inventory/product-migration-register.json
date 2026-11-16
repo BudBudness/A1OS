@@ -1,0 +1,227 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-11-06",
+  "approved_platforms": [
+    "GitHub",
+    "Cloudflare",
+    "Termux"
+  ],
+  "excluded_runtime_providers": [
+    "Vercel",
+    "Supabase",
+    "Convex",
+    "Macaly-hosted runtime",
+    "other unapproved providers"
+  ],
+  "status": "DISCOVERY_BASELINE",
+  "production_migrations_completed": 0,
+  "legacy_resources_deleted": 0,
+  "production_infrastructure_modified": false,
+  "products": [
+    {
+      "id": "a1os",
+      "repository": "BudBudness/A1OS",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "GitHub Actions",
+        "Termux local runtime where appropriate",
+        "Cloudflare Workers for edge/API components",
+        "Cloudflare D1 where relational migration is justified",
+        "Cloudflare R2 for object/artifact storage",
+        "Cloudflare Tunnel where existing local services are retained"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P0",
+      "notes": "Preserve Termux as an approved execution environment; classify local runtime vs Cloudflare edge vs GitHub CI. Reconcile documented tunnel API port 3012 against ops/services.json platform-api port 3013; replace Vercel cron and Supabase task persistence only after parity and recovery tests."
+    },
+    {
+      "id": "little-oaks",
+      "repository": "A1OS vertical / Vercel project little-oaks / Supabase project little-oaks",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "Cloudflare Access where suitable"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P1",
+      "notes": "Confirm canonical code location, live records, users, roles, backups and domain."
+    },
+    {
+      "id": "guza-gura",
+      "repository": "BudBudness/GUZA_GURA-",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P1",
+      "notes": "Port PWA, auth, listings, sellers, enquiries, images and moderation."
+    },
+    {
+      "id": "ether-tours-travel",
+      "repository": "BudBudness/Ether_Tours-Travel",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "Cloudflare Access where suitable"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P2",
+      "notes": "Port catalogue/enquiries and authorization equivalent to existing RLS."
+    },
+    {
+      "id": "dexta-buyer-signal",
+      "repository": "BudBudness/Dexta_Buyer_Signal",
+      "observed_dependencies": [
+        "Macaly-hosted UI/workspace",
+        "Convex",
+        "Vercel"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P2",
+      "notes": "Committed TanStack/Vite webapp depends directly on Convex and Convex Auth; verify complete UI source export from Macaly and inventory Convex schemas/functions/auth/jobs/storage."
+    },
+    {
+      "id": "smc-agent",
+      "repository": "BudBudness/SMC-Agent-",
+      "observed_dependencies": [
+        "Vercel",
+        "Supabase"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1 for bounded metadata",
+        "Cloudflare R2 for datasets/artifacts"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P2",
+      "notes": "Next.js plus Python pandas/NumPy/Streamlit research stack and Vercel Python API; separate compute compatibility workstream, benchmark historical data and avoid assuming a direct Workers/D1 port."
+    },
+    {
+      "id": "stramos-wisdom-charity",
+      "repository": "BudBudness/StramosWisdomCharityOrg",
+      "observed_dependencies": [
+        "FastAPI",
+        "PostgreSQL",
+        "Docker Compose"
+      ],
+      "target": [
+        "Cloudflare Workers after compatibility assessment",
+        "Cloudflare D1",
+        "Cloudflare R2"
+      ],
+      "status": "DISCOVERY_REQUIRED",
+      "priority": "P2",
+      "notes": "FastAPI/PostgreSQL/Next.js via Docker Compose; inspect backend/schema/attachments/tenant isolation; remove embedded local-dev password and use ignored local env plus separate generated production credentials."
+    },
+    {
+      "id": "pyonglive",
+      "repository": "BudBudness/PyongLive",
+      "observed_dependencies": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "Cloudflare Stream",
+        "GitHub Actions"
+      ],
+      "target": [
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Cloudflare R2",
+        "Cloudflare Stream subject to cost controls"
+      ],
+      "status": "CLOUDFLARE_ALIGNED_HARDENING_REQUIRED",
+      "priority": "P0",
+      "notes": "Wrangler binds production pyonglive-db and pyonglive-assets; deployment workflow applies remote D1 migrations before Worker deploy and runs production checks. Never reuse these bindings for staging."
+    }
+  ],
+  "lifecycle": [
+    "DISCOVER",
+    "SPECIFY",
+    "ARCHITECT",
+    "PLAN",
+    "BUILD",
+    "VERIFY",
+    "RELEASE",
+    "OPERATE",
+    "DECOMMISSION"
+  ],
+  "global_gates": [
+    "Complete source and destination inventory",
+    "Verified backup and tested restore",
+    "Schema/data reconciliation",
+    "R2 object checksums and access controls",
+    "Authentication and authorization tests",
+    "Protected secrets and least privilege",
+    "Workflow/cron/webhook coverage",
+    "Approved budget and usage alerts",
+    "Production end-to-end verification",
+    "Separate explicit decommission approval"
+  ],
+  "blockers": [
+    "Complete repository/branch/workflow inventory",
+    "Live provider data volumes, storage, auth and schema inventory",
+    "Cloudflare plans, quotas and cost envelopes",
+    "Dedicated least-privilege deployment identity",
+    "Staging owner, independent approver, budget and access boundary",
+    "Product data retention, recovery and cutover ownership"
+  ],
+  "evidence_updates": [
+    {
+      "date": "2026-11-06",
+      "repository": "BudBudness/A1OS",
+      "evidence": [
+        "AGENTS.md",
+        "ops/services.json",
+        "vercel.json",
+        ".github/workflows/production-e2e.yml"
+      ],
+      "finding": "Termux local runtime, Cloudflare Tunnel ingress, local SQLite, reconciliation and backup operations coexist with legacy Vercel cron/Supabase task persistence.",
+      "risk": "Documented tunnel API port 3012 conflicts with tracked platform-api port 3013; verify live Termux configuration before cutover."
+    },
+    {
+      "date": "2026-11-06",
+      "repository": "BudBudness/StramosWisdomCharityOrg",
+      "evidence": [
+        "docker-compose.yml",
+        "backend/requirements.txt"
+      ],
+      "finding": "FastAPI/PostgreSQL/Next.js Compose stack; embedded local-development database password in tracked Compose config.",
+      "risk": "Credential hygiene; verify no reuse in production."
+    },
+    {
+      "date": "2026-11-06",
+      "repository": "BudBudness/SMC-Agent-",
+      "evidence": [
+        "package.json",
+        "pyproject.toml",
+        "vercel.json"
+      ],
+      "finding": "Next.js plus pandas/NumPy/Streamlit research stack and Vercel Python API.",
+      "risk": "Workers/D1 compatibility and large time-series performance unproven."
+    }
+  ]
+}
