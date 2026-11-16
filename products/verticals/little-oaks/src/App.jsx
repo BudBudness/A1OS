@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-const SUPABASE_URL = "https://kiigbojuvcjnldxvdxlq.supabase.co";
-const SUPABASE_KEY = "sb_publishable_0kH7sD4Ee4DL_QyGVvxqYQ_yvNlT2nL";
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
 const programmes = [
   {
@@ -42,12 +41,55 @@ export function App() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
+  const [token, setToken] = useState("");
+  const [sending, setSending] = useState(false);
+  const widget = useRef(null);
+  const widgetId = useRef(null);
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return;
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.onload = () => {
+      widgetId.current = window.turnstile.render(widget.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        action: "enquiry",
+        callback: setToken,
+        "expired-callback": () => setToken(""),
+        "error-callback": () => setToken(""),
+      });
+    };
+    document.head.append(script);
+    return () => {
+      script.onload = null;
+      if (widgetId.current !== null) window.turnstile.remove(widgetId.current);
+      widgetId.current = null;
+      script.remove();
+    };
+  }, []);
+
   async function handleEnquirySubmit(event) {
-    event.preventDefault(); setError(""); setSubmitted(false);
-    const response = await fetch(SUPABASE_URL + "/rest/v1/enquiries", {
-      method: "POST", headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(enquiry)
-    });
-    if (!response.ok) { setError("We could not send your enquiry. Please call or WhatsApp Little Oaks."); return; }
+    event.preventDefault();
+    if (!token || sending) return;
+    setError("");
+    setSubmitted(false);
+    setSending(true);
+    try {
+      const response = await fetch("/api/enquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...enquiry, turnstileToken: token }),
+      });
+      if (!response.ok) throw new Error("Enquiry rejected");
+    } catch {
+      setError("We could not send your enquiry. Please call or WhatsApp Little Oaks.");
+      return;
+    } finally {
+      setSending(false);
+      setToken("");
+      if (widgetId.current !== null) window.turnstile.reset(widgetId.current);
+    }
     setSubmitted(true);
     const text = ["Little Oaks enquiry", "", "Parent/Guardian: " + enquiry.parent_name, "Child: " + enquiry.child_name, "Child age: " + enquiry.child_age, "Programme: " + (enquiry.programme || "Not specified"), "Phone: " + enquiry.phone, "Message: " + (enquiry.message || "Please contact me about availability and enrolment.")].join("\n");
     window.open("https://wa.me/256762023393?text=" + encodeURIComponent(text), "_blank", "noopener,noreferrer");
@@ -243,7 +285,11 @@ export function App() {
                 <label>Message<textarea value={enquiry.message} onChange={e => setEnquiry({...enquiry, message:e.target.value})} placeholder="Ask about availability, visits or enrolment." rows="4" /></label>
                 {submitted && <p className="form-success" role="status">Enquiry saved. WhatsApp has been opened for follow-up.</p>}
                 {error && <p className="form-error" role="alert">{error}</p>}
-                <button className="button primary full" type="submit">Send enquiry on WhatsApp</button>
+                <div ref={widget} />
+                {!TURNSTILE_SITE_KEY && <p role="status">Please call or WhatsApp Little Oaks to enquire.</p>}
+                <button className="button primary full" type="submit" disabled={!token || sending}>
+                  {sending ? "Sending…" : "Send enquiry on WhatsApp"}
+                </button>
               </form>
             </div>
 
