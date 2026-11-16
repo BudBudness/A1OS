@@ -161,3 +161,29 @@ This section supersedes any older default-branch SHA and open-PR observations ab
 ### Execution limitations
 
 This pass verified GitHub repository metadata, default branch refs, open PRs, changed-file lists, and combined commit statuses. It did not access the user's Termux filesystem or Cloudflare account resources. No deployment, data migration, DNS change, credential update, traffic cutover, or legacy service decommissioning is claimed. Overall mandate remains **PARTIALLY EXECUTED — NOT COMPLETE**.
+
+
+## 7. Execution progress — 2026-11-16
+
+This update supersedes earlier open-PR states where applicable.
+
+### Changes merged after the prior reconciliation
+
+- **A1OS PR #26 — Little Oaks Cloudflare migration:** merged to `main` at `f130bc6c35b5a48aafe9a05a8a0b14125bfcc7e0`. Its CI and Factory DoD checks passed on the PR head. The change integrates the public enquiry Worker, staging D1 schema, enquiry review migration, staff Worker, Wrangler configs and restore rehearsal script. This is source integration only; no new production deployment or DNS cutover was performed.
+- **A1OS PR #25:** closed as superseded by #26. Its shared UI, public Worker and staging config were compared with #26; #26 adds review/staff functionality and supports legacy exports with and without the `status` column.
+- **A1OS PR #28 — live portfolio register reconciliation:** merged to `main` at `3e2089663485d64996e32cf81e1d400375b64905`. The register is present on main.
+- **A1OS PR #30 — isolated canonical control-plane baseline:** merged to `main` at `3456fd8b84f54c1d5a9c3ca4498e0be1a7218d89`. Provider-boundary workflow, A1OS CI and Factory DoD all passed. The initial guard is explicitly documented as a denylist for known excluded providers, not a general unknown-provider allowlist. Staging remains design-only and unprovisioned.
+- **Dexta PR #9 — discovery authorization provenance:** merged to `main` at `4b9cf2f83037d875f2ed8884117aebff633ba196`. GitHub Actions run #43839194113 passed dependency installation and `pytest -q engine/tests`. The source adapter now requires approved authorization and permission context, preserves provenance, and labels contacts as authorized-private only when approval metadata is complete. The example source remains disabled and unverified.
+
+### Current portfolio blockers
+
+- **Little Oaks:** code is integrated, and prior synthetic staff-save verification is recorded. Production route, rollback, backup/restore and operational recovery remain unverified. Do not deploy the staging Worker or change DNS based only on this merge.
+- **Canonical control plane:** repository baseline and read-only policy checks are integrated. No staging Worker/D1/R2 resources, deployment identity, numeric spend cap, independent approval or restore drill are evidenced. Do not provision yet.
+- **PyongLive:** current `main` contains the newer lifecycle, Stream webhook and MediaMTX-related implementation. The older `fix/stream-lifecycle` branch is 10 commits ahead and 17 behind main; do not merge it wholesale because its diff omits newer main functionality. PR #8 selectively ports the HLS master-playlist fix with unit tests. Its first run exposed one incorrect test fixture URL; the fixture was corrected in commit `7c9dcd29deade799ece02f24db893e860e77abcc`, and the corrected run is still awaiting verification. No production broadcast or deployment was triggered by PR #8.
+- **Dexta:** the local `migration/macaly-vercel` branch's 2026-11-15 run #43721402543 failed due to missing `PYTHONPATH`. Current main includes the import-path correction. The merged provenance fix is tested. No authorized provider is configured, the example source remains disabled, and private prospect storage is not yet implemented. Keep scheduled prospect collection/publishing blocked.
+- **A1OS PR #23 and #22:** older branches remain 3 commits behind current main. PR #23's refreshed content is now merged through PR #30; the old PR #23 is historical/superseded and should be closed after confirming the replacement commit is present. PR #22 remains a separate stale governance-document proposal requiring content reconciliation.
+- **A1OS PR #21, #12, #9, #8, #1; Ether Tours PR #3; Dexta PR #7:** remain open and must be handled according to the target architecture and prior release gates. Do not merge legacy Vercel/Supabase/Convex runtime changes solely to make PR counts decrease.
+
+### Production and access boundary
+
+No production DNS, deployment, credential, permission, data migration, legacy-provider deletion or traffic cutover was performed in this progress batch. The connected GitHub integration is available for repository changes; Termux `~/A1OS_RESTORED` and live Cloudflare resource state remain unverified from this session.
