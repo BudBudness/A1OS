@@ -233,3 +233,7 @@ Latest evidence after the previous register sections; CI results are tied to the
 - Termux runtime, Cloudflare live bindings, DNS, backup/restore and rollback remain unverified in this session.
 
 Overall status: PARTIALLY EXECUTED — NOT COMPLETE. No production cutover, DNS mutation, credential rotation, provider deletion or financial execution was performed.
+
+### Repository protection posture
+
+- All eight discovered main branches returned GitHub branch metadata with protected=false. A1OS main also returned protection disabled and no required status-check contexts. This means the current repository branch protection layer is not enforcing the release gates documented above. No settings were changed; enabling branch protection/rulesets is a security-sensitive administrative change and remains an owner-approved action.
