@@ -1,0 +1,21 @@
+name: A1OS Runtime Security Regression
+on:
+  push:
+    paths:
+      - 'core/runtime.py'
+      - 'core/queue/durable.py'
+      - 'tests/test_runtime_queue_security.py'
+      - '.github/workflows/a1os-runtime-security.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest httpx
+      - run: python -m pytest -q tests/test_runtime_queue_security.py tests/test_cloudflare_task_store.py
