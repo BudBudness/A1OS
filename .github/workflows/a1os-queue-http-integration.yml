@@ -79,6 +79,11 @@ jobs:
           const r=await fetch(base+'/v1/tasks',{method:'POST',headers,body:JSON.stringify({task_id:'executor-smoke',target:'staging',role:'smoke',action:'noop',payload:{test:true}})});
           assert.equal(r.status,201);
           NODE
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const r=await fetch('http://127.0.0.1:8787/v1/tasks',{method:'POST',headers:{authorization:'Bearer integration-test-only-token','content-type':'application/json'},body:JSON.stringify({task_id:'executor-unregistered',target:'production',role:'admin',action:'shell',payload:{command:'echo unsafe'}})});
+          assert.equal(r.status,201);
+          NODE
           A1OS_QUEUE_URL=http://127.0.0.1:8787 A1OS_QUEUE_TOKEN=integration-test-only-token node executor.mjs
           node --input-type=module <<'NODE'
           import assert from 'node:assert/strict';
@@ -87,7 +92,12 @@ jobs:
           const result=await r.json();
           assert.equal(result.data.status,'completed');
           assert.equal(result.data.attempts,1);
-          console.log('PASS: executor claimed and completed allowlisted task over HTTP');
+          const rejected=await fetch('http://127.0.0.1:8787/v1/tasks/executor-unregistered',{headers:{authorization:'Bearer integration-test-only-token'}});
+          assert.equal(rejected.status,200);
+          const unregistered=await rejected.json();
+          assert.equal(unregistered.data.status,'queued','unregistered action must never execute');
+          assert.equal(unregistered.data.attempts,0);
+          console.log('PASS: executor completes allowlisted tasks and refuses unregistered actions');
           NODE
       - name: Worker diagnostics on failure
         if: failure()
