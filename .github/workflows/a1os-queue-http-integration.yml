@@ -46,6 +46,12 @@ jobs:
           assert.equal(r.status,200);assert.equal(r.data.ok,true);
           r=await req('/v1/tasks/pending','GET',undefined,false);
           assert.equal(r.status,401);
+          const invalidAuth=await fetch(base+'/v1/tasks/pending',{headers:{authorization:'Bearer incorrect-token'}});
+          assert.equal(invalidAuth.status,401,'reject incorrect bearer token');
+          r=await req('/v1/tasks','POST',{target:'',role:'tester',action:'noop'});
+          assert.equal(r.status,400,'reject invalid task');
+          r=await req('/v1/tasks','POST',{target:'staging',role:'tester',action:'noop',max_attempts:21});
+          assert.equal(r.status,400,'reject excessive retries');
           const id='integration-smoke';
           const payload={task_id:id,target:'staging',role:'tester',action:'noop',payload:{smoke:true}};
           r=await req('/v1/tasks','POST',payload);assert.equal(r.status,201);
