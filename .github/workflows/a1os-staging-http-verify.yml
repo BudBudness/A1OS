@@ -39,7 +39,9 @@ jobs:
           assert.equal(health?.status,200);
           assert.equal((await health.json()).ok,true);
           const unauthorized=await fetch(base+'/v1/tasks/pending');
-          assert.equal(unauthorized.status,401);
+          const unauthorizedBody=await unauthorized.text();
+          console.log('Unauthenticated /v1/tasks/pending:',JSON.stringify({status:unauthorized.status,body:unauthorizedBody.slice(0,400),server:unauthorized.headers.get('server'),contentType:unauthorized.headers.get('content-type')}));
+          assert.equal(unauthorized.status,401,'deployed /v1 route must reject unauthenticated requests');
           console.log('PASS: deployed staging health and unauthorized access rejection');
           NODE
       - name: Disable staging endpoint
