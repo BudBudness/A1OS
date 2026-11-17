@@ -24,7 +24,7 @@ jobs:
       - name: Require deployment credential
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN secret"; exit 1; }
-      - run: npm ci
+      - run: npm install
       - run: npm run typecheck
       - run: npm test
       - name: Generate isolated staging configuration
