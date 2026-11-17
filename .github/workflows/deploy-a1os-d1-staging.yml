@@ -36,12 +36,12 @@ jobs:
           import fs from 'node:fs';
           const config = JSON.parse(fs.readFileSync('wrangler.jsonc', 'utf8'));
           config.name = 'a1os-d1-task-queue-staging';
-          config.workers_dev = false;
+          config.workers_dev = true;
           config.d1_databases[0].database_name = 'a1os-task-queue-staging';
           config.d1_databases[0].database_id = '6b585263-15b3-43e5-bbb2-e4ec45eecfa0';
           fs.writeFileSync('wrangler.staging.json', JSON.stringify(config, null, 2));
           NODE
-      - name: Deploy staging Worker without public workers.dev route
+      - name: Deploy token-protected staging Worker
         run: npx wrangler deploy --config wrangler.staging.json
       - name: Verify deployment metadata
         run: npx wrangler deployments list --name a1os-d1-task-queue-staging
@@ -64,7 +64,7 @@ jobs:
           assert.ok(bindings.some(b=>b.name==='DB'&&b.type==='d1'&&b.database_id==='6b585263-15b3-43e5-bbb2-e4ec45eecfa0'),'staging D1 binding');
           assert.ok(bindings.some(b=>b.name==='TASK_QUEUE_TOKEN'&&b.type==='secret_text'),'auth secret binding');
           const subdomain=await get('/subdomain');
-          assert.equal(subdomain.enabled,false,'staging workers.dev must remain disabled');
+          assert.equal(subdomain.enabled,true,'staging workers.dev must remain enabled for authenticated E2E');
           assert.equal(subdomain.previews_enabled,false,'staging preview URLs must remain disabled');
-          console.log('PASS: correct staging D1, authentication secret, no public endpoint');
+          console.log('PASS: correct staging D1, authentication secret, authenticated endpoint enabled');
           NODE
