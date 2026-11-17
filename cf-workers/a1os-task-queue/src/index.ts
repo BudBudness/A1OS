@@ -191,8 +191,10 @@ async function recover(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname === "/health" && request.method === "GET") {
-      return json({ ok: true, service: "a1os-d1-task-queue" });
+    if (url.pathname === "/health") {
+      return request.method === "GET"
+        ? json({ ok: true, service: "a1os-d1-task-queue" })
+        : json({ error: "Method not allowed" }, 405);
     }
     const authorization = request.headers.get("authorization") ?? "";
     const match = authorization.match(/^Bearer\s+(.+)$/i);
