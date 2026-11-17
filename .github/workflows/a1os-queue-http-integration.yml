@@ -1,0 +1,61 @@
+name: A1OS Queue Local HTTP Integration
+on:
+  push:
+    paths:
+      - '.github/workflows/a1os-queue-http-integration.yml'
+      - 'cf-workers/a1os-task-queue/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  http-integration:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cf-workers/a1os-task-queue
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm test
+      - name: Start isolated local D1 Worker
+        run: |
+          cat > wrangler.integration.json <<'JSON'
+          {"name":"a1os-d1-task-queue-integration","main":"src/index.ts","compatibility_date":"2026-11-17","d1_databases":[{"binding":"DB","database_name":"a1os-task-queue-integration","database_id":"00000000-0000-4000-8000-000000000001","migrations_dir":"migrations"}]}
+          JSON
+          printf 'TASK_QUEUE_TOKEN=integration-test-only-token\n' > .dev.vars
+          npx wrangler d1 migrations apply a1os-task-queue-integration --local --config wrangler.integration.json
+          nohup npx wrangler dev --local --config wrangler.integration.json --port 8787 > /tmp/a1os-worker.log 2>&1 &
+          for i in $(seq 1 45); do if curl -fsS http://127.0.0.1:8787/health > /dev/null; then exit 0; fi; sleep 2; done
+          cat /tmp/a1os-worker.log
+          exit 1
+      - name: Exercise live HTTP authentication and task lifecycle
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const base='http://127.0.0.1:8787';
+          const token='integration-test-only-token';
+          const req=async(path,method='GET',body,auth=true)=>{
+            const r=await fetch(base+path,{method,headers:{...(auth?{authorization:'Bearer '+token}:{}),...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
+            return {status:r.status,data:await r.json()};
+          };
+          let r=await req('/health','GET',undefined,false);
+          assert.equal(r.status,200);assert.equal(r.data.ok,true);
+          r=await req('/v1/tasks/pending','GET',undefined,false);
+          assert.equal(r.status,401);
+          const id='integration-smoke';
+          const payload={task_id:id,target:'staging',role:'tester',action:'noop',payload:{smoke:true}};
+          r=await req('/v1/tasks','POST',payload);assert.equal(r.status,201);
+          r=await req('/v1/tasks','POST',payload);assert.equal(r.status,200);
+          r=await req('/v1/tasks/pending');assert.equal(r.status,200);assert.ok(r.data.data.some(x=>x.task_id===id));
+          r=await req('/v1/tasks/'+id+'/claim','POST');assert.equal(r.status,200);assert.equal(r.data.task.status,'running');
+          r=await req('/v1/tasks/'+id+'/complete','POST');assert.equal(r.status,200);assert.equal(r.data.task.status,'completed');
+          r=await req('/v1/tasks/'+id);assert.equal(r.status,200);assert.equal(r.data.data.status,'completed');
+          console.log('PASS: health, 401 auth, create, idempotency, pending, claim, complete, read');
+          NODE
+      - name: Worker diagnostics on failure
+        if: failure()
+        run: cat /tmp/a1os-worker.log || true
