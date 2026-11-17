@@ -70,6 +70,25 @@ jobs:
           console.log('PASS: HTTP auth, lifecycle, idempotency conflicts, retries, terminal failures, recovery');
 
           NODE
+      - name: Verify executor integration over HTTP
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const base='http://127.0.0.1:8787';
+          const headers={authorization:'Bearer integration-test-only-token','content-type':'application/json'};
+          const r=await fetch(base+'/v1/tasks',{method:'POST',headers,body:JSON.stringify({task_id:'executor-smoke',target:'staging',role:'smoke',action:'noop',payload:{test:true}})});
+          assert.equal(r.status,201);
+          NODE
+          A1OS_QUEUE_URL=http://127.0.0.1:8787 A1OS_QUEUE_TOKEN=integration-test-only-token node executor.mjs
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const r=await fetch('http://127.0.0.1:8787/v1/tasks/executor-smoke',{headers:{authorization:'Bearer integration-test-only-token'}});
+          assert.equal(r.status,200);
+          const result=await r.json();
+          assert.equal(result.data.status,'completed');
+          assert.equal(result.data.attempts,1);
+          console.log('PASS: executor claimed and completed allowlisted task over HTTP');
+          NODE
       - name: Worker diagnostics on failure
         if: failure()
         run: cat /tmp/a1os-worker.log || true
