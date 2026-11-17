@@ -7,18 +7,22 @@ from core.persistence.database import Database
 
 
 def _cloud_store():
-    """Return the Supabase store only for configured Vercel production requests."""
-    if not os.environ.get("VERCEL"):
-        return None
-    from core.persistence.supabase_tasks import store
+    """Use the Cloudflare D1 queue when configured; never fall back to Supabase."""
+    url = os.environ.get("A1OS_TASK_QUEUE_URL", "").strip()
+    token = os.environ.get("A1OS_TASK_QUEUE_TOKEN", "").strip()
+    if bool(url) != bool(token):
+        raise RuntimeError("A1OS_TASK_QUEUE_URL and A1OS_TASK_QUEUE_TOKEN must be configured together")
+    if url and token:
+        from core.persistence.cloudflare_tasks import CloudflareTaskStore
 
-    if not store.configured:
-        raise RuntimeError("Vercel task execution requires configured Supabase persistence")
-    return store
+        return CloudflareTaskStore(url=url, token=token)
+    if os.environ.get("VERCEL"):
+        raise RuntimeError("Cloudflare D1 task queue is required; legacy Supabase queue fallback is disabled")
+    return None
 
 
 class DurableQueue:
-    """Stable queue facade backed by SQLite locally and Supabase on Vercel."""
+    """Stable queue facade backed by local SQLite or the Cloudflare D1 Worker API."""
 
     @staticmethod
     def enqueue(target, role, action, data, task_id=None):

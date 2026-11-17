@@ -1,0 +1,34 @@
+name: A1OS D1 Task Queue Worker
+on:
+  pull_request:
+    paths:
+      - "cf-workers/a1os-task-queue/**"
+      - ".github/workflows/a1os-d1-task-queue.yml"
+  push:
+    branches: [main]
+    paths:
+      - "cf-workers/a1os-task-queue/**"
+      - ".github/workflows/a1os-d1-task-queue.yml"
+permissions:
+  contents: read
+concurrency:
+  group: a1os-d1-task-queue-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cf-workers/a1os-task-queue
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm test
+      - run: python tests/validate_d1_task_queue.py
