@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
+import importlib.util
 import sqlite3
-import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -11,7 +11,6 @@ from fastapi.testclient import TestClient
 
 API_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = API_ROOT.parents[1]
-sys.path.insert(0, str(API_ROOT))
 
 _tmp = TemporaryDirectory()
 DB_FILE = Path(_tmp.name) / "a1os-test.db"
@@ -36,7 +35,17 @@ conn.execute("INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, 
 conn.commit()
 conn.close()
 
-from api.app import app  # noqa: E402
+# Load the platform API under an isolated package name to avoid collision
+# with the root A1OS api package during whole-repository pytest collection.
+spec = importlib.util.spec_from_file_location(
+    "a1os_platform_test_api",
+    API_ROOT / "api" / "app.py",
+    submodule_search_locations=[str(API_ROOT / "api")],
+)
+assert spec is not None and spec.loader is not None
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+app = module.app
 
 
 def test_car_wash_requires_authentication():
