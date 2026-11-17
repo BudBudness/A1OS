@@ -1,11 +1,13 @@
 interface D1Result<T = Record<string, unknown>> {
   results?: T[];
   success: boolean;
+  meta?: { changes?: number };
 }
 interface D1PreparedStatement {
   bind(...values: unknown[]): D1PreparedStatement;
   all<T = Record<string, unknown>>(): Promise<D1Result<T>>;
   first<T = Record<string, unknown>>(): Promise<T | null>;
+  run(): Promise<D1Result>;
 }
 interface D1Database {
   prepare(query: string): D1PreparedStatement;
@@ -121,7 +123,8 @@ async function enqueue(request: Request, env: Env): Promise<Response> {
     row.action === action && row.payload_json === payloadJson &&
     row.max_attempts === maxAttempts;
   if (!sameRequest) return json({ error: "task_id already exists with different content" }, 409);
-  return json({ task_id: taskId, created: Boolean(inserted), task: publicTask(row) }, inserted ? 201 : 200);
+  const created = (inserted?.meta?.changes ?? 0) > 0;
+  return json({ task_id: taskId, created, task: publicTask(row) }, created ? 201 : 200);
 }
 
 async function getTask(taskId: string, env: Env): Promise<Response> {
