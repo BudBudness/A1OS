@@ -54,7 +54,21 @@ jobs:
           r=await req('/v1/tasks/'+id+'/claim','POST');assert.equal(r.status,200);assert.equal(r.data.task.status,'running');
           r=await req('/v1/tasks/'+id+'/complete','POST');assert.equal(r.status,200);assert.equal(r.data.task.status,'completed');
           r=await req('/v1/tasks/'+id);assert.equal(r.status,200);assert.equal(r.data.data.status,'completed');
-          console.log('PASS: health, 401 auth, create, idempotency, pending, claim, complete, read');
+          r=await req('/v1/tasks/'+id+'/claim','POST');assert.equal(r.status,409,'completed task cannot be reclaimed');
+          r=await req('/v1/tasks/'+id+'/complete','POST');assert.equal(r.status,409,'completed task cannot be completed twice');
+          r=await req('/v1/tasks','POST',{...payload,action:'different'});assert.equal(r.status,409,'conflicting idempotency key');
+          const retryId='integration-retry';
+          r=await req('/v1/tasks','POST',{task_id:retryId,target:'staging',role:'tester',action:'noop',max_attempts:2});assert.equal(r.status,201);
+          r=await req('/v1/tasks/'+retryId+'/claim','POST');assert.equal(r.status,200);
+          r=await req('/v1/tasks/'+retryId+'/fail','POST',{error:'transient test failure'});assert.equal(r.status,200);assert.equal(r.data.task.status,'retry');
+          const deniedId='integration-denied';
+          r=await req('/v1/tasks','POST',{task_id:deniedId,target:'staging',role:'tester',action:'noop'});assert.equal(r.status,201);
+          r=await req('/v1/tasks/'+deniedId+'/claim','POST');assert.equal(r.status,200);
+          r=await req('/v1/tasks/'+deniedId+'/fail','POST',{error:'ApprovalDenied: integration test'});assert.equal(r.status,200);assert.equal(r.data.task.status,'failed');
+          r=await req('/v1/tasks/recover','POST',{stale_after_seconds:30});assert.equal(r.status,200);
+          r=await req('/v1/tasks/pending','GET',undefined,true);assert.equal(r.status,200);
+          console.log('PASS: HTTP auth, lifecycle, idempotency conflicts, retries, terminal failures, recovery');
+
           NODE
       - name: Worker diagnostics on failure
         if: failure()
