@@ -54,7 +54,12 @@ class Runtime:
                         data = row["payload"]
 
                         if isinstance(data, dict):
-                            payload.update(data)
+                            # Queue metadata is authoritative; task data cannot
+                            # override the target, role, or action being executed.
+                            payload.update({
+                                key: value for key, value in data.items()
+                                if key not in {"target", "role", "action"}
+                            })
 
                     except Exception:
                             continue
@@ -210,8 +215,7 @@ class Runtime:
                 )
 
             else:
-                if manage_queue:
-                    DurableQueue.complete(task_id)
+                raise RuntimeError("No execution system attached; refusing to complete task")
 
             return result
 
