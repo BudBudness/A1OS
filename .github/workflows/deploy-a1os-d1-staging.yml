@@ -1,5 +1,8 @@
 name: Deploy A1OS D1 Queue (staging only)
 on:
+  push:
+    paths:
+      - '.github/workflows/deploy-a1os-d1-staging.yml'
   workflow_dispatch:
 permissions:
   contents: read
