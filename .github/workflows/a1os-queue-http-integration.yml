@@ -87,9 +87,15 @@ jobs:
           r=await req('/v1/tasks','POST',{task_id:deniedId,target:'staging',role:'tester',action:'noop'});assert.equal(r.status,201);
           r=await req('/v1/tasks/'+deniedId+'/claim','POST');assert.equal(r.status,200);
           r=await req('/v1/tasks/'+deniedId+'/fail','POST',{error:'ApprovalDenied: integration test'});assert.equal(r.status,200);assert.equal(r.data.task.status,'failed');
+          const recoveryId='integration-recovery';
+          r=await req('/v1/tasks','POST',{task_id:recoveryId,target:'staging',role:'tester',action:'noop',max_attempts:2});assert.equal(r.status,201);
+          r=await req('/v1/tasks/'+recoveryId+'/claim','POST');assert.equal(r.status,200);
+          await new Promise(resolve=>setTimeout(resolve,32000));
           r=await req('/v1/tasks/recover','POST',{stale_after_seconds:30});assert.equal(r.status,200);
+          assert.ok(r.data.tasks.some(task=>task.task_id===recoveryId&&task.status==='retry'),'stale running task must recover to retry');
+          r=await req('/v1/tasks/'+recoveryId);assert.equal(r.status,200);assert.equal(r.data.data.status,'retry');assert.equal(r.data.data.attempts,1);
           r=await req('/v1/tasks/pending','GET',undefined,true);assert.equal(r.status,200);
-          console.log('PASS: HTTP auth, lifecycle, idempotency conflicts, retries, terminal failures, recovery');
+          console.log('PASS: HTTP auth, lifecycle, idempotency conflicts, retries, terminal failures, stale recovery');
 
           NODE
       - name: Verify executor integration over HTTP
