@@ -1,0 +1,46 @@
+name: Verify A1OS Cloudflare Staging HTTP
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      CLOUDFLARE_ACCOUNT_ID: d9be8d8a7f91cb703d7c6210ef413c6a
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Require staging credentials
+        run: test -n "$CLOUDFLARE_API_TOKEN"
+      - name: Enable staging endpoint temporarily
+        run: |
+          curl --fail-with-body -sS -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/a1os-d1-task-queue-staging/subdomain" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"enabled":true,"previews_enabled":false}'
+      - name: Check deployed HTTP health and unauthorized access
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          const base='https://a1os-d1-task-queue-staging.eddiebillions85.workers.dev';
+          let health;
+          for(let i=0;i<20;i++){
+            try {health=await fetch(base+'/health');if(health.status===200)break;}catch{}
+            await new Promise(r=>setTimeout(r,1000));
+          }
+          assert.equal(health?.status,200);
+          assert.equal((await health.json()).ok,true);
+          const unauthorized=await fetch(base+'/v1/tasks/pending');
+          assert.equal(unauthorized.status,401);
+          console.log('PASS: deployed staging health and unauthorized access rejection');
+          NODE
+      - name: Disable staging endpoint
+        if: always()
+        run: |
+          curl --fail-with-body -sS -X POST \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/a1os-d1-task-queue-staging/subdomain" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"enabled":false,"previews_enabled":false}'
