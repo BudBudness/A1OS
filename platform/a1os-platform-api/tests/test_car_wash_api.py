@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import importlib.util
 import sqlite3
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -44,6 +45,7 @@ spec = importlib.util.spec_from_file_location(
 )
 assert spec is not None and spec.loader is not None
 module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = module
 spec.loader.exec_module(module)
 app = module.app
 
