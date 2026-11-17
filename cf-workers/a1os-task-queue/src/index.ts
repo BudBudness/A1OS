@@ -15,6 +15,7 @@ interface D1Database {
 interface Env {
   DB: D1Database;
   TASK_QUEUE_TOKEN: string;
+  A1OS_E2E_TEST_TOKEN?: string;
 }
 
 type TaskRow = {
@@ -198,8 +199,27 @@ export default {
     }
     const authorization = request.headers.get("authorization") ?? "";
     const match = authorization.match(/^Bearer\s+(.+)$/i);
-    if (!match || !(await sameSecret(match[1], env.TASK_QUEUE_TOKEN ?? ""))) {
-      return json({ error: "Unauthorized" }, 401);
+    if (!match) return json({ error: "Unauthorized" }, 401);
+    const primary = await sameSecret(match[1], env.TASK_QUEUE_TOKEN ?? "");
+    const smoke = !primary && await sameSecret(match[1], env.A1OS_E2E_TEST_TOKEN ?? "");
+    if (!primary && !smoke) return json({ error: "Unauthorized" }, 401);
+    // The secondary credential is restricted to acceptance-test tasks.
+    if (smoke) {
+      const smokeId = /^\/v1\/tasks\/(a1os-acceptance-[a-f0-9]{32})(?:\/(claim|complete))?$/.test(url.pathname);
+      if (url.pathname === "/v1/tasks" && request.method === "POST") {
+        const body = await bodyJson(request.clone());
+        if (!body || typeof body.task_id !== "string" ||
+            !/^a1os-acceptance-[a-f0-9]{32}$/.test(body.task_id) ||
+            body.target !== "staging" || body.role !== "smoke" ||
+            body.action !== "noop" || JSON.stringify(body.payload) !== '{"test":true}') {
+          return json({ error: "Forbidden" }, 403);
+        }
+      } else if (!smokeId || !(
+        request.method === "GET" && !url.pathname.endsWith("/claim") && !url.pathname.endsWith("/complete") ||
+        request.method === "POST" && (url.pathname.endsWith("/claim") || url.pathname.endsWith("/complete"))
+      )) {
+        return json({ error: "Forbidden" }, 403);
+      }
     }
     try {
       if (url.pathname === "/v1/tasks" && request.method === "POST") return await enqueue(request, env);
