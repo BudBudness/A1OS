@@ -1,8 +1,14 @@
 name: Verify A1OS Cloudflare Staging HTTP
 on:
+  push:
+    paths:
+      - '.github/workflows/a1os-staging-http-verify.yml'
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: a1os-staging-live-http
+  cancel-in-progress: false
 jobs:
   verify:
     runs-on: ubuntu-latest
