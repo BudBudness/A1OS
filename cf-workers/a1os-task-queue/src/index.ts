@@ -205,7 +205,7 @@ export default {
     if (!primary && !smoke) return json({ error: "Unauthorized" }, 401);
     // The secondary credential is restricted to acceptance-test tasks.
     if (smoke) {
-      const smokeId = /^\\/v1\\/tasks\\/(a1os-acceptance-[a-f0-9]{32})(?:\\/(claim|complete))?$/.test(url.pathname);
+      const smokeId = /^\/v1\/tasks\/(a1os-acceptance-[a-f0-9]{32})(?:\/(claim|complete))?$/.test(url.pathname);
       if (url.pathname === "/v1/tasks" && request.method === "POST") {
         const body = await bodyJson(request.clone());
         if (!body || typeof body.task_id !== "string" ||
