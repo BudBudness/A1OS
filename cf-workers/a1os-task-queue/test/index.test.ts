@@ -22,6 +22,6 @@ describe("A1OS D1 task queue Worker", () => {
 
   it("rejects unsupported methods", async () => {
     const response = await worker.fetch(new Request("https://queue.test/health", { method: "POST" }), env);
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(405);
   });
 });
