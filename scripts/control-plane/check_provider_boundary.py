@@ -48,6 +48,16 @@ def inspect(root: Path) -> tuple[list[Violation], int]:
                     if pattern.search(line): found.append(Violation(path,number,category))
     return found,scanned
 
+def has_application_source(root: Path) -> bool:
+    """Configuration alone is not an application implementation."""
+    source = root / "src"
+    if not source.is_dir():
+        return False
+    return any(
+        path.is_file() and path.suffix.lower() in {".py", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx"}
+        for path in source.rglob("*")
+    )
+
 def self_test() -> int:
     cases=(
         ("hosting","run: vercel deploy\n","hosting/runtime"),
@@ -93,10 +103,10 @@ def main() -> int:
     if violations:
         for v in violations: print(f"ERROR: {v.path}:{v.line}: [{v.dependency_class}] prohibited dependency")
         print("Provider boundary: FAIL"); return 1
-    if scanned==0:
-        print("Provider boundary: PASS; implementation status: NO_IMPLEMENTATION")
+    if not has_application_source(args.root):
+        print("Provider boundary: PASS; implementation status: NO_IMPLEMENTATION (configuration is not application source)")
         return 2 if args.require_implementation else 0
-    print("Provider boundary: PASS; implementation status: SOURCE_PRESENT (not deployment-ready)")
+    print("Provider boundary: PASS; implementation status: APPLICATION_SOURCE_PRESENT (not deployment-ready)")
     return 0
 
 if __name__=="__main__":
