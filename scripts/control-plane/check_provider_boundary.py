@@ -38,6 +38,9 @@ def inspect(root: Path) -> tuple[list[Violation], int]:
         if not base.is_dir():
             found.append(Violation(base,0,"workspace-integrity")); continue
         for path in sorted(p for p in base.rglob("*") if p.is_file() and p.suffix.lower() in SUFFIXES):
+            # The provider policy is the rule inventory itself, not an application dependency.
+            if path.relative_to(root).as_posix() == "config/provider-policy.json":
+                continue
             scanned += 1
             try: lines=path.read_text(encoding="utf-8").splitlines()
             except (UnicodeDecodeError,OSError):
