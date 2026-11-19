@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - "canonical-control-plane/**"
-      - "scripts/control-plane/check_provider_boundary.py"
+      - "scripts/control-plane/**"
       - ".github/workflows/canonical-control-plane-policy.yml"
   push:
     branches: [main]
     paths:
       - "canonical-control-plane/**"
-      - "scripts/control-plane/check_provider_boundary.py"
+      - "scripts/control-plane/**"
       - ".github/workflows/canonical-control-plane-policy.yml"
   workflow_dispatch:
 
@@ -30,7 +30,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Test guard
-        run: python scripts/control-plane/check_provider_boundary.py --self-test
-      - name: Enforce provider allowlist boundary
+      - name: Test provider dependency classes
+        env:
+          PYTHONPATH: scripts/control-plane
+        run: |
+          python scripts/control-plane/check_provider_boundary.py --self-test
+          python -m unittest discover -s scripts/control-plane -p 'test_*.py'
+      - name: Enforce provider boundary
         run: python scripts/control-plane/check_provider_boundary.py --root canonical-control-plane

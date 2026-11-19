@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "approved_provider_families": {
+    "cloudflare": ["Workers", "D1", "R2", "KV", "Queues", "Durable Objects", "Cloudflare Access", "Cloudflare Stream", "Cloudflare DNS", "Cloudflare Tunnel"],
+    "github": ["repositories", "pull requests", "GitHub Actions", "release records"],
+    "termux": ["local operator tooling", "local execution", "local verification"]
+  },
+  "known_prohibited_providers": ["Vercel", "Supabase", "Convex", "Firebase", "Auth0", "Clerk", "Okta", "Keycloak", "WorkOS", "Google OAuth"],
+  "prohibited_dependency_classes": ["unapproved hosting/runtime", "unapproved database/backend", "unapproved identity/authentication", "unapproved CI/CD/deployment"],
+  "scope": "canonical-control-plane/{src,config,infra,workflows}",
+  "readiness": "A passing scan is not evidence of application, staging, runtime, or deployment readiness."
+}
