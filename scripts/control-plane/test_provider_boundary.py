@@ -2,7 +2,7 @@
 import tempfile
 import unittest
 from pathlib import Path
-from check_provider_boundary import inspect
+from check_provider_boundary import has_application_source, inspect
 
 class ProviderBoundaryTests(unittest.TestCase):
     def setUp(self):
@@ -41,5 +41,13 @@ class ProviderBoundaryTests(unittest.TestCase):
     def test_empty_workspace_is_not_implementation(self):
         found,scanned=inspect(self.root)
         self.assertEqual(scanned,0); self.assertEqual(found,[])
+        self.assertFalse(has_application_source(self.root))
+    def test_configuration_alone_is_not_implementation(self):
+        config=self.root/"config"; config.mkdir()
+        (config/"provider-policy.json").write_text('{"approved":["cloudflare"]}',encoding="utf-8")
+        self.assertFalse(has_application_source(self.root))
+        (self.root/"src").mkdir(exist_ok=True)
+        (self.root/"src"/"main.py").write_text("print('app')",encoding="utf-8")
+        self.assertTrue(has_application_source(self.root))
 
 if __name__=="__main__": unittest.main()
