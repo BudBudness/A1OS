@@ -44,10 +44,11 @@ async function rows(env, sql, user, all = false) {
   return result.results || [];
 }
 async function workspace(env, user) {
-  const matters = await env.DB.prepare(canSeeAll(user)
+  const matterSql = canSeeAll(user)
     ? "SELECT m.*, c.legal_name AS client FROM matters m LEFT JOIN clients c ON c.id=m.client_id ORDER BY m.created_at DESC"
-    : "SELECT m.*, c.legal_name AS client FROM matters m LEFT JOIN clients c ON c.id=m.client_id WHERE m.id IN (SELECT matter_id FROM matter_members WHERE user_id=?) ORDER BY m.created_at DESC")
-    .bind(...(canSeeAll(user) ? [] : [user.user_id])).all();
+    : "SELECT m.*, c.legal_name AS client FROM matters m LEFT JOIN clients c ON c.id=m.client_id WHERE m.id IN (SELECT matter_id FROM matter_members WHERE user_id=?) ORDER BY m.created_at DESC";
+  const matterStatement = canSeeAll(user) ? env.DB.prepare(matterSql) : env.DB.prepare(matterSql).bind(user.user_id);
+  const matters = await matterStatement.all();
   const matterIds = matters.results.map(x => x.id);
   const scoped = async (table, order, where = "") => {
     if (!matterIds.length) return [];
@@ -72,7 +73,7 @@ async function workspace(env, user) {
 async function handle(request, env) {
   const url = new URL(request.url);
   if (url.pathname === "/health") return json({ ok: true, service: "barya-legal-api" });
-  if (!url.pathname.startsWith("/api/")) return fail("Not found",404);
+  if (!url.pathname.startsWith("/api/")) return env.ASSETS ? env.ASSETS.fetch(request) : fail("Static assets binding is not configured",503);
   let user;
   try { user = await actor(request, env); } catch (e) { return fail("Identity verification failed or Access is not configured",503); }
   if (!user) return fail("Cloudflare Access authentication required",401);
@@ -123,9 +124,13 @@ async function handle(request, env) {
     const matterId=clean(request.headers.get("x-matter-id"));
     if (!matterId || !await allowedMatter(env,user,matterId)) return fail("Matter access denied",403);
     const title=clean(request.headers.get("x-document-title")), type=clean(request.headers.get("x-document-type"))||"file";
+    const length = Number(request.headers.get("content-length") || 0);
     if (!title || !request.body) return fail("Document title and body are required",400);
+    if (!length || length > 25 * 1024 * 1024) return fail("Document upload must include Content-Length and be no larger than 25 MB",413);
+    const bytes = await request.arrayBuffer();
+    if (bytes.byteLength > 25 * 1024 * 1024) return fail("Document exceeds the 25 MB upload limit",413);
     const id=uuid(), key=`matters/${matterId}/${id}`;
-    await env.DOCUMENTS.put(key,request.body,{httpMetadata:{contentType:request.headers.get("content-type")||"application/octet-stream"}});
+    await env.DOCUMENTS.put(key,bytes,{httpMetadata:{contentType:request.headers.get("content-type")||"application/octet-stream"}});
     try {
       await env.DB.prepare("INSERT INTO documents (id,matter_id,title,document_type,storage_path,mime_type,uploaded_by) VALUES (?,?,?,?,?,?,?)")
         .bind(id,matterId,title,type,key,request.headers.get("content-type"),user.user_id).run();

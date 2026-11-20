@@ -128,3 +128,27 @@ CREATE INDEX IF NOT EXISTS idx_deadlines_due ON deadlines(status,deadline_at);
 CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(status,due_at);
 CREATE INDEX IF NOT EXISTS idx_docs_matter ON documents(matter_id,created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_events(created_at);
+
+CREATE TABLE IF NOT EXISTS parties (
+  id TEXT PRIMARY KEY,
+  matter_id TEXT NOT NULL REFERENCES matters(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  party_type TEXT NOT NULL,
+  contact TEXT,
+  notes TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS evidence (
+  id TEXT PRIMARY KEY,
+  matter_id TEXT NOT NULL REFERENCES matters(id) ON DELETE CASCADE,
+  reference TEXT NOT NULL,
+  description TEXT NOT NULL,
+  source TEXT,
+  storage_path TEXT,
+  exhibit_number TEXT,
+  collected_at TEXT,
+  recorded_by TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_parties_matter ON parties(matter_id);
+CREATE INDEX IF NOT EXISTS idx_evidence_matter ON evidence(matter_id);
