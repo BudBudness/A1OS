@@ -41,3 +41,12 @@ jobs:
       - name: Verify canonical control-plane instruction chain
         run: |
           python scripts/control-plane/check_agent_instructions.py --preflight --for-path canonical-control-plane/src/
+      - name: Validate fail-closed release gate manifest
+        run: python scripts/control-plane/check_release_gates.py
+      - name: Confirm production release remains blocked without evidence
+        run: |
+          set +e
+          python scripts/control-plane/check_release_gates.py --evaluate
+          code=$?
+          set -e
+          test "$code" -eq 2
