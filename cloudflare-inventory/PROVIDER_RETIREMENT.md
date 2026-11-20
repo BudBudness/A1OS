@@ -1,35 +1,45 @@
-# Vercel and Supabase retirement — A1OS
+# Vercel and Supabase retirement — A1OS and portfolio audit
 
-## Target platform
+## Canonical platform
 
-A1OS is standardized on GitHub + Cloudflare + Termux. Vercel and Supabase are retired providers. No new integrations, deployments, credentials, cron jobs, or CI dependencies may be added.
+The approved platform direction is GitHub + Cloudflare + Termux. Vercel and Supabase are retired providers. Do not add new integrations, deployments, credentials, cron jobs or CI dependencies for either provider.
 
-## Removed from the A1OS core runtime
+## External decommissioning — verified
 
-- Root Vercel deployment and cron configuration (vercel.json).
-- Vercel-specific Python entrypoint configuration (pyproject.toml).
-- Supabase task persistence client (core/persistence/supabase_tasks.py) and its provider-specific tests.
-- Supabase/Vercel runtime selection in app.py.
-- Supabase task polling/claiming/completion in core/worker.py; the worker now uses the shared durable queue facade backed by Cloudflare D1 or local SQLite.
-- Supabase credentials from worker launch/status scripts and CI regression jobs.
-- Vercel-specific config files under the Legal and Little Oaks verticals.
-- Supabase credentials and provider-specific production smoke job from the Legal CI workflow.
+- Vercel project inventory returned zero projects after the owner's manual deletion.
+- Supabase project inventory returned zero projects after the owner's manual deletion.
+- Owner confirmed that the Vercel and Supabase GitHub Apps were removed from repository access.
+- These are account-level changes; this document records the verification and owner confirmation, not an automated uninstall operation.
 
-## Remaining migration work — not yet retired
+## A1OS repository changes in PR #49
 
-The repository still contains product-level Supabase integration code that must be migrated before it can be safely deleted:
+- **YouTube High Profit:** all 23 product files and the dedicated workflow removed from the PR branch. No product code is being migrated; the product is being retired.
+- **Legal:** browser Supabase SDK, credentials, password-auth flow and direct database calls removed from the PR branch. Replaced with Cloudflare Access JWT verification in a Worker, D1 relational persistence, matter-membership authorization, audit events and private R2 document storage.
+- **Frontend and Worker:** GitHub Actions frontend tests/build, Worker tests, local D1 migration application and Wrangler deploy dry-run passed.
+- **Historical Supabase migrations:** root `supabase/migrations/` files are retained as immutable audit/migration evidence only. They are not executable runtime dependencies.
 
-- **Legal vertical:** Supabase JS SDK, browser client, authentication, database/RLS and associated historical migrations. Replace with an approved Cloudflare-backed data/auth design and verify confidentiality, authorization and tenant boundaries first.
-- **YouTube High Profit:** optional Supabase job persistence and historical schema. Replace with Cloudflare D1/R2 or an explicitly approved local Termux persistence design, then verify job lifecycle and artifact recovery.
-- **Historical supabase/ migration files:** retained as migration/audit evidence. They are not authorization to continue using Supabase.
+## Legal production gates — still open
 
-## External decommissioning is separate
+- Create the D1 database and R2 bucket in the Cloudflare account.
+- Set the exact Access team domain and application audience; configure the Access application and staff policy.
+- Replace the placeholder D1 database ID in Wrangler configuration.
+- Provision staff profiles from verified Access subject IDs and assign matter memberships.
+- Deploy the combined Worker + Workers Assets bundle.
+- Import data only if a verified, authorized export exists. Prior context search found no recorded Legal database export, backup or restore evidence before the former Supabase project was deleted. The earlier Legal artifact was described as a generated/orchestrated skeleton, not a verified live persistence system.
+- Complete live browser, access-denied, matter-isolation, document upload/download, backup and restore tests.
 
-Repository changes do not uninstall GitHub Apps, delete Vercel projects/deployments, delete Supabase projects/databases, revoke provider credentials, or remove account-level integrations. Those operations require resource inventory, verified backups/restore, cutover evidence and explicit authorization. No external resource was changed by this PR.
+No production runtime is declared migrated until those gates pass.
 
-## Verification gates
+## Additional repository findings
 
-- CI must pass after the core runtime refactor.
-- Confirm no active core imports or worker scripts depend on Supabase.
-- Confirm no root or product Vercel deployment configuration remains.
-- Complete Legal and YouTube High Profit migrations independently before deleting their remaining Supabase code or data.
+A portfolio-wide GitHub code search found further Vercel/Supabase references outside the two A1OS products in this PR:
+
+- `BudBudness/Ether_Tours-Travel`: Supabase SDK/auth/database code and Vercel deployment assumptions.
+- `BudBudness/GUZA_GURA-`: Supabase SDK/auth/database code and Vercel deployment assumptions.
+- `BudBudness/SMC-Agent-`: Vercel configuration and direct REST calls to the deleted Supabase project URL.
+
+These repositories were not modified by PR #49. They remain portfolio retirement/migration work and must be migrated and independently verified before claiming the entire GitHub portfolio is provider-independent.
+
+## Verification boundary
+
+PR #49 validates code and local D1 migration behavior only. It does not provision Cloudflare account resources, deploy production, restore deleted data, or prove that production products operate.

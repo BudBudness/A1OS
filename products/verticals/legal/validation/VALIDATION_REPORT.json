@@ -4,11 +4,20 @@
   "checks": {
     "architecture": true,
     "dependencies": true,
-    "api": false,
-    "security": false,
-    "operations": false,
-    "recovery": false
+    "api_unit": true,
+    "access_jwt_validation_implemented": true,
+    "matter_scope_authorization_implemented": true,
+    "d1_migration_ci": true,
+    "cloudflare_resources": false,
+    "data_restore": false,
+    "production_e2e": false,
+    "backup_restore": false
   },
-  "issues": ["Production database and deployment E2E remain to be connected and verified."],
-  "status": "in_progress"
+  "issues": [
+    "Cloudflare D1, R2 and Workers Assets must be provisioned and bound to the production account.",
+    "The former Supabase project was deleted before an export was verified; restore only from a verified authorized backup.",
+    "Cloudflare Access team domain, application audience, staff subject IDs and role profiles must be configured.",
+    "Production browser, matter-isolation, document, backup and restore tests remain outstanding."
+  ],
+  "status": "cloudflare_code_and_ci_verified_production_provisioning_pending"
 }

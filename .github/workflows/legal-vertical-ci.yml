@@ -3,11 +3,13 @@ on:
   push:
     paths:
       - "products/verticals/legal/**"
+      - ".github/workflows/legal-vertical-ci.yml"
   pull_request:
     paths:
       - "products/verticals/legal/**"
+      - ".github/workflows/legal-vertical-ci.yml"
 jobs:
-  verify:
+  frontend:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -17,6 +19,26 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: products/verticals/legal/package.json
       - run: npm install
       - run: npm test
       - run: npm run build
+  worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: products/verticals/legal/worker
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Build frontend assets
+        working-directory: products/verticals/legal
+        run: npm install && npm run build
+      - name: Install Worker dependencies
+        run: npm install
+      - run: npm test
+      - run: npx wrangler d1 migrations apply barya-legal --local
+      - run: npx wrangler deploy --dry-run
