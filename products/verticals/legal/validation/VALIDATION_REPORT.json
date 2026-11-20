@@ -7,7 +7,7 @@
     "api_unit": true,
     "access_jwt_validation_implemented": true,
     "matter_scope_authorization_implemented": true,
-    "d1_migration_ci": "pending",
+    "d1_migration_ci": true,
     "cloudflare_resources": false,
     "data_restore": false,
     "production_e2e": false,
@@ -19,5 +19,5 @@
     "Cloudflare Access team domain, application audience, staff subject IDs and role profiles must be configured.",
     "Production browser, matter-isolation, document, backup and restore tests remain outstanding."
   ],
-  "status": "cloudflare_runtime_implemented_deployment_blocked"
+  "status": "cloudflare_code_and_ci_verified_production_provisioning_pending"
 }
