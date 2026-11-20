@@ -1,10 +1,8 @@
 def test_cloud_worker_requires_secret(monkeypatch):
     import app as api
 
-    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setattr(api, "_production_cloud_store", lambda: True)
     monkeypatch.setenv("A1OS_WORKER_SECRET", "worker-secret")
-    monkeypatch.setattr(api.supabase_tasks, "url", "https://example.supabase.co")
-    monkeypatch.setattr(api.supabase_tasks, "key", "test-key")
 
     response = api.app.test_client().post("/v1/worker/run", json={"limit": 1})
     assert response.status_code == 401
@@ -14,10 +12,8 @@ def test_cloud_worker_requires_secret(monkeypatch):
 def test_cloud_worker_rejects_invalid_limit_body(monkeypatch):
     import app as api
 
-    monkeypatch.setenv("VERCEL", "1")
+    monkeypatch.setattr(api, "_production_cloud_store", lambda: True)
     monkeypatch.setenv("A1OS_WORKER_SECRET", "worker-secret")
-    monkeypatch.setattr(api.supabase_tasks, "url", "https://example.supabase.co")
-    monkeypatch.setattr(api.supabase_tasks, "key", "test-key")
 
     response = api.app.test_client().post(
         "/v1/worker/run",
