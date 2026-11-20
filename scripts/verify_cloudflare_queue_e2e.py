@@ -4,11 +4,24 @@
 Requires A1OS_TASK_QUEUE_URL and A1OS_TASK_QUEUE_TOKEN. Never prints credentials.
 The task is claimed and completed by this test, not executed by the production engine.
 """
+import importlib.util
 import json
 import os
+from pathlib import Path
 import sys
 import uuid
-from core.persistence.cloudflare_tasks import CloudflareTaskStore
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+STORE_PATH = REPOSITORY_ROOT / "core" / "persistence" / "cloudflare_tasks.py"
+if not STORE_PATH.is_file():
+    raise RuntimeError(f"CloudflareTaskStore source file not found: {STORE_PATH}")
+SPEC = importlib.util.spec_from_file_location("a1os_cloudflare_tasks", STORE_PATH)
+if SPEC is None or SPEC.loader is None:
+    raise RuntimeError(f"Could not load CloudflareTaskStore from {STORE_PATH}")
+MODULE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(MODULE)
+CloudflareTaskStore = MODULE.CloudflareTaskStore
+
 
 def main():
     url = os.getenv("A1OS_TASK_QUEUE_URL", "").strip()
@@ -41,6 +54,7 @@ def main():
     except Exception as exc:
         print(f"FAIL: {type(exc).__name__}: {exc}", file=sys.stderr)
         return 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
