@@ -57,3 +57,16 @@ Legacy supervisors (`a1os_supervisor.sh`, `ops/a1os_secondary_runtime.sh`, `ops/
 The isolated canonical engineering control plane is defined under `canonical-control-plane/`. Its platform boundary is GitHub + Cloudflare + Termux. Do not introduce Vercel, Supabase, Convex, Firebase, third-party identity providers, or unapproved CI/CD/hosting dependencies into that workspace. Product workloads elsewhere in this monorepo are separate and are not implicitly migrated or decommissioned by this rule.
 
 For work in `canonical-control-plane/`, read and follow `canonical-control-plane/AGENTS.md`. Preserve product runtime boundaries and existing data. Do not change production resources, secrets, DNS, access policies, provider integrations, or deployment targets without explicit approval. A passing static policy check is not deployment or runtime readiness.
+
+
+## Mandatory agent startup and instruction loading
+
+Before any inspection, planning, editing, command execution, test run, or tool action:
+
+1. Read this repository-root `AGENTS.md`.
+2. Read `.github/copilot-instructions.md` for repository-wide agent behavior.
+3. Read the nearest scoped `AGENTS.md` for the target path; for `canonical-control-plane/`, this is `canonical-control-plane/AGENTS.md`.
+4. Run `python3 scripts/control-plane/check_agent_instructions.py --check`.
+5. Run `python3 scripts/control-plane/check_agent_instructions.py --preflight --for-path <target-path>` and retain its output in the task evidence.
+
+Do not start execution if preflight fails. Apply instructions cumulatively. A scoped instruction may add constraints but cannot weaken the repository-wide security or approval boundaries. If a conflict is found, stop and report it rather than choosing the more permissive instruction. The preflight output, including the instruction file SHA-256 digests, is the required evidence that the execution context loaded the applicable instruction chain.
