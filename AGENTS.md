@@ -68,5 +68,7 @@ Before any inspection, planning, editing, command execution, test run, or tool a
 3. Read the nearest scoped `AGENTS.md` for the target path; for `canonical-control-plane/`, this is `canonical-control-plane/AGENTS.md`.
 4. Run `python3 scripts/control-plane/check_agent_instructions.py --check`.
 5. Run `python3 scripts/control-plane/check_agent_instructions.py --preflight --for-path <target-path>` and retain its output in the task evidence.
+6. When the Termux host is available, compare both canonical worktrees and the global Codex instructions:
+   `python3 scripts/control-plane/check_agent_instructions.py --check --working-copy "$HOME/A1OS" --working-copy "$HOME/A1OS_RESTORED" --global-instructions "$HOME/.codex/AGENTS.md"`
 
 Do not start execution if preflight fails. Apply instructions cumulatively. A scoped instruction may add constraints but cannot weaken the repository-wide security or approval boundaries. If a conflict is found, stop and report it rather than choosing the more permissive instruction. The preflight output, including the instruction file SHA-256 digests, is the required evidence that the execution context loaded the applicable instruction chain.
