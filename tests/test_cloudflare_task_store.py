@@ -70,7 +70,6 @@ def test_local_runtime_uses_local_queue_when_cloudflare_is_unconfigured(monkeypa
     assert _cloud_store() is None
 
 def test_remote_queue_requires_url_and_token_together(monkeypatch):
-    monkeypatch.delenv("VERCEL", raising=False)
     monkeypatch.setenv("A1OS_TASK_QUEUE_URL", "https://queue.example.workers.dev")
     monkeypatch.delenv("A1OS_TASK_QUEUE_TOKEN", raising=False)
     try:
