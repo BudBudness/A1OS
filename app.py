@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import json
 import os
-import uuid
 
 from flask import Flask, jsonify, request
 
@@ -51,7 +50,7 @@ def ready():
     return jsonify({
         "status": "ready" if cloud else "degraded",
         "service": "a1os-api",
-        "execution_mode": "cloud-queue" if cloud else "serverless-safe",
+        "execution_mode": "cloudflare-d1" if cloud else "local-termux",
         "persistence": "cloudflare-d1" if cloud else "local",
     })
 
