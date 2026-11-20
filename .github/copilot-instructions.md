@@ -11,7 +11,7 @@ Before any inspection, planning, editing, command execution, test run, or tool a
 
 Do not begin the requested task if preflight fails. Apply all applicable instructions cumulatively; a scoped instruction supplements the root contract and cannot override security or approval boundaries. If instructions conflict, stop and report the exact conflict rather than choosing the more permissive rule.
 
-Canonical engineering platform: GitHub + Cloudflare + Termux. Do not add Vercel, Supabase, or another unapproved provider to the canonical control-plane workspace.
+Repository platform: GitHub + Cloudflare + Termux. Vercel and Supabase are retired across this repository. Do not add new dependencies, deployments, credentials, cron jobs, or CI integrations for either. Existing product integrations must be migrated and verified before their remaining code or data is removed.
 
 Routine read-only inspection, implementation, and deterministic tests are authorized. Obtain explicit approval before destructive or irreversible changes, production changes, external-consequence actions, security-sensitive changes, or credential, permission, identity, DNS, or access-policy changes.
 

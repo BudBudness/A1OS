@@ -7,7 +7,7 @@ from core.persistence.database import Database
 
 
 def _cloud_store():
-    """Use the Cloudflare D1 queue when configured; never fall back to Supabase."""
+    """Use Cloudflare D1 when configured, otherwise the local SQLite queue."""
     url = os.environ.get("A1OS_TASK_QUEUE_URL", "").strip()
     token = os.environ.get("A1OS_TASK_QUEUE_TOKEN", "").strip()
     if bool(url) != bool(token):
@@ -16,8 +16,6 @@ def _cloud_store():
         from core.persistence.cloudflare_tasks import CloudflareTaskStore
 
         return CloudflareTaskStore(url=url, token=token)
-    if os.environ.get("VERCEL"):
-        raise RuntimeError("Cloudflare D1 task queue is required; legacy Supabase queue fallback is disabled")
     return None
 
 
@@ -149,10 +147,10 @@ class DurableQueue:
         )
 
     @staticmethod
-    def recover_running():
+    def recover_running(stale_after_seconds=300):
         cloud = _cloud_store()
         if cloud is not None:
-            return cloud.recover_stale_tasks()
+            return cloud.recover_stale_tasks(stale_after_seconds=stale_after_seconds)
 
         cur = Database.execute(
             """

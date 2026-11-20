@@ -4,20 +4,20 @@ set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-load_required_var() {
+load_optional_var() {
   local name="$1"
   local value
-  value="$(sed -n "s/^${name}=//p" .env.local | head -n 1)"
-  if [[ -z "$value" ]]; then
-    printf 'Missing %s in .env.local\n' "$name" >&2
-    exit 1
+  value="$(sed -n "s/^${name}=//p" .env.local 2>/dev/null | head -n 1)"
+  if [[ -n "$value" ]]; then
+    printf -v "$name" '%s' "$value"
+    export "$name"
   fi
-  printf -v "$name" '%s' "$value"
-  export "$name"
 }
 
-load_required_var SUPABASE_URL
-load_required_var SUPABASE_SECRET_KEY
+# Cloudflare D1 credentials are optional when intentionally running the local
+# SQLite queue under Termux. If only one is supplied, the Python client fails closed.
+load_optional_var A1OS_TASK_QUEUE_URL
+load_optional_var A1OS_TASK_QUEUE_TOKEN
 
 export A1OS_WORKER_POLL_SECONDS="${A1OS_WORKER_POLL_SECONDS:-2}"
 export A1OS_WORKER_BATCH_SIZE="${A1OS_WORKER_BATCH_SIZE:-10}"
