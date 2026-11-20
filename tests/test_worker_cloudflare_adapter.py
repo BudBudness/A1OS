@@ -1,9 +1,7 @@
 import ast
 from pathlib import Path
 
-from core import queue as queue_package
 from core.queue import durable
-
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
