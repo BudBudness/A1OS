@@ -16,20 +16,20 @@ async def test_worker_executes_claimed_cloud_task_without_reclaiming_or_local_en
     lifecycle = []
     runtime_calls = []
 
-    monkeypatch.setattr(worker.supabase_tasks, "pending_tasks", lambda limit: [_task()])
+    monkeypatch.setattr(worker.DurableQueue, "pending", lambda limit: [_task()])
     monkeypatch.setattr(
-        worker.supabase_tasks,
-        "claim_task",
+        worker.DurableQueue,
+        "claim",
         lambda task_id: lifecycle.append(("claim", task_id)) or True,
     )
     monkeypatch.setattr(
-        worker.supabase_tasks,
-        "complete_task",
+        worker.DurableQueue,
+        "complete",
         lambda task_id: lifecycle.append(("complete", task_id)),
     )
     monkeypatch.setattr(
-        worker.supabase_tasks,
-        "fail_task",
+        worker.DurableQueue,
+        "fail",
         lambda task_id, error: lifecycle.append(("fail", task_id, error)),
     )
 
@@ -52,19 +52,19 @@ async def test_worker_executes_claimed_cloud_task_without_reclaiming_or_local_en
     assert runtime_calls[0]["manage_queue"] is False
 
 
-async def test_worker_records_runtime_failure_in_supabase(monkeypatch):
+async def test_worker_records_runtime_failure_in_cloudflare_queue(monkeypatch):
     lifecycle = []
 
-    monkeypatch.setattr(worker.supabase_tasks, "pending_tasks", lambda limit: [_task()])
+    monkeypatch.setattr(worker.DurableQueue, "pending", lambda limit: [_task()])
     monkeypatch.setattr(worker.supabase_tasks, "claim_task", lambda task_id: True)
     monkeypatch.setattr(
-        worker.supabase_tasks,
-        "complete_task",
+        worker.DurableQueue,
+        "complete",
         lambda task_id: lifecycle.append(("complete", task_id)),
     )
     monkeypatch.setattr(
-        worker.supabase_tasks,
-        "fail_task",
+        worker.DurableQueue,
+        "fail",
         lambda task_id, error: lifecycle.append(("fail", task_id, error)),
     )
 
