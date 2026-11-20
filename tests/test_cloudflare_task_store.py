@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 import httpx
 
 from core.persistence.cloudflare_tasks import CloudflareTaskStore
@@ -59,7 +57,6 @@ def test_pending_tasks_reads_worker_data(monkeypatch):
 
 
 def test_cloud_store_uses_configured_cloudflare_endpoint(monkeypatch):
-    monkeypatch.delenv("VERCEL", raising=False)
     monkeypatch.setenv("A1OS_TASK_QUEUE_URL", "https://queue.example.workers.dev")
     monkeypatch.setenv("A1OS_TASK_QUEUE_TOKEN", "token")
     store = _cloud_store()
