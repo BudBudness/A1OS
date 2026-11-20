@@ -149,10 +149,11 @@ class DurableQueue:
         )
 
     @staticmethod
-    def recover_running():
+    def recover_running(stale_after_seconds=300):
+        stale_after_seconds = max(0, int(stale_after_seconds))
         cloud = _cloud_store()
         if cloud is not None:
-            return cloud.recover_stale_tasks()
+            return cloud.recover_stale_tasks(stale_after_seconds=stale_after_seconds)
 
         cur = Database.execute(
             """
@@ -162,7 +163,9 @@ class DurableQueue:
                 error='Recovered after process interruption',
                 next_attempt_at=NULL
             WHERE status='running'
+              AND datetime(updated_at) < datetime('now', ? || ' seconds')
             """,
+            ("-" + str(stale_after_seconds),),
         )
         return cur.rowcount
 
