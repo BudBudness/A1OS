@@ -45,7 +45,8 @@ def _row_payload(row: dict[str, Any]) -> dict[str, Any]:
         payload = json.loads(payload)
     if not isinstance(payload, dict):
         payload = {}
-    return {"target": row["target"], "role": row["role"], "action": row["action"], **payload}
+    # Queue columns are the trusted execution envelope; payload data must not override them.
+    return {**payload, "target": row["target"], "role": row["role"], "action": row["action"]}
 
 async def _execute_payload(task_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     target = str(payload["target"]).lower()
