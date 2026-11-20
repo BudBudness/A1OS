@@ -1,6 +1,6 @@
 # A1OS
 
-Autonomous multi-engine AI/agent orchestration platform ("A1OS Factory"). Python monolith (`core/`, `infra/`, `api/`) plus Node tooling and productized "OS" packages under `products/`. Product verticals are maintained under `products/verticals/`; Little Oaks is preserved as an independent product vertical. Remote: `https://github.com/BudBudness/A1OS.git`, working copy on branch `main`. Repo-local OpenCode agents encode extra operational constraints — read `.opencode/agents/little-oaks.md` (live-stack ops, hard rules) and `.opencode/agents/security-auditor.md` before operating the stack or auditing it.
+Autonomous multi-engine AI/agent orchestration platform ("A1OS Factory"). Python monolith (`core/`, `infra/`, `api/`) plus Node tooling and productized "OS" packages under `products/`. Product verticals are maintained under `products/verticals/`; Little Oaks is preserved as an independent product vertical. Remote: `https://github.com/BudBudness/A1OS.git`, working copy on branch `main`. Product-specific operational constraints must be read from the applicable product documentation and scoped `AGENTS.md` files when present. Do not assume retired or absent agent files exist.
 
 ## Environment
 
@@ -50,3 +50,10 @@ Legacy supervisors (`a1os_supervisor.sh`, `ops/a1os_secondary_runtime.sh`, `ops/
 - Cron gotchas: the runit service `crond` ships DISABLED (`down` file) — if `ps` shows no `crond -n` process, run `sv up crond` (it must be up for any scheduled job to fire). crond runs as the real Termux uid `u0_a433` and ONLY reads `$PREFIX/var/spool/cron/u0_a433`; inside PRoot, `crontab` writes to the `root` spool which crond ignores. Always install to both (copy `~/crontab.txt` to `.../spool/cron/u0_a433` AND run `crontab ~/crontab.txt`).
 - Cloudflare tunnel gotchas: the public site is served by tunnel `a1os-prod` (credentials `7fdd3dce-…json` in `~/.cloudflared/config.yml`). NEVER judge tunnel health by process cmdline name — connector processes can run under misleading names (a prior setup ran `cloudflared tunnel run router-panel`/`ssh-tunnel` processes that were actually carrying a1os-prod's connectors via config.yml credentials; killing them killed the public site). Judge health by public reachability (`https://little-oaks.pyongcity.org/api/health`) or the watchdog log. The watchdog auto-restarts the tunnel when public checks fail; the canonical launch is `cloudflared tunnel --protocol http2 --config ~/.cloudflared/config.yml run a1os-prod`.
 - Host memory is tight (~5.5Gi total, ~1.1Gi free) — avoid parallel heavy builds.
+
+
+## Canonical control plane
+
+The isolated canonical engineering control plane is defined under `canonical-control-plane/`. Its platform boundary is GitHub + Cloudflare + Termux. Do not introduce Vercel, Supabase, Convex, Firebase, third-party identity providers, or unapproved CI/CD/hosting dependencies into that workspace. Product workloads elsewhere in this monorepo are separate and are not implicitly migrated or decommissioned by this rule.
+
+For work in `canonical-control-plane/`, read and follow `canonical-control-plane/AGENTS.md`. Preserve product runtime boundaries and existing data. Do not change production resources, secrets, DNS, access policies, provider integrations, or deployment targets without explicit approval. A passing static policy check is not deployment or runtime readiness.
