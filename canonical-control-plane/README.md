@@ -38,6 +38,7 @@ The initial CI guard is a deterministic denylist for the currently identified ex
 - `--preflight --for-path <path>` prints the complete applicable instruction chain with SHA-256 digests. CI captures this output before running the control-plane checks.
 - `--working-copy <path>` compares instruction-file hashes against the canonical checkout. Repeat the option for every local checkout that must be audited.
 - `--global-instructions <path>` checks the operator's global instruction file for the canonical platform and approval boundaries.
+- Termux drift command: `python3 scripts/control-plane/check_agent_instructions.py --check --working-copy "$HOME/A1OS" --working-copy "$HOME/A1OS_RESTORED" --global-instructions "$HOME/.codex/AGENTS.md"`.
 - `scripts/control-plane/check_release_gates.py --evaluate` fails closed until every required gate has verified evidence. The checked-in manifest deliberately keeps production deployment disabled and release BLOCKED.
 
 A GitHub Actions preflight proves that the CI runner loaded the applicable files; it does not, by itself, prove that every external agent runtime obeys them. Agent integrations must invoke the preflight before starting work and retain its output as execution evidence. Local Termux worktrees and the operator's global instruction file must be checked from the Termux host because GitHub cannot inspect files stored only on that device.
