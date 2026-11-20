@@ -40,7 +40,10 @@ def _single_worker_lock() -> Iterator[None]:
             handle.close()
 
 def _row_payload(row: dict[str, Any]) -> dict[str, Any]:
-    payload = row.get("payload") or {}
+    try:
+        payload = row["payload"] or {}
+    except (KeyError, IndexError, TypeError):
+        payload = {}
     if isinstance(payload, str):
         payload = json.loads(payload)
     if not isinstance(payload, dict):
@@ -77,7 +80,7 @@ async def process_once(limit: int | None = None) -> int:
             if result.get("status") == "completed":
                 DurableQueue.complete(task_id)
             else:
-                DurableQueue.fail(task_id, RuntimeError(result.get("error", "Task execution failed")) )
+                DurableQueue.fail(task_id, RuntimeError(result.get("error", "Task execution failed")))
         except Exception as exc:
             _log("task_failed", task_id=task_id, error_type=type(exc).__name__, error=str(exc)[:500])
             DurableQueue.fail(task_id, exc)
@@ -89,7 +92,7 @@ async def process_once(limit: int | None = None) -> int:
 async def run_worker() -> None:
     with _single_worker_lock():
         _log("worker_online", poll_seconds=POLL_SECONDS, batch_size=BATCH_SIZE, stale_seconds=STALE_SECONDS)
-        recovered = DurableQueue.recover_running()
+        recovered = DurableQueue.recover_running(STALE_SECONDS)
         if recovered:
             _log("stale_tasks_recovered", count=recovered)
         while True:
