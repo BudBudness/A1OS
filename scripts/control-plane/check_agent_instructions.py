@@ -48,7 +48,7 @@ CONFLICT_PATTERNS = (
 
 def applicable(root: Path, target: str) -> list[Path]:
     target_path = Path(target)
-    chain = [root / ROOT_INSTRUCTIONS]
+    chain = [root / ROOT_INSTRUCTIONS, root / COPILOT_INSTRUCTIONS]
     for scope, relative in SCOPED_INSTRUCTIONS.items():
         if target_path == Path(scope) or Path(scope) in target_path.parents:
             chain.append(root / relative)
@@ -141,7 +141,8 @@ def self_test() -> None:
         assert not validate(root), validate(root)
         chain = applicable(root, "canonical-control-plane/src/main.py")
         assert [p.relative_to(root).as_posix() for p in chain] == [
-            "AGENTS.md", "canonical-control-plane/AGENTS.md"
+            "AGENTS.md", ".github/copilot-instructions.md",
+            "canonical-control-plane/AGENTS.md"
         ]
         (root / "canonical-control-plane/AGENTS.md").write_text(
             "Use Vercel for hosting.\n", encoding="utf-8"
