@@ -72,3 +72,8 @@ Before any inspection, planning, editing, command execution, test run, or tool a
    `python3 scripts/control-plane/check_agent_instructions.py --check --working-copy "$HOME/A1OS" --working-copy "$HOME/A1OS_RESTORED" --global-instructions "$HOME/.codex/AGENTS.md"`
 
 Do not start execution if preflight fails. Apply instructions cumulatively. A scoped instruction may add constraints but cannot weaken the repository-wide security or approval boundaries. If a conflict is found, stop and report it rather than choosing the more permissive instruction. The preflight output, including the instruction file SHA-256 digests, is the required evidence that the execution context loaded the applicable instruction chain.
+
+
+## Repository-wide provider retirement
+
+The A1OS repository platform direction is GitHub + Cloudflare + Termux. Vercel and Supabase are retired providers: do not add new integrations, deployments, runtime dependencies, credentials, cron jobs, or CI checks for either provider anywhere in this repository. Existing product verticals that still contain these integrations are migration work, not an approved exception. Migrate and verify equivalent Cloudflare/Termux functionality before removing any remaining product code or stored data. Preserve historical migration records and audit evidence; do not delete external projects, databases, deployments, credentials, or data without explicit approval and verified backup/restore and cutover evidence.
