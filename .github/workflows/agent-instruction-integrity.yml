@@ -1,0 +1,43 @@
+name: Agent Instruction Integrity
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "**/AGENTS.md"
+      - ".github/copilot-instructions.md"
+      - "scripts/control-plane/check_agent_instructions.py"
+      - ".github/workflows/agent-instruction-integrity.yml"
+  push:
+    branches: [main]
+    paths:
+      - "AGENTS.md"
+      - "**/AGENTS.md"
+      - ".github/copilot-instructions.md"
+      - "scripts/control-plane/check_agent_instructions.py"
+      - ".github/workflows/agent-instruction-integrity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-instruction-integrity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  instruction-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify hierarchy and conflict rules
+        run: |
+          python scripts/control-plane/check_agent_instructions.py --self-test
+          python scripts/control-plane/check_agent_instructions.py --check
+      - name: Verify canonical control-plane instruction chain
+        run: |
+          python scripts/control-plane/check_agent_instructions.py --preflight --for-path canonical-control-plane/src/
