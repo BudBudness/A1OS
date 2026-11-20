@@ -1,5 +1,4 @@
-name: Legal Vertical CI
-
+name: Legal Cloudflare build and security gate
 on:
   push:
     branches: [main]
@@ -11,21 +10,19 @@ on:
     paths:
       - "products/verticals/legal/**"
       - ".github/workflows/legal-production-e2e.yml"
-
 permissions:
   contents: read
-
 jobs:
-  build-test:
+  verify:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: products/verticals/legal
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - run: npm install
-      - run: npm test
-      - run: npm run build
+      - name: Verify frontend
+        working-directory: products/verticals/legal
+        run: npm install && npm test && npm run build
+      - name: Verify Worker
+        working-directory: products/verticals/legal/worker
+        run: npm install && npm test && npx wrangler deploy --dry-run
