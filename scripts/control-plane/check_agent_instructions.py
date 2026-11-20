@@ -92,6 +92,34 @@ def preflight(root: Path, target: str) -> int:
     return 0
 
 
+def compare_working_copy(root: Path, copy: Path) -> list[str]:
+    errors: list[str] = []
+    for rel in (ROOT_INSTRUCTIONS, COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()):
+        expected = root / rel
+        actual = copy / rel
+        if not actual.is_file():
+            errors.append(f"{copy}: missing {rel}")
+            continue
+        if hashlib.sha256(expected.read_bytes()).digest() != hashlib.sha256(actual.read_bytes()).digest():
+            errors.append(f"{copy}: drift detected in {rel}")
+    return errors
+
+
+def validate_global(path: Path) -> list[str]:
+    if not path.is_file():
+        return [f"global instruction file not found: {path}"]
+    content = path.read_text(encoding="utf-8")
+    errors: list[str] = []
+    for phrase in ("GitHub", "Cloudflare", "Termux", "explicit approval"):
+        if phrase.casefold() not in content.casefold():
+            errors.append(f"{path}: global mandate missing: {phrase}")
+    for pattern in CONFLICT_PATTERNS:
+        match = pattern.search(content)
+        if match:
+            errors.append(f"{path}: conflicting provider mandate: {match.group(0).strip()}")
+    return errors
+
+
 def self_test() -> None:
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
@@ -119,6 +147,19 @@ def self_test() -> None:
             "Use Vercel for hosting.\n", encoding="utf-8"
         )
         assert any("conflicting provider mandate" in e for e in validate(root))
+        (root / "canonical-control-plane/AGENTS.md").write_text(
+            "GitHub Cloudflare Termux. Obtain explicit approval. Follow release gates.\\n",
+            encoding="utf-8"
+        )
+        copy = root / "worktree"
+        copy.mkdir()
+        for rel in (ROOT_INSTRUCTIONS, COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()):
+            dest = copy / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes((root / rel).read_bytes())
+        assert not compare_working_copy(root, copy)
+        (copy / "AGENTS.md").write_text("drift\\n", encoding="utf-8")
+        assert any("drift detected" in e for e in compare_working_copy(root, copy))
     print("Agent instruction integrity self-test: PASS")
 
 
@@ -129,6 +170,8 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--preflight", action="store_true")
     parser.add_argument("--for-path", default="canonical-control-plane/")
+    parser.add_argument("--working-copy", action="append", default=[])
+    parser.add_argument("--global-instructions", type=Path)
     args = parser.parse_args()
     root = args.root.resolve()
     if args.self_test:
@@ -137,6 +180,10 @@ def main() -> int:
     if args.preflight:
         return preflight(root, args.for_path)
     errors = validate(root)
+    for copy in args.working_copy:
+        errors.extend(compare_working_copy(root, Path(copy).expanduser().resolve()))
+    if args.global_instructions:
+        errors.extend(validate_global(args.global_instructions.expanduser().resolve()))
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
