@@ -7,6 +7,8 @@ on:
       - "**/AGENTS.md"
       - ".github/copilot-instructions.md"
       - "scripts/control-plane/check_agent_instructions.py"
+      - "scripts/control-plane/check_release_gates.py"
+      - "canonical-control-plane/config/release-gates.json"
       - ".github/workflows/agent-instruction-integrity.yml"
   push:
     branches: [main]

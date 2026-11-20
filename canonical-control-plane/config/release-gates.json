@@ -10,8 +10,8 @@
   "gates": [
     {
       "id": "canonical_instructions_on_main",
-      "status": "pending",
-      "evidence": null
+      "status": "ci_verified",
+      "evidence": "PR #44 merged as b99dd3406ba05df8255ebb01ad4bc0b5004270a7; main CI run 44755853829"
     },
     {
       "id": "global_repository_reconciliation",
@@ -26,22 +26,22 @@
     {
       "id": "automated_instruction_integrity",
       "status": "ci_verified",
-      "evidence": "GitHub Actions Agent Instruction Integrity run 44755576697"
+      "evidence": "main CI run 44755853829"
     },
     {
       "id": "agent_preflight",
       "status": "ci_verified",
-      "evidence": "GitHub Actions instruction-integrity preflight log run 44755576697"
+      "evidence": "main CI preflight log from run 44755853829"
     },
     {
       "id": "security_and_provider_boundary",
       "status": "ci_verified",
-      "evidence": "GitHub Actions Provider Boundary run 44755576478"
+      "evidence": "main provider-boundary run 44755853544"
     },
     {
       "id": "engineering_workflow",
       "status": "ci_verified",
-      "evidence": "GitHub Actions PR checks"
+      "evidence": "main CI and factory DoD runs 44755853419 and 44755853553"
     },
     {
       "id": "isolated_staging",
