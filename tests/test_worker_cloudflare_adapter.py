@@ -53,3 +53,31 @@ def test_local_recovery_applies_stale_threshold(monkeypatch):
     assert durable.DurableQueue.recover_running(stale_after_seconds=63) == 1
     assert "datetime(updated_at) < datetime('now', ? || ' seconds')" in captured["sql"]
     assert captured["params"] == ("-63",)
+
+
+def test_task_payload_cannot_override_trusted_queue_routing_fields(monkeypatch):
+    import importlib.util
+    import sys
+    import types
+
+    fake_state = types.ModuleType("core.state")
+    fake_state.system = object()
+    monkeypatch.setitem(sys.modules, "core.state", fake_state)
+    worker_path = REPOSITORY_ROOT / "core" / "worker.py"
+    spec = importlib.util.spec_from_file_location("a1os_worker_adapter_test", worker_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    payload = module._row_payload({
+        "task_id": "task-1",
+        "target": "staging",
+        "role": "smoke",
+        "action": "noop",
+        "payload": {"target": "production", "role": "admin", "action": "shell", "value": 1},
+    })
+    assert payload == {
+        "target": "staging",
+        "role": "smoke",
+        "action": "noop",
+        "value": 1,
+    }
