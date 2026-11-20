@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
-from core.persistence.supabase_tasks import store as supabase_tasks
+from core.queue.durable import DurableQueue
 from core.state import system
 
 POLL_SECONDS = float(os.environ.get("A1OS_WORKER_POLL_SECONDS", "2"))
@@ -65,22 +65,22 @@ async def _execute_payload(task_id: str, payload: dict[str, Any]) -> dict[str, A
 
 async def process_once(limit: int | None = None) -> int:
     batch_limit = BATCH_SIZE if limit is None else max(1, min(int(limit), 5))
-    rows = supabase_tasks.pending_tasks(limit=batch_limit)
+    rows = DurableQueue.pending(limit=batch_limit)
     processed = 0
     for row in rows:
         task_id = str(row["task_id"])
-        if not supabase_tasks.claim_task(task_id):
+        if not DurableQueue.claim(task_id):
             continue
         payload = _row_payload(row)
         try:
             result = await _execute_payload(task_id, payload)
             if result.get("status") == "completed":
-                supabase_tasks.complete_task(task_id)
+                DurableQueue.complete(task_id)
             else:
-                supabase_tasks.fail_task(task_id, result.get("error", "Task execution failed"))
+                DurableQueue.fail(task_id, RuntimeError(result.get("error", "Task execution failed")) )
         except Exception as exc:
             _log("task_failed", task_id=task_id, error_type=type(exc).__name__, error=str(exc)[:500])
-            supabase_tasks.fail_task(task_id, str(exc))
+            DurableQueue.fail(task_id, exc)
         processed += 1
     if processed:
         _log("batch_processed", processed=processed)
@@ -89,7 +89,7 @@ async def process_once(limit: int | None = None) -> int:
 async def run_worker() -> None:
     with _single_worker_lock():
         _log("worker_online", poll_seconds=POLL_SECONDS, batch_size=BATCH_SIZE, stale_seconds=STALE_SECONDS)
-        recovered = supabase_tasks.recover_stale_tasks(STALE_SECONDS)
+        recovered = DurableQueue.recover_running()
         if recovered:
             _log("stale_tasks_recovered", count=recovered)
         while True:
