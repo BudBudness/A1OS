@@ -18,6 +18,9 @@ REQUIRED = {
     "backup_restore_and_rollback",
     "independent_runtime_verification",
     "release_approval",
+    "external_agent_runtime_preflight",
+    "branch_protection_required_checks",
+    "protected_environment_reviewers",
 }
 ACCEPTED = {"verified", "ci_verified"}
 

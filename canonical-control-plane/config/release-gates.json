@@ -62,6 +62,21 @@
       "id": "release_approval",
       "status": "not_granted",
       "evidence": null
+    },
+    {
+      "id": "external_agent_runtime_preflight",
+      "status": "unverified",
+      "evidence": null
+    },
+    {
+      "id": "branch_protection_required_checks",
+      "status": "unverified",
+      "evidence": null
+    },
+    {
+      "id": "protected_environment_reviewers",
+      "status": "unverified",
+      "evidence": null
     }
   ]
 }
