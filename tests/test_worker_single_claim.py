@@ -65,7 +65,7 @@ async def test_worker_records_runtime_failure_in_durable_queue(monkeypatch):
     monkeypatch.setattr(
         worker.DurableQueue,
         "fail",
-        lambda task_id, error: lifecycle.append(("fail", task_id, error)),
+        lambda task_id, error: lifecycle.append(("fail", task_id, str(error))),
     )
 
     async def fake_runtime_execute(**kwargs):
