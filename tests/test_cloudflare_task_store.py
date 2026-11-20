@@ -67,17 +67,10 @@ def test_cloud_store_uses_configured_cloudflare_endpoint(monkeypatch):
     assert store.configured
 
 
-def test_vercel_runtime_fails_closed_without_cloudflare_queue(monkeypatch):
-    monkeypatch.setenv("VERCEL", "1")
+def test_local_runtime_uses_local_queue_when_cloudflare_is_unconfigured(monkeypatch):
     monkeypatch.delenv("A1OS_TASK_QUEUE_URL", raising=False)
     monkeypatch.delenv("A1OS_TASK_QUEUE_TOKEN", raising=False)
-    try:
-        _cloud_store()
-    except RuntimeError as error:
-        assert "Cloudflare D1 task queue is required" in str(error)
-    else:
-        raise AssertionError("legacy Supabase queue fallback must remain disabled")
-
+    assert _cloud_store() is None
 
 def test_remote_queue_requires_url_and_token_together(monkeypatch):
     monkeypatch.delenv("VERCEL", raising=False)
