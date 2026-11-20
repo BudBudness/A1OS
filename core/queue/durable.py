@@ -16,8 +16,6 @@ def _cloud_store():
         from core.persistence.cloudflare_tasks import CloudflareTaskStore
 
         return CloudflareTaskStore(url=url, token=token)
-    if os.environ.get("VERCEL"):
-        raise RuntimeError("Cloudflare D1 task queue is required; legacy Supabase queue fallback is disabled")
     return None
 
 
