@@ -11,20 +11,11 @@ from observability.health import health_snapshot
 from observability.metrics import increment
 from core.queue.durable import DurableQueue
 
-try:
-    from core.persistence.supabase_tasks import store as supabase_tasks
-except Exception:
-    supabase_tasks = None
-
 app = Flask(__name__)
 
 
 def _production_cloud_store():
-    return bool(
-        os.environ.get("VERCEL")
-        and supabase_tasks is not None
-        and supabase_tasks.configured
-    )
+    return DurableQueue._cloud_store() is not None
 
 
 def _safe_error_message(error: Exception) -> str:
@@ -32,7 +23,7 @@ def _safe_error_message(error: Exception) -> str:
     for value in (
         os.environ.get("A1OS_EXECUTE_SECRET", ""),
         os.environ.get("A1OS_WORKER_SECRET", ""),
-        os.environ.get("SUPABASE_SECRET_KEY", ""),
+        os.environ.get("A1OS_TASK_QUEUE_TOKEN", ""),
     ):
         if value:
             message = message.replace(value, "[REDACTED]")
@@ -61,7 +52,7 @@ def ready():
         "status": "ready" if cloud else "degraded",
         "service": "a1os-api",
         "execution_mode": "cloud-queue" if cloud else "serverless-safe",
-        "persistence": "supabase" if cloud else "local",
+        "persistence": "cloudflare-d1" if cloud else "local",
     })
 
 
@@ -74,7 +65,7 @@ def health_check():
         if isinstance(database, dict):
             database_integrity = database.get("integrity")
     snapshot["database_integrity"] = database_integrity
-    snapshot["persistence"] = "supabase" if _production_cloud_store() else "local"
+    snapshot["persistence"] = "cloudflare-d1" if _production_cloud_store() else "local"
     snapshot["status"] = "healthy" if _production_cloud_store() else (
         "healthy" if database_integrity == "ok" else "degraded"
     )
@@ -85,12 +76,6 @@ def health_check():
 @app.get("/v1/tasks/<task_id>")
 def get_task(task_id: str):
     try:
-        if _production_cloud_store():
-            row = supabase_tasks.get_task(task_id)
-            if row is None:
-                return jsonify({"detail": "Task not found"}), 404
-            return jsonify(row)
-
         row = DurableQueue.get(task_id)
         if row is None:
             return jsonify({"detail": "Task not found"}), 404
@@ -141,9 +126,7 @@ def execute_task():
 
     try:
         if _production_cloud_store():
-            task_id = str(uuid.uuid4())
-            supabase_tasks.insert_task(
-                task_id=task_id,
+            task_id = DurableQueue.enqueue(
                 target=payload["target"],
                 role=payload["role"],
                 action=payload["action"],
@@ -153,7 +136,7 @@ def execute_task():
             return jsonify({
                 "status": "accepted",
                 "task_id": task_id,
-                "execution_mode": "cloud-queue",
+                "execution_mode": "cloudflare-d1",
             }), 202
 
         from core.state import system
@@ -193,13 +176,12 @@ def execute_task():
 
 @app.route("/v1/worker/run", methods=["GET", "POST"])
 def run_cloud_worker():
-    """Process a bounded Supabase task batch; authenticated for Vercel Cron."""
+    """Process a bounded Cloudflare D1 task batch using bearer-token authentication."""
     if not _production_cloud_store():
         return jsonify({"detail": "Cloud task store is not configured"}), 503
 
-    # Vercel Cron sends Authorization: Bearer $CRON_SECRET.
-    # The custom header remains available for manually triggered workers.
-    secret = os.environ.get("CRON_SECRET") or os.environ.get("A1OS_WORKER_SECRET")
+    # Cloudflare scheduled dispatch or an operator may send a bearer token.
+    secret = os.environ.get("A1OS_WORKER_SECRET") or os.environ.get("CRON_SECRET")
     authorization = request.headers.get("Authorization", "")
     supplied = request.headers.get("X-A1OS-Worker-Token", "")
     if authorization.startswith("Bearer "):
