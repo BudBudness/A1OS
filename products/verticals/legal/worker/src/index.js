@@ -2,6 +2,8 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
 const PRIVILEGED = new Set(["partner", "administrator"]);
+let cachedJwks;
+let cachedIssuer;
 const uuid = () => crypto.randomUUID();
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 const fail = (message, status) => json({ error: message }, status);
@@ -14,8 +16,16 @@ async function identity(request, env) {
   }
   const token = request.headers.get("Cf-Access-Jwt-Assertion");
   if (!token) return null;
-  const jwks = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`));
-  const { payload } = await jwtVerify(token, jwks, { issuer, audience: env.ACCESS_AUD });
+  if (!cachedJwks || cachedIssuer !== issuer) {
+    cachedJwks = createRemoteJWKSet(new URL(`${issuer}/cdn-cgi/access/certs`));
+    cachedIssuer = issuer;
+  }
+  let payload;
+  try {
+    ({ payload } = await jwtVerify(token, cachedJwks, { issuer, audience: env.ACCESS_AUD }));
+  } catch {
+    return null;
+  }
   if (!payload.sub || !payload.email) return null;
   return { id: String(payload.sub), email: String(payload.email).toLowerCase() };
 }
