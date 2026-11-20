@@ -20,7 +20,7 @@ No Supabase, Vercel, browser-held database credentials, or direct browser-to-dat
 3. Apply `worker/migrations/0001_initial.sql` with Wrangler.
 4. Configure a Cloudflare Access self-hosted application for the frontend/API hostname and set its audience.
 5. Provision active staff profiles in D1 using verified Cloudflare Access subject IDs and firm-approved roles. Do not self-register users or grant roles from browser input.
-6. Deploy the Worker and static frontend; configure the route so `/api/*` reaches this Worker and the SPA assets are served from Cloudflare Pages or the approved static hosting path.
+6. Build the Vite frontend; the Worker serves the `dist` assets through Workers Assets and routes `/api/*` through the authenticated API. Deploy the combined Worker + assets bundle with Wrangler.
 7. Verify access-denied, matter-isolation, document upload/download, backup and restore before production use.
 
 ## Local verification
