@@ -89,7 +89,7 @@ async def process_once(limit: int | None = None) -> int:
 async def run_worker() -> None:
     with _single_worker_lock():
         _log("worker_online", poll_seconds=POLL_SECONDS, batch_size=BATCH_SIZE, stale_seconds=STALE_SECONDS)
-        recovered = DurableQueue.recover_running()
+        recovered = DurableQueue.recover_running(stale_after_seconds=STALE_SECONDS)
         if recovered:
             _log("stale_tasks_recovered", count=recovered)
         while True:
