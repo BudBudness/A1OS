@@ -56,7 +56,7 @@ async def test_worker_records_runtime_failure_in_cloudflare_queue(monkeypatch):
     lifecycle = []
 
     monkeypatch.setattr(worker.DurableQueue, "pending", lambda limit: [_task()])
-    monkeypatch.setattr(worker.supabase_tasks, "claim_task", lambda task_id: True)
+    monkeypatch.setattr(worker.DurableQueue, "claim", lambda task_id: True)
     monkeypatch.setattr(
         worker.DurableQueue,
         "complete",
