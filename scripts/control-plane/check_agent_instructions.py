@@ -93,8 +93,31 @@ def preflight(root: Path, target: str) -> int:
 
 
 def compare_working_copy(root: Path, copy: Path) -> list[str]:
+    """Check shared governance without erasing worktree-specific operations.
+
+    Root AGENTS.md may legitimately contain distinct runtime topology and
+    environment details in separate worktrees. Enforce its governance
+    invariants, but require byte-for-byte parity only for shared agent policy
+    files that have no worktree-specific operational content.
+    """
     errors: list[str] = []
-    for rel in (ROOT_INSTRUCTIONS, COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()):
+    root_file = copy / ROOT_INSTRUCTIONS
+    if not root_file.is_file():
+        errors.append(f"{copy}: missing {ROOT_INSTRUCTIONS}")
+    else:
+        content = root_file.read_text(encoding="utf-8")
+        for phrase in REQUIRED_PHRASES[ROOT_INSTRUCTIONS]:
+            if phrase.casefold() not in content.casefold():
+                errors.append(f"{copy}/{ROOT_INSTRUCTIONS}: required policy phrase missing: {phrase}")
+        for pattern in CONFLICT_PATTERNS:
+            match = pattern.search(content)
+            if match:
+                errors.append(
+                    f"{copy}/{ROOT_INSTRUCTIONS}: conflicting provider mandate: "
+                    f"{match.group(0).strip()}"
+                )
+
+    for rel in (COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()):
         expected = root / rel
         actual = copy / rel
         if not actual.is_file():
@@ -159,8 +182,16 @@ def self_test() -> None:
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes((root / rel).read_bytes())
         assert not compare_working_copy(root, copy)
-        (copy / "AGENTS.md").write_text("drift\\n", encoding="utf-8")
-        assert any("drift detected" in e for e in compare_working_copy(root, copy))
+        # Worktree-specific runtime documentation is allowed when shared
+        # governance invariants remain present and non-conflicting.
+        (copy / "AGENTS.md").write_text(
+            "Local runtime topology differs. GitHub + Cloudflare + Termux. "
+            "Never print or commit secrets. Require explicit approval.\\n",
+            encoding="utf-8"
+        )
+        assert not compare_working_copy(root, copy)
+        (copy / "AGENTS.md").write_text("Local runtime with no governance.\\n", encoding="utf-8")
+        assert any("required policy phrase missing" in e for e in compare_working_copy(root, copy))
     print("Agent instruction integrity self-test: PASS")
 
 
