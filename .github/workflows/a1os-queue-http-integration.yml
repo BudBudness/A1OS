@@ -9,6 +9,15 @@ on:
       - 'core/queue/durable.py'
       - 'core/worker.py'
       - 'tests/test_worker_cloudflare_adapter.py'
+  pull_request:
+    paths:
+      - '.github/workflows/a1os-queue-http-integration.yml'
+      - 'cf-workers/a1os-task-queue/**'
+      - 'scripts/verify_cloudflare_queue_e2e.py'
+      - 'core/persistence/cloudflare_tasks.py'
+      - 'core/queue/durable.py'
+      - 'core/worker.py'
+      - 'tests/test_worker_cloudflare_adapter.py'
   workflow_dispatch:
 permissions:
   contents: read
