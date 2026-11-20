@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "platform": ["GitHub", "Cloudflare", "Termux"],
+  "release_status": "BLOCKED",
+  "production_deployment_enabled": false,
+  "gates": [
+    {"id": "canonical_instructions_on_main", "status": "pending", "evidence": null},
+    {"id": "global_repository_reconciliation", "status": "unverified", "evidence": null},
+    {"id": "working_copy_drift_check", "status": "unverified", "evidence": null},
+    {"id": "automated_instruction_integrity", "status": "implemented", "evidence": ".github/workflows/agent-instruction-integrity.yml"},
+    {"id": "agent_preflight", "status": "ci_verified", "evidence": "GitHub Actions instruction-integrity job"},
+    {"id": "security_and_provider_boundary", "status": "ci_verified", "evidence": ".github/workflows/canonical-control-plane-policy.yml"},
+    {"id": "engineering_workflow", "status": "ci_verified", "evidence": "GitHub Actions PR checks"},
+    {"id": "isolated_staging", "status": "not_started", "evidence": null},
+    {"id": "backup_restore_and_rollback", "status": "not_verified", "evidence": null},
+    {"id": "independent_runtime_verification", "status": "not_verified", "evidence": null},
+    {"id": "release_approval", "status": "not_granted", "evidence": null}
+  ]
+}
