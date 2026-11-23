@@ -10,6 +10,7 @@ on:
       - "scripts/control-plane/check_release_gates.py"
       - "canonical-control-plane/config/release-gates.json"
       - ".github/workflows/agent-instruction-integrity.yml"
+      - ".github/hooks/**"
   push:
     branches: [main]
     paths:
@@ -36,6 +37,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+      - name: Verify Copilot hook enforcement
+        run: python .github/hooks/a1os_instruction_guard.py --self-test
       - name: Verify hierarchy and conflict rules
         run: |
           python scripts/control-plane/check_agent_instructions.py --self-test
