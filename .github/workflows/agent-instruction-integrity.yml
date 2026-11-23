@@ -40,6 +40,8 @@ jobs:
           python-version: "3.13"
       - name: Verify Copilot hook enforcement
         run: python .github/hooks/a1os_instruction_guard.py --self-test
+      - name: Verify internal A1OS agent entrypoints
+        run: python -m unittest discover -s tests -p "test_agent_preflight_entrypoints.py"
       - name: Verify hierarchy and conflict rules
         run: |
           python scripts/control-plane/check_agent_instructions.py --self-test
