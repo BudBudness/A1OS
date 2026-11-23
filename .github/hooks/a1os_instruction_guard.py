@@ -94,23 +94,57 @@ def run_guard(root: Path, event_name: str) -> dict[str, Any]:
     return {}
 
 
-def handle_event(event: dict[str, Any]) -> dict[str, Any]:
+def adapt_result(result: dict[str, Any], event_name: str, runtime: str) -> dict[str, Any]:
+    if runtime != "codex":
+        return result
+    if "permissionDecision" in result:
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                **result,
+            }
+        }
+    if "additionalContext" in result:
+        return {
+            "hookSpecificOutput": {
+                "hookEventName": "SessionStart",
+                "additionalContext": result["additionalContext"],
+            }
+        }
+    return result
+
+
+def handle_event(event: dict[str, Any], runtime: str = "copilot") -> dict[str, Any]:
     event_name = event.get("hook_event_name") or event.get("eventName") or ""
     cwd = event.get("cwd")
     root = find_repo_root(cwd if isinstance(cwd, str) else None)
     if root is None:
         if event_name in {"preToolUse", "PreToolUse"}:
-            return {
+            result = {
                 "permissionDecision": "deny",
                 "permissionDecisionReason": "A1OS instruction guard could not locate the repository root; tool execution denied.",
             }
-        if event_name in {"sessionStart", "SessionStart"}:
-            return {"additionalContext": "A1OS PREFLIGHT BLOCKED: repository root not found. Do not use tools."}
-        return {}
-    return run_guard(root, event_name)
+        elif event_name in {"sessionStart", "SessionStart"}:
+            result = {"additionalContext": "A1OS PREFLIGHT BLOCKED: repository root not found. Do not use tools."}
+        else:
+            result = {}
+    else:
+        result = run_guard(root, event_name)
+    return adapt_result(result, event_name, runtime)
 
 
 def self_test() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    codex_config = json.loads((repo_root / ".codex/hooks.json").read_text(encoding="utf-8"))
+    codex_hooks = codex_config.get("hooks", {})
+    assert {"SessionStart", "PreToolUse"}.issubset(codex_hooks)
+    assert codex_hooks["PreToolUse"][0].get("matcher") == "*"
+    assert all(
+        entry.get("type") == "command" and "--runtime codex" in entry.get("command", "")
+        for event in ("SessionStart", "PreToolUse")
+        for entry in codex_hooks[event][0].get("hooks", [])
+    )
+
     hook_config = Path(__file__).with_name("a1os-instruction-guard.json")
     config = json.loads(hook_config.read_text(encoding="utf-8"))
     assert config.get("version") == 1
@@ -146,6 +180,11 @@ def self_test() -> None:
         assert "A1OS_AGENT_PREFLIGHT=PASS" in start.get("additionalContext", "")
         assert "canonical-control-plane/AGENTS.md" in start.get("additionalContext", "")
 
+        codex_start = handle_event({"hook_event_name": "SessionStart", "cwd": str(root)}, "codex")
+        codex_context = codex_start.get("hookSpecificOutput", {})
+        assert codex_context.get("hookEventName") == "SessionStart"
+        assert "A1OS_AGENT_PREFLIGHT=PASS" in codex_context.get("additionalContext", "")
+
         allowed = handle_event({"hook_event_name": "preToolUse", "cwd": str(root), "toolName": "bash"})
         assert allowed == {}, allowed
 
@@ -155,6 +194,14 @@ def self_test() -> None:
         denied = handle_event({"hook_event_name": "preToolUse", "cwd": str(root), "toolName": "bash"})
         assert denied.get("permissionDecision") == "deny", denied
         assert "conflicting provider mandate" in denied.get("permissionDecisionReason", "")
+
+        codex_denied = handle_event(
+            {"hook_event_name": "PreToolUse", "cwd": str(root), "tool_name": "Bash"},
+            "codex",
+        )
+        codex_decision = codex_denied.get("hookSpecificOutput", {})
+        assert codex_decision.get("hookEventName") == "PreToolUse"
+        assert codex_decision.get("permissionDecision") == "deny"
 
         missing_root = handle_event({"hook_event_name": "preToolUse", "cwd": "/tmp"})
         assert missing_root.get("permissionDecision") == "deny", missing_root
@@ -166,22 +213,25 @@ def main() -> int:
     if "--self-test" in sys.argv[1:]:
         self_test()
         return 0
+    runtime_index = sys.argv.index("--runtime") if "--runtime" in sys.argv[1:] else -1
+    runtime = "codex" if runtime_index >= 0 and runtime_index + 1 < len(sys.argv) and sys.argv[runtime_index + 1] == "codex" else "copilot"
     event: dict[str, Any] = {}
     try:
         event = json.load(sys.stdin)
         if not isinstance(event, dict):
             raise ValueError("hook input must be a JSON object")
-        result = handle_event(event)
-    except Exception as exc:  # Fail closed for preToolUse on malformed input/runtime errors.
-        event_name = ""
-        try:
-            event_name = event.get("hook_event_name") or event.get("eventName") or ""
-        except Exception:
-            pass
-        result = {
-            "permissionDecision": "deny",
-            "permissionDecisionReason": f"A1OS instruction guard error; tool execution denied: {type(exc).__name__}: {exc}",
-        }
+        result = handle_event(event, runtime)
+    except Exception as exc:  # Fail closed on malformed input/runtime errors.
+        reason = f"A1OS instruction guard error; tool execution denied: {type(exc).__name__}: {exc}"
+        event_name = event.get("hook_event_name") or event.get("eventName") or ""
+        if runtime == "codex" and event_name == "SessionStart":
+            result = {"continue": False, "stopReason": reason}
+        else:
+            result = adapt_result(
+                {"permissionDecision": "deny", "permissionDecisionReason": reason},
+                "PreToolUse",
+                runtime,
+            )
     print(json.dumps(result, separators=(",", ":")))
     return 0
 
