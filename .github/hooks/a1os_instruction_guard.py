@@ -213,7 +213,8 @@ def main() -> int:
     if "--self-test" in sys.argv[1:]:
         self_test()
         return 0
-    runtime = "codex" if "--runtime" in sys.argv[1:] and sys.argv[sys.argv.index("--runtime") + 1] == "codex" else "copilot"
+    runtime_index = sys.argv.index("--runtime") if "--runtime" in sys.argv[1:] else -1
+    runtime = "codex" if runtime_index >= 0 and runtime_index + 1 < len(sys.argv) and sys.argv[runtime_index + 1] == "codex" else "copilot"
     event: dict[str, Any] = {}
     try:
         event = json.load(sys.stdin)
