@@ -1,6 +1,13 @@
 import json
 from pathlib import Path
 from datetime import datetime, timezone
+import sys
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT))
+from tools.a1os_factory.engine_runtime import require_agent_preflight
+
+require_agent_preflight("tools/a1os_factory/ai_agent_operating_layer/")
 
 root = Path("tools/a1os_factory/ai_agent_operating_layer")
 
