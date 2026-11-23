@@ -41,8 +41,6 @@ class AgentPreflightEntrypointTests(unittest.TestCase):
             engine_runtime.require_agent_preflight("core/agent.py")
         self.assertEqual(raised.exception.code, 1)
 
-    @patch("tools.a1os_factory.engine_runtime.FactoryEngine.run")
-    @patch("tools.a1os_factory.engine_runtime.require_agent_preflight")
     def test_all_internal_agent_entrypoints_invoke_preflight(self):
         root = engine_runtime.Path(__file__).resolve().parents[1]
         entrypoints = {
