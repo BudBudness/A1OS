@@ -51,7 +51,7 @@ def run_preflight(root: Path, target: str) -> subprocess.CompletedProcess[str]:
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        timeout=20,
+        timeout=10,
         check=False,
     )
 
@@ -166,6 +166,7 @@ def main() -> int:
     if "--self-test" in sys.argv[1:]:
         self_test()
         return 0
+    event: dict[str, Any] = {}
     try:
         event = json.load(sys.stdin)
         if not isinstance(event, dict):
@@ -177,15 +178,10 @@ def main() -> int:
             event_name = event.get("hook_event_name") or event.get("eventName") or ""
         except Exception:
             pass
-        if event_name in {"preToolUse", "PreToolUse"}:
-            result = {
-                "permissionDecision": "deny",
-                "permissionDecisionReason": f"A1OS instruction guard error; tool execution denied: {type(exc).__name__}: {exc}",
-            }
-        elif event_name in {"sessionStart", "SessionStart"}:
-            result = {"additionalContext": f"A1OS PREFLIGHT BLOCKED: guard error {type(exc).__name__}: {exc}. Do not use tools."}
-        else:
-            result = {}
+        result = {
+            "permissionDecision": "deny",
+            "permissionDecisionReason": f"A1OS instruction guard error; tool execution denied: {type(exc).__name__}: {exc}",
+        }
     print(json.dumps(result, separators=(",", ":")))
     return 0
 
