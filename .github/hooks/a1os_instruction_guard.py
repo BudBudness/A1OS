@@ -223,11 +223,15 @@ def main() -> int:
         result = handle_event(event, runtime)
     except Exception as exc:  # Fail closed on malformed input/runtime errors.
         reason = f"A1OS instruction guard error; tool execution denied: {type(exc).__name__}: {exc}"
-        result = adapt_result(
-            {"permissionDecision": "deny", "permissionDecisionReason": reason},
-            "PreToolUse",
-            runtime,
-        )
+        event_name = event.get("hook_event_name") or event.get("eventName") or ""
+        if runtime == "codex" and event_name == "SessionStart":
+            result = {"continue": False, "stopReason": reason}
+        else:
+            result = adapt_result(
+                {"permissionDecision": "deny", "permissionDecisionReason": reason},
+                "PreToolUse",
+                runtime,
+            )
     print(json.dumps(result, separators=(",", ":")))
     return 0
 
