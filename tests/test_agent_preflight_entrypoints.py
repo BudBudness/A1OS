@@ -66,7 +66,7 @@ class AgentPreflightEntrypointTests(unittest.TestCase):
         finally:
             sys.argv = old_argv
         preflight.assert_called_once_with("tools/a1os_factory/")
-        run.assert_called_once_with("sample-product", {}, None)
+        run.assert_called_once_with("sample-product", {})
 
 
 if __name__ == "__main__":
