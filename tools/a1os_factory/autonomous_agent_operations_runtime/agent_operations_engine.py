@@ -3,6 +3,12 @@ from pathlib import Path
 from datetime import datetime, timezone
 import sys
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT))
+from tools.a1os_factory.engine_runtime import require_agent_preflight
+
+require_agent_preflight("tools/a1os_factory/autonomous_agent_operations_runtime/")
+
 product = sys.argv[1] if len(sys.argv) > 1 else "unknown-product"
 
 root = Path("factory_runs") / product / "agent_operations"
