@@ -50,7 +50,7 @@ Branch protection / required-check settings and GitHub environment reviewer rule
 
 GitHub Copilot CLI and cloud-agent sessions use `.github/hooks/a1os-instruction-guard.json`. The session-start hook injects the verified root and scoped instruction chains; the pre-tool hook revalidates policy before every tool call and denies execution on detected drift. The hook self-test runs in the Agent Instruction Integrity workflow.
 
-Local Codex CLI sessions use `.codex/hooks.json` and the shared guard. Codex loads project hooks only from a trusted project layer; the operator must review and trust the hook through `/hooks`. If that trust step is not completed or hooks are disabled, Codex is not automatically gated and the deterministic preflight must be run manually. Other external agent runtimes remain outside this enforcement boundary.
+Local Codex CLI sessions use `.codex/hooks.json` and the shared guard. Codex loads project hooks only from a trusted project layer; the operator must review and trust the hook through `/hooks`. If that trust step is not completed or hooks are disabled, Codex is not automatically gated and the deterministic preflight must be run manually. Codex also documents that hook failures/timeouts and some specialized tool paths may not block execution. Treat this as a runtime guardrail, not a universal sandbox. Other external agent runtimes remain outside this enforcement boundary.
 
 
 Internal A1OS agent execution paths are also gated: the shared factory CLI, autonomous-agent operations initializer, AI-agent operating-layer initializer, and `core.A1Agent.process_task` run the same deterministic preflight before work or side effects. The central factory CLI gate covers all engine modules that delegate to it.
