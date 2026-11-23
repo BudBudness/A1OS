@@ -44,3 +44,13 @@ The initial CI guard is a deterministic denylist for the currently identified ex
 A GitHub Actions preflight proves that the CI runner loaded the applicable files; it does not, by itself, prove that every external agent runtime obeys them. Agent integrations must invoke the preflight before starting work and retain its output as execution evidence. Local Termux worktrees and the operator's global instruction file must be checked from the Termux host because GitHub cannot inspect files stored only on that device.
 
 Branch protection / required-check settings and GitHub environment reviewer rules are repository settings, not source files. The workflow check is not a mandatory merge gate until those repository settings require it.
+
+
+## Agent runtime enforcement
+
+GitHub Copilot CLI and cloud-agent sessions use `.github/hooks/a1os-instruction-guard.json`. The session-start hook injects the verified root and scoped instruction chains; the pre-tool hook revalidates policy before every tool call and denies execution on detected drift. The hook self-test runs in the Agent Instruction Integrity workflow.
+
+This enforcement is runtime-specific. It does not prove that unrelated external agent runtimes (including Codex sessions without the repository hook loaded) are intercepted. Those runtimes must use the deterministic preflight explicitly.
+
+
+Internal A1OS agent execution paths are also gated: the shared factory CLI, autonomous-agent operations initializer, AI-agent operating-layer initializer, and `core.A1Agent.process_task` run the same deterministic preflight before work or side effects. The central factory CLI gate covers all engine modules that delegate to it.
