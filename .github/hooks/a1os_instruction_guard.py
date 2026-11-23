@@ -111,6 +111,16 @@ def handle_event(event: dict[str, Any]) -> dict[str, Any]:
 
 
 def self_test() -> None:
+    hook_config = Path(__file__).with_name("a1os-instruction-guard.json")
+    config = json.loads(hook_config.read_text(encoding="utf-8"))
+    assert config.get("version") == 1
+    configured_hooks = config.get("hooks", {})
+    assert {"sessionStart", "preToolUse"}.issubset(configured_hooks)
+    for event_name in ("sessionStart", "preToolUse"):
+        entries = configured_hooks[event_name]
+        assert entries and all(entry.get("type") == "command" for entry in entries)
+        assert all("a1os_instruction_guard.py" in entry.get("bash", "") for entry in entries)
+
     source_checker = Path(__file__).resolve().parents[2] / CHECKER
     assert source_checker.is_file(), source_checker
     with tempfile.TemporaryDirectory() as tmp:
