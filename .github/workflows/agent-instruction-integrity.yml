@@ -11,6 +11,11 @@ on:
       - "canonical-control-plane/config/release-gates.json"
       - ".github/workflows/agent-instruction-integrity.yml"
       - ".github/hooks/**"
+      - "tools/a1os_factory/engine_runtime.py"
+      - "tools/a1os_factory/autonomous_agent_operations_runtime/agent_operations_engine.py"
+      - "tools/a1os_factory/ai_agent_operating_layer/ai_agent_operating_engine.py"
+      - "core/agent.py"
+      - "tests/test_agent_preflight_entrypoints.py"
   push:
     branches: [main]
     paths:
