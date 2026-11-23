@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -71,7 +73,29 @@ class FactoryEngine:
         return plan
 
 
+def require_agent_preflight(target_path: str) -> None:
+    """Validate and print the A1OS instruction chain before agent/factory execution."""
+    root = Path(__file__).resolve().parents[2]
+    checker = root / "scripts/control-plane/check_agent_instructions.py"
+    result = subprocess.run(
+        [sys.executable, str(checker), "--root", str(root), "--preflight", "--for-path", target_path],
+        cwd=root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=25,
+        check=False,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        raise SystemExit(result.returncode)
+
+
 def cli(engine: FactoryEngine) -> None:
+    require_agent_preflight("tools/a1os_factory/")
     parser = argparse.ArgumentParser()
     parser.add_argument("product")
     parser.add_argument("--requirements", type=Path)
