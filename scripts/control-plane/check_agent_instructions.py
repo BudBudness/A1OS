@@ -174,6 +174,21 @@ def self_test() -> None:
         )
         assert not validate(root), validate(root)
         assert preflight(root, "canonical-control-plane/src/main.py") == 0
+
+        global_file = root / "global-instructions.md"
+        global_file.write_text(
+            "GitHub Cloudflare Termux. Require explicit approval.\\n",
+            encoding="utf-8"
+        )
+        assert not validate_global(global_file)
+        assert preflight(root, "canonical-control-plane/src/main.py", global_file) == 0
+        global_file.write_text(
+            "Use Vercel for hosting.\\n", encoding="utf-8"
+        )
+        assert any("conflicting provider mandate" in e for e in validate_global(global_file))
+        assert preflight(root, "canonical-control-plane/src/main.py", global_file) == 1
+        global_file.unlink()
+
         chain = applicable(root, "canonical-control-plane/src/main.py")
         assert [p.relative_to(root).as_posix() for p in chain] == [
             "AGENTS.md", ".github/copilot-instructions.md",
