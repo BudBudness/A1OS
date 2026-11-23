@@ -27,4 +27,4 @@ This repository ships a GitHub Copilot hook at `.github/hooks/a1os-instruction-g
 - Keep the hook configuration and guard script on the repository default branch. Copilot cloud agent only loads repository hook configuration from the default branch.
 - If a runtime does not support repository hooks, run the documented `--check` and `--preflight --for-path <target-path>` commands manually before any work. Do not claim automatic enforcement for unsupported runtimes.
 
-Hook timeout limitation: GitHub documents command-hook timeouts as fail-open for `preToolUse`. Keep the guard fast, retain the per-tool validation, and treat hook execution evidence as required. This hook enforces supported Copilot CLI/cloud-agent sessions; it does not control unrelated external agent runtimes.
+Hook timeout limitation: GitHub documents command-hook timeouts as fail-open for `preToolUse`. Keep the guard fast, retain the per-tool validation, and treat hook execution evidence as required. This hook enforces supported Copilot CLI/cloud-agent sessions. Internal A1OS agent entrypoints also invoke the deterministic preflight directly. It does not control unrelated external agent runtimes.
