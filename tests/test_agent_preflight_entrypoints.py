@@ -43,6 +43,20 @@ class AgentPreflightEntrypointTests(unittest.TestCase):
 
     @patch("tools.a1os_factory.engine_runtime.FactoryEngine.run")
     @patch("tools.a1os_factory.engine_runtime.require_agent_preflight")
+    def test_all_internal_agent_entrypoints_invoke_preflight(self):
+        root = engine_runtime.Path(__file__).resolve().parents[1]
+        entrypoints = {
+            "tools/a1os_factory/engine_runtime.py": 'require_agent_preflight("tools/a1os_factory/")',
+            "tools/a1os_factory/autonomous_agent_operations_runtime/agent_operations_engine.py": 'require_agent_preflight("tools/a1os_factory/autonomous_agent_operations_runtime/")',
+            "tools/a1os_factory/ai_agent_operating_layer/ai_agent_operating_engine.py": 'require_agent_preflight("tools/a1os_factory/ai_agent_operating_layer/")',
+            "core/agent.py": 'require_agent_preflight("core/agent.py")',
+        }
+        for relative, marker in entrypoints.items():
+            with self.subTest(entrypoint=relative):
+                self.assertIn(marker, (root / relative).read_text(encoding="utf-8"))
+
+    @patch("tools.a1os_factory.engine_runtime.FactoryEngine.run")
+    @patch("tools.a1os_factory.engine_runtime.require_agent_preflight")
     def test_factory_cli_preflights_before_engine_run(self, preflight, run):
         run.return_value = {"status": "planned"}
         engine = engine_runtime.make_engine("test", "test")
