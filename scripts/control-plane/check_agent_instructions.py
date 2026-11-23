@@ -75,6 +75,15 @@ def validate(root: Path) -> list[str]:
 
 
 def preflight(root: Path, target: str) -> int:
+    # Preflight is an enforcement boundary, not merely an instruction printer.
+    # Validate the complete governance set before declaring the loaded chain safe.
+    errors = validate(root)
+    if errors:
+        for error in errors:
+            print(f"PRE-FLIGHT BLOCKED: {error}", file=sys.stderr)
+        print("A1OS_AGENT_PREFLIGHT=FAIL", file=sys.stderr)
+        return 1
+
     chain = applicable(root, target)
     missing = [path for path in chain if not path.is_file()]
     if missing:
@@ -171,6 +180,9 @@ def self_test() -> None:
             "Use Vercel for hosting.\n", encoding="utf-8"
         )
         assert any("conflicting provider mandate" in e for e in validate(root))
+        # A conflicting policy must block preflight; printing the chain alone
+        # must never produce a PASS receipt.
+        assert preflight(root, "canonical-control-plane/src") == 1
         (root / "canonical-control-plane/AGENTS.md").write_text(
             "GitHub Cloudflare Termux. Obtain explicit approval. Follow release gates.\\n",
             encoding="utf-8"
