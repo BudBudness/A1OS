@@ -19,6 +19,7 @@ on:
       - ".github/copilot-instructions.md"
       - "scripts/control-plane/check_agent_instructions.py"
       - ".github/workflows/agent-instruction-integrity.yml"
+      - ".github/hooks/**"
   workflow_dispatch:
 
 permissions:
