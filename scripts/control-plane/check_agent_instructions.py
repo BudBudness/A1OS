@@ -74,7 +74,18 @@ def validate(root: Path) -> list[str]:
     return errors
 
 
-def preflight(root: Path, target: str) -> int:
+def preflight(root: Path, target: str, global_instructions: Path | None = None) -> int:
+    # Preflight is an enforcement boundary, not merely an instruction printer.
+    # Validate the complete governance set before declaring the loaded chain safe.
+    errors = validate(root)
+    if global_instructions is not None:
+        errors.extend(validate_global(global_instructions))
+    if errors:
+        for error in errors:
+            print(f"PRE-FLIGHT BLOCKED: {error}", file=sys.stderr)
+        print("A1OS_AGENT_PREFLIGHT=FAIL", file=sys.stderr)
+        return 1
+
     chain = applicable(root, target)
     missing = [path for path in chain if not path.is_file()]
     if missing:
@@ -162,6 +173,22 @@ def self_test() -> None:
             "Follow release gates.\n", encoding="utf-8"
         )
         assert not validate(root), validate(root)
+        assert preflight(root, "canonical-control-plane/src/main.py") == 0
+
+        global_file = root / "global-instructions.md"
+        global_file.write_text(
+            "GitHub Cloudflare Termux. Require explicit approval.\\n",
+            encoding="utf-8"
+        )
+        assert not validate_global(global_file)
+        assert preflight(root, "canonical-control-plane/src/main.py", global_file) == 0
+        global_file.write_text(
+            "Use Vercel for hosting.\\n", encoding="utf-8"
+        )
+        assert any("conflicting provider mandate" in e for e in validate_global(global_file))
+        assert preflight(root, "canonical-control-plane/src/main.py", global_file) == 1
+        global_file.unlink()
+
         chain = applicable(root, "canonical-control-plane/src/main.py")
         assert [p.relative_to(root).as_posix() for p in chain] == [
             "AGENTS.md", ".github/copilot-instructions.md",
@@ -171,6 +198,9 @@ def self_test() -> None:
             "Use Vercel for hosting.\n", encoding="utf-8"
         )
         assert any("conflicting provider mandate" in e for e in validate(root))
+        # A conflicting policy must block preflight; printing the chain alone
+        # must never produce a PASS receipt.
+        assert preflight(root, "canonical-control-plane/src") == 1
         (root / "canonical-control-plane/AGENTS.md").write_text(
             "GitHub Cloudflare Termux. Obtain explicit approval. Follow release gates.\\n",
             encoding="utf-8"
@@ -209,13 +239,17 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
+    global_instructions = (
+        args.global_instructions.expanduser().resolve()
+        if args.global_instructions else None
+    )
     if args.preflight:
-        return preflight(root, args.for_path)
+        return preflight(root, args.for_path, global_instructions)
     errors = validate(root)
     for copy in args.working_copy:
         errors.extend(compare_working_copy(root, Path(copy).expanduser().resolve()))
-    if args.global_instructions:
-        errors.extend(validate_global(args.global_instructions.expanduser().resolve()))
+    if global_instructions is not None:
+        errors.extend(validate_global(global_instructions))
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
