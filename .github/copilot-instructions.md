@@ -25,6 +25,6 @@ This repository ships a GitHub Copilot hook at `.github/hooks/a1os-instruction-g
 - `preToolUse` re-runs the full instruction validator before every tool call. If the repository root cannot be located, the checker fails, or policy drift is detected, the hook returns a deny decision.
 - A successful hook returns no permission decision; it does not grant tool permissions or bypass Copilot's normal approval model.
 - Keep the hook configuration and guard script on the repository default branch. Copilot cloud agent only loads repository hook configuration from the default branch.
-- If a runtime does not support repository hooks, run the documented `--check` and `--preflight --for-path <target-path>` commands manually before any work. Do not claim automatic enforcement for unsupported runtimes.
+- Codex project hooks load only from a trusted project layer. On the local Codex CLI, inspect and trust the repository hook through `/hooks`; if the project layer is not trusted or hooks are disabled, use the documented `--check` and `--preflight --for-path <target-path>` commands manually. Do not claim automatic enforcement until the hook is loaded.
 
 Hook timeout limitation: GitHub documents command-hook timeouts as fail-open for `preToolUse`. Keep the guard fast, retain the per-tool validation, and treat hook execution evidence as required. This hook enforces supported Copilot CLI/cloud-agent sessions. Internal A1OS agent entrypoints also invoke the deterministic preflight directly. It does not control unrelated external agent runtimes.
