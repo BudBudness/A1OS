@@ -23,10 +23,11 @@ def find_repo_root(cwd: str | None) -> Path | None:
     candidates: list[Path] = []
     if cwd:
         candidates.append(Path(cwd).expanduser())
-    workspace = os.environ.get("GITHUB_WORKSPACE")
-    if workspace:
-        candidates.append(Path(workspace).expanduser())
-    candidates.append(Path.cwd())
+    else:
+        workspace = os.environ.get("GITHUB_WORKSPACE")
+        if workspace:
+            candidates.append(Path(workspace).expanduser())
+        candidates.append(Path.cwd())
     seen: set[Path] = set()
     for candidate in candidates:
         try:
@@ -145,7 +146,7 @@ def self_test() -> None:
         assert denied.get("permissionDecision") == "deny", denied
         assert "conflicting provider mandate" in denied.get("permissionDecisionReason", "")
 
-        missing_root = handle_event({"hook_event_name": "preToolUse", "cwd": str(root / "missing")})
+        missing_root = handle_event({"hook_event_name": "preToolUse", "cwd": "/tmp"})
         assert missing_root.get("permissionDecision") == "deny", missing_root
 
     print("A1OS Copilot instruction hook self-test: PASS")
