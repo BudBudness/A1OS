@@ -13,6 +13,7 @@
 - Do not infer that hooks are active. Verify Claude Code hook configuration and execution evidence before claiming enforcement.
 - Use deterministic commands and tests before delegating work to subagents. Subagents inherit the same policy and must not broaden permissions.
 - Do not use Claude API tokens or paid API access when an authenticated Claude Code subscription/session is already available. Do not bypass provider authentication, licensing, usage limits, or access controls.
+- Obtain explicit approval for destructive, irreversible, production, external-consequence, security-sensitive, credential, permission, identity, DNS and access-policy changes.
 - Preserve project state. Never run broad cleanup, reset, force-push, production deployment, secret rotation, or permission changes without the approvals required by `AGENTS.md`.
 - Report concrete files, commits, test results, evidence, limitations and outstanding gates. Never claim local Termux execution unless it was actually run on the Termux host.
 
