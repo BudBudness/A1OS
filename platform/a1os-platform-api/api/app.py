@@ -964,6 +964,8 @@ def admin_password_reset(user_id: int, payload: dict, request: Request):
             "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             (password_hash, user_id),
         )
+        # A reset must invalidate every existing bearer/cookie session immediately.
+        conn.execute("DELETE FROM auth_sessions WHERE user_id = ?", (user_id,))
         _audit(
             conn,
             actor,
