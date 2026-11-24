@@ -64,14 +64,19 @@ For work in `canonical-control-plane/`, read and follow `canonical-control-plane
 Before any inspection, planning, editing, command execution, test run, or tool action:
 
 1. Read this repository-root `AGENTS.md`.
-2. Read `.github/copilot-instructions.md` for repository-wide agent behavior.
-3. Read the nearest scoped `AGENTS.md` for the target path; for `canonical-control-plane/`, this is `canonical-control-plane/AGENTS.md`.
-4. Run `python3 scripts/control-plane/check_agent_instructions.py --check`.
-5. Run `python3 scripts/control-plane/check_agent_instructions.py --preflight --for-path <target-path>` and retain its output in the task evidence.
-6. When the Termux host is available, compare both canonical worktrees and the global Codex instructions:
+2. For Claude Code sessions, read `CLAUDE.md`; it imports this canonical policy and supplies Claude-specific runtime guidance.
+3. Read `.github/copilot-instructions.md` for repository-wide Copilot behavior.
+4. Read the nearest scoped `AGENTS.md` for the target path; for `canonical-control-plane/`, this is `canonical-control-plane/AGENTS.md`.
+5. Run `python3 scripts/control-plane/check_agent_instructions.py --check`.
+6. Run `python3 scripts/control-plane/check_agent_instructions.py --preflight --for-path <target-path>` and retain its output in the task evidence.
+7. When the Termux host is available, compare both canonical worktrees and the global Codex instructions:
    `python3 scripts/control-plane/check_agent_instructions.py --check --working-copy "$HOME/A1OS" --working-copy "$HOME/A1OS_RESTORED" --global-instructions "$HOME/.codex/AGENTS.md"`
 
 Do not start execution if preflight fails. Apply instructions cumulatively. A scoped instruction may add constraints but cannot weaken the repository-wide security or approval boundaries. If a conflict is found, stop and report it rather than choosing the more permissive instruction. The preflight output, including the instruction file SHA-256 digests, is the required evidence that the execution context loaded the applicable instruction chain.
+
+## Termux environment maintenance
+
+The deterministic operator utility is `scripts/termux-maintenance/a1os_termux_maintenance.py`; usage and safety boundaries are in `docs/TERMUX_ENVIRONMENT_MANAGEMENT.md`. Its default mode is read-only. Cache cleanup is limited to exact allowlisted reproducible caches and requires interactive confirmation. Never expand its deletion scope to projects, unknown files, downloads, databases, backups, credentials, configuration, package state or active services without a separate reviewed change and required approval. Do not claim Termux health or local execution from repository CI; the utility must be run on the actual Termux host for device-level evidence.
 
 
 ## Repository-wide provider retirement
