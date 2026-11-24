@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import importlib.util
 import sqlite3
