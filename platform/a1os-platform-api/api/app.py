@@ -2302,6 +2302,15 @@ def education_create_admission(payload: dict, request: Request):
 
     conn = db()
     try:
+        student_id = payload.get("student_id")
+        if student_id is not None:
+            student = conn.execute(
+                "SELECT id FROM education_students WHERE id = ? AND organization_id = ?",
+                (student_id, actor["organization_id"]),
+            ).fetchone()
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
+
         cur = conn.execute("""
             INSERT INTO education_admissions
             (organization_id, student_id, applicant_name, status,
@@ -2345,6 +2354,14 @@ def education_update_admission(
 
         if not row:
             raise HTTPException(status_code=404, detail="Admission not found")
+
+        if updates.get("student_id") is not None:
+            student = conn.execute(
+                "SELECT id FROM education_students WHERE id = ? AND organization_id = ?",
+                (updates["student_id"], actor["organization_id"]),
+            ).fetchone()
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
 
         sql = ", ".join(f"{k} = ?" for k in updates)
         conn.execute(
