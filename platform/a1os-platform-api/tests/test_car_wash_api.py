@@ -357,8 +357,16 @@ def test_deactivated_user_sessions_are_rejected():
     try:
         expiry = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
         conn.execute(
+            "INSERT INTO users (organization_id, email, full_name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            (1, "deactivation-admin@example.test", "Deactivation Admin", "test-hash", "super_admin"),
+        )
+        admin_id = conn.execute(
+            "SELECT id FROM users WHERE email = ?",
+            ("deactivation-admin@example.test",),
+        ).fetchone()[0]
+        conn.execute(
             "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
-            (1, "fresh-manager-session", expiry),
+            (admin_id, "fresh-admin-session", expiry),
         )
         conn.execute(
             "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
@@ -371,7 +379,7 @@ def test_deactivated_user_sessions_are_rejected():
     with TestClient(app) as client:
         response = client.patch(
             "/v1/users/2",
-            headers={"Cookie": "a1os_session=fresh-manager-session"},
+            headers={"Cookie": "a1os_session=fresh-admin-session"},
             json={"active": 0},
         )
         assert response.status_code == 200
