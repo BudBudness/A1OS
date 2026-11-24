@@ -64,7 +64,7 @@ For work in `canonical-control-plane/`, read and follow `canonical-control-plane
 Before any inspection, planning, editing, command execution, test run, or tool action:
 
 1. Read this repository-root `AGENTS.md`.
-2. For Claude Code sessions, read `CLAUDE.md`; it imports this canonical policy and supplies Claude-specific runtime guidance.
+2. For Claude Code sessions, read `CLAUDE.md`; it imports this canonical policy, supplies Claude-specific runtime guidance, and must contain the explicit-approval boundary.
 3. Read `.github/copilot-instructions.md` for repository-wide Copilot behavior.
 4. Read the nearest scoped `AGENTS.md` for the target path; for `canonical-control-plane/`, this is `canonical-control-plane/AGENTS.md`.
 5. Run `python3 scripts/control-plane/check_agent_instructions.py --check`.
