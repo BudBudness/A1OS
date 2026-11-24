@@ -295,3 +295,41 @@ def test_education_admissions_enforce_student_tenant_ownership():
             json={"student_id": student_id},
         )
         assert rejected_update.status_code == 404
+
+
+def test_admin_password_reset_revokes_existing_sessions():
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        conn.execute(
+            "INSERT INTO users (organization_id, email, full_name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            (1, "root-admin@example.test", "Root Admin", "test-hash", "super_admin"),
+        )
+        admin_id = conn.execute(
+            "SELECT id FROM users WHERE email = ?",
+            ("root-admin@example.test",),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+            (admin_id, "root-admin-token", (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()),
+        )
+        conn.execute(
+            "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+            (1, "target-session-to-revoke", (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/admin/users/1/password-reset",
+            headers={"Cookie": "a1os_session=root-admin-token"},
+            json={"new_password": "new-secure-password"},
+        )
+        assert response.status_code == 200
+
+        stale_session = client.get(
+            "/v1/auth/me",
+            headers={"Cookie": "a1os_session=target-session-to-revoke"},
+        )
+        assert stale_session.status_code == 401
