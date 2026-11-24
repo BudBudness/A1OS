@@ -29,7 +29,7 @@ REQUIRED_PHRASES = {
     CLAUDE_INSTRUCTIONS: (
         "@AGENTS.md",
         "preflight",
-        "explicit approval",
+        "approval policy",
     ),
     COPILOT_INSTRUCTIONS: (
         "AGENTS.md",
