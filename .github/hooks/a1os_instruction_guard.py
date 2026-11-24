@@ -167,6 +167,10 @@ def self_test() -> None:
             "GitHub + Cloudflare + Termux. Never print or commit secrets. Require explicit approval.\n",
             encoding="utf-8",
         )
+        (root / "CLAUDE.md").write_text(
+            "@AGENTS.md\nRun preflight. Require explicit approval.\n",
+            encoding="utf-8",
+        )
         (root / ".github/copilot-instructions.md").write_text(
             "Read AGENTS.md and run preflight. GitHub + Cloudflare + Termux.\n",
             encoding="utf-8",
