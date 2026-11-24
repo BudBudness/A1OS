@@ -218,6 +218,10 @@ def self_test() -> None:
         prefix = Path(tmp) / "prefix"
         (home / ".cache/pip").mkdir(parents=True)
         (home / ".cache/pip/wheel.whl").write_bytes(b"cache-data")
+        outside = Path(tmp) / "outside"
+        outside.mkdir()
+        (outside / "keep").write_text("keep", encoding="utf-8")
+        (home / ".cache/yarn").symlink_to(outside, target_is_directory=True)
         (home / "A1OS").mkdir()
         (home / "A1OS/.git").mkdir()
         (home / ".ssh").mkdir()
@@ -236,13 +240,8 @@ def self_test() -> None:
         assert (home / ".ssh/key").read_text(encoding="utf-8") == "must stay"
         assert (home / "A1OS/.git").is_dir()
         # Symlink cache root is not traversed or removed.
-        outside = Path(tmp) / "outside"
-        outside.mkdir()
-        (outside / "keep").write_text("keep", encoding="utf-8")
-        link = home / ".npm"
-        link.symlink_to(outside, target_is_directory=True)
-        assert link.is_symlink()
-        assert (outside / "keep").exists()
+        assert (home / ".cache/yarn").is_symlink()
+        assert (outside / "keep").read_text(encoding="utf-8") == "keep"
     print("A1OS Termux maintenance self-test: PASS")
 
 
