@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import importlib.util
 import sqlite3
@@ -176,3 +177,223 @@ def test_payment_is_recorded_and_overpayment_is_rejected():
         listed = client.get("/api/car-wash/payments", headers=headers)
         assert listed.status_code == 200
         assert any(item["vehicle_id"] == vehicle_id and item["amount"] == 5000 for item in listed.json()["items"])
+
+
+
+def test_empty_database_bootstrap_creates_platform_admin(monkeypatch, tmp_path):
+    database_file = tmp_path / "empty-platform.db"
+    secret_dir = tmp_path / ".a1os"
+    secret_dir.mkdir()
+    secret_file = secret_dir / "platform-admin-password"
+    secret_file.write_text("bootstrap-test-password", encoding="utf-8")
+
+    monkeypatch.setattr(module, "DB_PATH", database_file)
+    monkeypatch.setattr(module, "SCHEMA_PATH", schema_path)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    module._init_db()
+
+    check = sqlite3.connect(database_file)
+    try:
+        organization = check.execute(
+            "SELECT code, name, industry FROM organizations"
+        ).fetchone()
+        admin = check.execute(
+            "SELECT email, role, password_hash FROM users"
+        ).fetchone()
+    finally:
+        check.close()
+
+    assert organization == ("ICR", "A1OS Platform", "general")
+    assert admin is not None
+    assert admin[0] == "admin@a1os.io"
+    assert admin[1] == "super_admin"
+    assert module._verify_password("bootstrap-test-password", admin[2])
+
+
+def test_account_cannot_reference_another_organizations_party():
+    with TestClient(app) as client:
+        org_two_headers = {"Cookie": "a1os_session=token-two"}
+        org_one_headers = {"Cookie": "a1os_session=token-one"}
+
+        other_party = client.post(
+            "/v1/parties",
+            headers=org_two_headers,
+            json={"name": "Tenant Two Customer", "party_type": "customer"},
+        )
+        assert other_party.status_code == 201
+        other_party_id = other_party.json()["party_id"]
+
+        rejected = client.post(
+            "/v1/accounts",
+            headers=org_one_headers,
+            json={
+                "name": "Cross-tenant receivable",
+                "account_type": "receivable",
+                "party_id": other_party_id,
+            },
+        )
+        assert rejected.status_code == 422
+        assert rejected.json()["detail"] == "party_id must belong to the organization"
+
+        own_party = client.post(
+            "/v1/parties",
+            headers=org_one_headers,
+            json={"name": "Tenant One Customer", "party_type": "customer"},
+        )
+        assert own_party.status_code == 201
+        accepted = client.post(
+            "/v1/accounts",
+            headers=org_one_headers,
+            json={
+                "name": "Tenant One receivable",
+                "account_type": "receivable",
+                "party_id": own_party.json()["party_id"],
+            },
+        )
+        assert accepted.status_code == 201
+
+
+def test_education_admissions_enforce_student_tenant_ownership():
+    # The fixture's manager role intentionally lacks education permissions.
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        permissions = json.dumps(["education:read", "education:write"])
+        conn.execute(
+            "INSERT INTO roles (organization_id, name, permissions) VALUES (?, ?, ?)",
+            (1, "manager", permissions),
+        )
+        conn.execute(
+            "INSERT INTO roles (organization_id, name, permissions) VALUES (?, ?, ?)",
+            (2, "manager", permissions),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    with TestClient(app) as client:
+        tenant_two = {"Cookie": "a1os_session=token-two"}
+        tenant_one = {"Cookie": "a1os_session=token-one"}
+
+        student = client.post(
+            "/v1/education/students",
+            headers=tenant_two,
+            json={"first_name": "Tenant", "last_name": "Two"},
+        )
+        assert student.status_code == 201
+        student_id = student.json()["student_id"]
+
+        rejected_create = client.post(
+            "/v1/education/admissions",
+            headers=tenant_one,
+            json={"applicant_name": "Cross tenant applicant", "student_id": student_id},
+        )
+        assert rejected_create.status_code == 404
+
+        own_student = client.post(
+            "/v1/education/students",
+            headers=tenant_one,
+            json={"first_name": "Tenant", "last_name": "One"},
+        )
+        assert own_student.status_code == 201
+        own_student_id = own_student.json()["student_id"]
+
+        admission = client.post(
+            "/v1/education/admissions",
+            headers=tenant_one,
+            json={"applicant_name": "Own applicant", "student_id": own_student_id},
+        )
+        assert admission.status_code == 201
+        admission_id = admission.json()["admission_id"]
+
+        rejected_update = client.patch(
+            f"/v1/education/admissions/{admission_id}",
+            headers=tenant_one,
+            json={"student_id": student_id},
+        )
+        assert rejected_update.status_code == 404
+
+
+def test_admin_password_reset_revokes_existing_sessions():
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        conn.execute(
+            "INSERT INTO users (organization_id, email, full_name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            (1, "root-admin@example.test", "Root Admin", "test-hash", "super_admin"),
+        )
+        admin_id = conn.execute(
+            "SELECT id FROM users WHERE email = ?",
+            ("root-admin@example.test",),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+            (admin_id, "root-admin-token", (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()),
+        )
+        conn.execute(
+            "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+            (1, "target-session-to-revoke", (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/admin/users/1/password-reset",
+            headers={"Cookie": "a1os_session=root-admin-token"},
+            json={"new_password": "new-secure-password"},
+        )
+        assert response.status_code == 200
+
+        stale_session = client.get(
+            "/v1/auth/me",
+            headers={"Cookie": "a1os_session=target-session-to-revoke"},
+        )
+        assert stale_session.status_code == 401
+
+ 
+def test_deactivated_user_sessions_are_rejected():
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        expiry = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+        conn.execute(
+            "INSERT INTO users (organization_id, email, full_name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            (1, "deactivation-admin@example.test", "Deactivation Admin", "test-hash", "super_admin"),
+        )
+        admin_id = conn.execute(
+            "SELECT id FROM users WHERE email = ?",
+            ("deactivation-admin@example.test",),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+            (admin_id, "fresh-admin-session", expiry),
+        )
+        conn.execute(
+            "INSERT INTO users (organization_id, email, full_name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            (1, "deactivation-target@example.test", "Deactivation Target", "test-hash", "manager"),
+        )
+        target_id = conn.execute(
+            "SELECT id FROM users WHERE email = ?",
+            ("deactivation-target@example.test",),
+        ).fetchone()[0]
+        conn.execute(
+            "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+            (target_id, "fresh-target-session", expiry),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    with TestClient(app) as client:
+        response = client.patch(
+            f"/v1/users/{target_id}",
+            headers={"Cookie": "a1os_session=fresh-admin-session"},
+            json={"active": 0},
+        )
+        assert response.status_code == 200
+
+        stale_session = client.get(
+            "/v1/auth/me",
+            headers={"Cookie": "a1os_session=fresh-target-session"},
+        )
+        assert stale_session.status_code == 401

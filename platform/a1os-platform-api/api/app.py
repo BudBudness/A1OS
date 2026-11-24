@@ -54,7 +54,7 @@ def _init_db():
     org = conn.execute("SELECT id FROM organizations LIMIT 1").fetchone()
     if org is None:
         admin_email = os.getenv("A1OS_PLATFORM_ADMIN_EMAIL", "admin@a1os.io")
-        secret_path = pathlib.Path.home() / ".a1os" / "platform-admin-password"
+        secret_path = Path.home() / ".a1os" / "platform-admin-password"
         if not secret_path.exists():
             raise RuntimeError(
                 "Platform admin bootstrap secret is missing: "
@@ -69,6 +69,7 @@ def _init_db():
             INSERT INTO organizations (code, name, industry)
             VALUES (?, ?, ?)
             """,
+            ("ICR", "A1OS Platform", "general"),
         )
         org_id = conn.execute(
             "SELECT id FROM organizations WHERE code = 'ICR'"
@@ -233,7 +234,7 @@ def _current_actor(request: Request):
             SELECT u.*, s.token AS session_token, s.expires_at AS session_expiry
             FROM auth_sessions s
             JOIN users u ON u.id = s.user_id
-            WHERE s.token = ?
+            WHERE s.token = ? AND u.active = 1
             """,
             (token,),
         ).fetchone()
@@ -963,6 +964,8 @@ def admin_password_reset(user_id: int, payload: dict, request: Request):
             "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             (password_hash, user_id),
         )
+        # A reset must invalidate every existing bearer/cookie session immediately.
+        conn.execute("DELETE FROM auth_sessions WHERE user_id = ?", (user_id,))
         _audit(
             conn,
             actor,
@@ -1463,8 +1466,26 @@ def create_account(payload: dict, request: Request):
             detail=f"account_type must be one of: {sorted(valid_types)}",
         )
 
+    party_id = payload.get("party_id")
+    if party_id is not None:
+        try:
+            party_id = int(party_id)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=422, detail="party_id must be an integer")
+
     conn = db()
     try:
+        if party_id is not None:
+            party = conn.execute(
+                "SELECT id FROM parties WHERE id = ? AND organization_id = ?",
+                (party_id, actor["organization_id"]),
+            ).fetchone()
+            if not party:
+                raise HTTPException(
+                    status_code=422,
+                    detail="party_id must belong to the organization",
+                )
+
         cur = conn.execute(
             """
             INSERT INTO accounts (organization_id, account_type, name, party_id)
@@ -1474,7 +1495,7 @@ def create_account(payload: dict, request: Request):
                 actor["organization_id"],
                 account_type,
                 name,
-                payload.get("party_id"),
+                party_id,
             ),
         )
         _audit(conn, actor, "account", cur.lastrowid, "created",
@@ -2283,6 +2304,15 @@ def education_create_admission(payload: dict, request: Request):
 
     conn = db()
     try:
+        student_id = payload.get("student_id")
+        if student_id is not None:
+            student = conn.execute(
+                "SELECT id FROM education_students WHERE id = ? AND organization_id = ?",
+                (student_id, actor["organization_id"]),
+            ).fetchone()
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
+
         cur = conn.execute("""
             INSERT INTO education_admissions
             (organization_id, student_id, applicant_name, status,
@@ -2326,6 +2356,14 @@ def education_update_admission(
 
         if not row:
             raise HTTPException(status_code=404, detail="Admission not found")
+
+        if updates.get("student_id") is not None:
+            student = conn.execute(
+                "SELECT id FROM education_students WHERE id = ? AND organization_id = ?",
+                (updates["student_id"], actor["organization_id"]),
+            ).fetchone()
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
 
         sql = ", ".join(f"{k} = ?" for k in updates)
         conn.execute(
@@ -2687,7 +2725,7 @@ async def websocket_endpoint(websocket: WebSocket):
             SELECT u.*, s.expires_at AS session_expiry
             FROM auth_sessions s
             JOIN users u ON u.id = s.user_id
-            WHERE s.token = ?
+            WHERE s.token = ? AND u.active = 1
             """,
             (token,),
         ).fetchone()

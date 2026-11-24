@@ -228,3 +228,99 @@ CREATE TABLE IF NOT EXISTS car_wash_payments (
 
 CREATE INDEX IF NOT EXISTS idx_car_wash_payments_org_date
     ON car_wash_payments (organization_id, created_at);
+
+-- Education vertical resources. Every child reference is organization-scoped
+-- both in application validation and at the database foreign-key boundary.
+CREATE TABLE IF NOT EXISTS education_students (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL,
+    admission_no TEXT,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    gender TEXT,
+    date_of_birth TEXT,
+    class_name TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    metadata TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (organization_id, id),
+    FOREIGN KEY (organization_id) REFERENCES organizations(id)
+);
+
+CREATE TABLE IF NOT EXISTS education_parents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    relationship TEXT,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (organization_id, id),
+    FOREIGN KEY (organization_id) REFERENCES organizations(id)
+);
+
+CREATE TABLE IF NOT EXISTS education_admissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL,
+    student_id INTEGER,
+    applicant_name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    application_date TEXT,
+    metadata TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id),
+    FOREIGN KEY (organization_id, student_id)
+        REFERENCES education_students(organization_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS education_attendance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL,
+    student_id INTEGER NOT NULL,
+    attendance_date TEXT NOT NULL,
+    status TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id),
+    FOREIGN KEY (organization_id, student_id)
+        REFERENCES education_students(organization_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS education_fees (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL,
+    student_id INTEGER,
+    description TEXT NOT NULL,
+    amount REAL NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'pending',
+    due_date TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id),
+    FOREIGN KEY (organization_id, student_id)
+        REFERENCES education_students(organization_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS education_site_content (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_id INTEGER NOT NULL,
+    content_key TEXT NOT NULL,
+    content TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (organization_id, content_key),
+    FOREIGN KEY (organization_id) REFERENCES organizations(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_education_students_org
+    ON education_students (organization_id, status, class_name);
+CREATE INDEX IF NOT EXISTS idx_education_admissions_org
+    ON education_admissions (organization_id, status, created_at);
+CREATE INDEX IF NOT EXISTS idx_education_attendance_org_date
+    ON education_attendance (organization_id, attendance_date);
+CREATE INDEX IF NOT EXISTS idx_education_fees_org_status
+    ON education_fees (organization_id, status, due_date);
