@@ -1464,8 +1464,26 @@ def create_account(payload: dict, request: Request):
             detail=f"account_type must be one of: {sorted(valid_types)}",
         )
 
+    party_id = payload.get("party_id")
+    if party_id is not None:
+        try:
+            party_id = int(party_id)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=422, detail="party_id must be an integer")
+
     conn = db()
     try:
+        if party_id is not None:
+            party = conn.execute(
+                "SELECT id FROM parties WHERE id = ? AND organization_id = ?",
+                (party_id, actor["organization_id"]),
+            ).fetchone()
+            if not party:
+                raise HTTPException(
+                    status_code=422,
+                    detail="party_id must belong to the organization",
+                )
+
         cur = conn.execute(
             """
             INSERT INTO accounts (organization_id, account_type, name, party_id)
@@ -1475,7 +1493,7 @@ def create_account(payload: dict, request: Request):
                 actor["organization_id"],
                 account_type,
                 name,
-                payload.get("party_id"),
+                party_id,
             ),
         )
         _audit(conn, actor, "account", cur.lastrowid, "created",
