@@ -369,8 +369,16 @@ def test_deactivated_user_sessions_are_rejected():
             (admin_id, "fresh-admin-session", expiry),
         )
         conn.execute(
+            "INSERT INTO users (organization_id, email, full_name, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            (1, "deactivation-target@example.test", "Deactivation Target", "test-hash", "manager"),
+        )
+        target_id = conn.execute(
+            "SELECT id FROM users WHERE email = ?",
+            ("deactivation-target@example.test",),
+        ).fetchone()[0]
+        conn.execute(
             "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
-            (2, "fresh-target-session", expiry),
+            (target_id, "fresh-target-session", expiry),
         )
         conn.commit()
     finally:
@@ -378,7 +386,7 @@ def test_deactivated_user_sessions_are_rejected():
 
     with TestClient(app) as client:
         response = client.patch(
-            "/v1/users/2",
+            `/v1/users/{target_id}`,
             headers={"Cookie": "a1os_session=fresh-admin-session"},
             json={"active": 0},
         )
