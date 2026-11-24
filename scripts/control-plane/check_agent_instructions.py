@@ -171,7 +171,7 @@ def self_test() -> None:
             "Require explicit approval.\n", encoding="utf-8"
         )
         (root / CLAUDE_INSTRUCTIONS).write_text(
-            "@AGENTS.md\nRun preflight. Require explicit approval.\n",
+            "@AGENTS.md\nRun preflight. Treat AGENTS.md as the approval policy.\n",
             encoding="utf-8"
         )
         (root / COPILOT_INSTRUCTIONS).write_text(
