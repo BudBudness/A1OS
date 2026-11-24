@@ -333,3 +333,19 @@ def test_admin_password_reset_revokes_existing_sessions():
             headers={"Cookie": "a1os_session=target-session-to-revoke"},
         )
         assert stale_session.status_code == 401
+
+ 
+def test_deactivated_user_sessions_are_rejected():
+    with TestClient(app) as client:
+        response = client.patch(
+            "/v1/users/2",
+            headers={"Cookie": "a1os_session=token-one"},
+            json={"active": 0},
+        )
+        assert response.status_code == 200
+
+        stale_session = client.get(
+            "/v1/auth/me",
+            headers={"Cookie": "a1os_session=token-two"},
+        )
+        assert stale_session.status_code == 401
