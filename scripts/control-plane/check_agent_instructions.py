@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 ROOT_INSTRUCTIONS = "AGENTS.md"
+CLAUDE_INSTRUCTIONS = "CLAUDE.md"
 COPILOT_INSTRUCTIONS = ".github/copilot-instructions.md"
 SCOPED_INSTRUCTIONS = {
     "canonical-control-plane": "canonical-control-plane/AGENTS.md",
@@ -24,6 +25,11 @@ REQUIRED_PHRASES = {
         "GitHub + Cloudflare + Termux",
         "Never print or commit",
         "explicit approval",
+    ),
+    CLAUDE_INSTRUCTIONS: (
+        "@AGENTS.md",
+        "preflight",
+        "approval policy",
     ),
     COPILOT_INSTRUCTIONS: (
         "AGENTS.md",
@@ -48,7 +54,7 @@ CONFLICT_PATTERNS = (
 
 def applicable(root: Path, target: str) -> list[Path]:
     target_path = Path(target)
-    chain = [root / ROOT_INSTRUCTIONS, root / COPILOT_INSTRUCTIONS]
+    chain = [root / ROOT_INSTRUCTIONS, root / CLAUDE_INSTRUCTIONS, root / COPILOT_INSTRUCTIONS]
     for scope, relative in SCOPED_INSTRUCTIONS.items():
         if target_path == Path(scope) or Path(scope) in target_path.parents:
             chain.append(root / relative)
@@ -57,7 +63,7 @@ def applicable(root: Path, target: str) -> list[Path]:
 
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
-    required = [ROOT_INSTRUCTIONS, COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()]
+    required = [ROOT_INSTRUCTIONS, CLAUDE_INSTRUCTIONS, COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()]
     for rel in required:
         path = root / rel
         if not path.is_file():
@@ -128,7 +134,7 @@ def compare_working_copy(root: Path, copy: Path) -> list[str]:
                     f"{match.group(0).strip()}"
                 )
 
-    for rel in (COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()):
+    for rel in (CLAUDE_INSTRUCTIONS, COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()):
         expected = root / rel
         actual = copy / rel
         if not actual.is_file():
@@ -164,6 +170,10 @@ def self_test() -> None:
             "GitHub + Cloudflare + Termux. Never print or commit secrets. "
             "Require explicit approval.\n", encoding="utf-8"
         )
+        (root / CLAUDE_INSTRUCTIONS).write_text(
+            "@AGENTS.md\nRun preflight. Treat AGENTS.md as the approval policy.\n",
+            encoding="utf-8"
+        )
         (root / COPILOT_INSTRUCTIONS).write_text(
             "Read AGENTS.md and run preflight. GitHub + Cloudflare + Termux.\n",
             encoding="utf-8"
@@ -191,7 +201,7 @@ def self_test() -> None:
 
         chain = applicable(root, "canonical-control-plane/src/main.py")
         assert [p.relative_to(root).as_posix() for p in chain] == [
-            "AGENTS.md", ".github/copilot-instructions.md",
+            "AGENTS.md", "CLAUDE.md", ".github/copilot-instructions.md",
             "canonical-control-plane/AGENTS.md"
         ]
         (root / "canonical-control-plane/AGENTS.md").write_text(
@@ -207,7 +217,7 @@ def self_test() -> None:
         )
         copy = root / "worktree"
         copy.mkdir()
-        for rel in (ROOT_INSTRUCTIONS, COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()):
+        for rel in (ROOT_INSTRUCTIONS, CLAUDE_INSTRUCTIONS, COPILOT_INSTRUCTIONS, *SCOPED_INSTRUCTIONS.values()):
             dest = copy / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes((root / rel).read_bytes())

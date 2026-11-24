@@ -4,9 +4,12 @@ on:
   pull_request:
     paths:
       - "AGENTS.md"
+      - "CLAUDE.md"
       - "**/AGENTS.md"
       - ".github/copilot-instructions.md"
       - "scripts/control-plane/check_agent_instructions.py"
+      - "scripts/termux-maintenance/**"
+      - "docs/TERMUX_ENVIRONMENT_MANAGEMENT.md"
       - "scripts/control-plane/check_release_gates.py"
       - "canonical-control-plane/config/release-gates.json"
       - ".github/workflows/agent-instruction-integrity.yml"
@@ -23,7 +26,10 @@ on:
       - "AGENTS.md"
       - "**/AGENTS.md"
       - ".github/copilot-instructions.md"
+      - "CLAUDE.md"
       - "scripts/control-plane/check_agent_instructions.py"
+      - "scripts/termux-maintenance/**"
+      - "docs/TERMUX_ENVIRONMENT_MANAGEMENT.md"
       - ".github/workflows/agent-instruction-integrity.yml"
       - ".github/hooks/**"
   workflow_dispatch:
@@ -48,6 +54,8 @@ jobs:
         run: python .github/hooks/a1os_instruction_guard.py --self-test
       - name: Verify internal A1OS agent entrypoints
         run: python -m unittest discover -s tests -p "test_agent_preflight_entrypoints.py"
+      - name: Verify Termux maintenance safety logic
+        run: python scripts/termux-maintenance/a1os_termux_maintenance.py --self-test
       - name: Verify hierarchy and conflict rules
         run: |
           python scripts/control-plane/check_agent_instructions.py --self-test
