@@ -168,7 +168,7 @@ def self_test() -> None:
             encoding="utf-8",
         )
         (root / "CLAUDE.md").write_text(
-            "@AGENTS.md\nRun preflight. Require explicit approval.\n",
+            "@AGENTS.md\nRun preflight. Treat AGENTS.md as the approval policy.\n",
             encoding="utf-8",
         )
         (root / ".github/copilot-instructions.md").write_text(
