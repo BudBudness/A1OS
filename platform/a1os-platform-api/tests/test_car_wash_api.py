@@ -254,6 +254,22 @@ def test_account_cannot_reference_another_organizations_party():
 
 
 def test_education_admissions_enforce_student_tenant_ownership():
+    # The fixture's manager role intentionally lacks education permissions.
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        permissions = json.dumps(["education:read", "education:write"])
+        conn.execute(
+            "INSERT INTO roles (organization_id, name, permissions) VALUES (?, ?, ?)",
+            (1, "manager", permissions),
+        )
+        conn.execute(
+            "INSERT INTO roles (organization_id, name, permissions) VALUES (?, ?, ?)",
+            (2, "manager", permissions),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
     with TestClient(app) as client:
         tenant_two = {"Cookie": "a1os_session=token-two"}
         tenant_one = {"Cookie": "a1os_session=token-one"}
@@ -336,16 +352,31 @@ def test_admin_password_reset_revokes_existing_sessions():
 
  
 def test_deactivated_user_sessions_are_rejected():
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        expiry = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+        conn.execute(
+            "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+            (1, "fresh-manager-session", expiry),
+        )
+        conn.execute(
+            "INSERT INTO auth_sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
+            (2, "fresh-target-session", expiry),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
     with TestClient(app) as client:
         response = client.patch(
             "/v1/users/2",
-            headers={"Cookie": "a1os_session=token-one"},
+            headers={"Cookie": "a1os_session=fresh-manager-session"},
             json={"active": 0},
         )
         assert response.status_code == 200
 
         stale_session = client.get(
             "/v1/auth/me",
-            headers={"Cookie": "a1os_session=token-two"},
+            headers={"Cookie": "a1os_session=fresh-target-session"},
         )
         assert stale_session.status_code == 401
