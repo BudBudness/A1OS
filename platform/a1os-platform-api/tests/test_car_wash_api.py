@@ -251,3 +251,47 @@ def test_account_cannot_reference_another_organizations_party():
             },
         )
         assert accepted.status_code == 201
+
+
+def test_education_admissions_enforce_student_tenant_ownership():
+    with TestClient(app) as client:
+        tenant_two = {"Cookie": "a1os_session=token-two"}
+        tenant_one = {"Cookie": "a1os_session=token-one"}
+
+        student = client.post(
+            "/v1/education/students",
+            headers=tenant_two,
+            json={"first_name": "Tenant", "last_name": "Two"},
+        )
+        assert student.status_code == 201
+        student_id = student.json()["student_id"]
+
+        rejected_create = client.post(
+            "/v1/education/admissions",
+            headers=tenant_one,
+            json={"applicant_name": "Cross tenant applicant", "student_id": student_id},
+        )
+        assert rejected_create.status_code == 404
+
+        own_student = client.post(
+            "/v1/education/students",
+            headers=tenant_one,
+            json={"first_name": "Tenant", "last_name": "One"},
+        )
+        assert own_student.status_code == 201
+        own_student_id = own_student.json()["student_id"]
+
+        admission = client.post(
+            "/v1/education/admissions",
+            headers=tenant_one,
+            json={"applicant_name": "Own applicant", "student_id": own_student_id},
+        )
+        assert admission.status_code == 201
+        admission_id = admission.json()["admission_id"]
+
+        rejected_update = client.patch(
+            f"/v1/education/admissions/{admission_id}",
+            headers=tenant_one,
+            json={"student_id": student_id},
+        )
+        assert rejected_update.status_code == 404
