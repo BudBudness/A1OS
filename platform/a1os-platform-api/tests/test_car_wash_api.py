@@ -208,3 +208,46 @@ def test_empty_database_bootstrap_creates_platform_admin(monkeypatch, tmp_path):
     assert admin[0] == "admin@a1os.io"
     assert admin[1] == "super_admin"
     assert module._verify_password("bootstrap-test-password", admin[2])
+
+
+def test_account_cannot_reference_another_organizations_party():
+    with TestClient(app) as client:
+        org_two_headers = {"Cookie": "a1os_session=token-two"}
+        org_one_headers = {"Cookie": "a1os_session=token-one"}
+
+        other_party = client.post(
+            "/v1/parties",
+            headers=org_two_headers,
+            json={"name": "Tenant Two Customer", "party_type": "customer"},
+        )
+        assert other_party.status_code == 201
+        other_party_id = other_party.json()["party_id"]
+
+        rejected = client.post(
+            "/v1/accounts",
+            headers=org_one_headers,
+            json={
+                "name": "Cross-tenant receivable",
+                "account_type": "receivable",
+                "party_id": other_party_id,
+            },
+        )
+        assert rejected.status_code == 422
+        assert rejected.json()["detail"] == "party_id must belong to the organization"
+
+        own_party = client.post(
+            "/v1/parties",
+            headers=org_one_headers,
+            json={"name": "Tenant One Customer", "party_type": "customer"},
+        )
+        assert own_party.status_code == 201
+        accepted = client.post(
+            "/v1/accounts",
+            headers=org_one_headers,
+            json={
+                "name": "Tenant One receivable",
+                "account_type": "receivable",
+                "party_id": own_party.json()["party_id"],
+            },
+        )
+        assert accepted.status_code == 201
