@@ -176,3 +176,35 @@ def test_payment_is_recorded_and_overpayment_is_rejected():
         listed = client.get("/api/car-wash/payments", headers=headers)
         assert listed.status_code == 200
         assert any(item["vehicle_id"] == vehicle_id and item["amount"] == 5000 for item in listed.json()["items"])
+
+
+
+def test_empty_database_bootstrap_creates_platform_admin(monkeypatch, tmp_path):
+    database_file = tmp_path / "empty-platform.db"
+    secret_dir = tmp_path / ".a1os"
+    secret_dir.mkdir()
+    secret_file = secret_dir / "platform-admin-password"
+    secret_file.write_text("bootstrap-test-password", encoding="utf-8")
+
+    monkeypatch.setattr(module, "DB_PATH", database_file)
+    monkeypatch.setattr(module, "SCHEMA_PATH", schema_path)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    module._init_db()
+
+    check = sqlite3.connect(database_file)
+    try:
+        organization = check.execute(
+            "SELECT code, name, industry FROM organizations"
+        ).fetchone()
+        admin = check.execute(
+            "SELECT email, role, password_hash FROM users"
+        ).fetchone()
+    finally:
+        check.close()
+
+    assert organization == ("ICR", "A1OS Platform", "general")
+    assert admin is not None
+    assert admin[0] == "admin@a1os.io"
+    assert admin[1] == "super_admin"
+    assert module._verify_password("bootstrap-test-password", admin[2])
