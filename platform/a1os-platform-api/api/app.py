@@ -54,7 +54,7 @@ def _init_db():
     org = conn.execute("SELECT id FROM organizations LIMIT 1").fetchone()
     if org is None:
         admin_email = os.getenv("A1OS_PLATFORM_ADMIN_EMAIL", "admin@a1os.io")
-        secret_path = pathlib.Path.home() / ".a1os" / "platform-admin-password"
+        secret_path = Path.home() / ".a1os" / "platform-admin-password"
         if not secret_path.exists():
             raise RuntimeError(
                 "Platform admin bootstrap secret is missing: "
@@ -69,6 +69,7 @@ def _init_db():
             INSERT INTO organizations (code, name, industry)
             VALUES (?, ?, ?)
             """,
+            ("ICR", "A1OS Platform", "general"),
         )
         org_id = conn.execute(
             "SELECT id FROM organizations WHERE code = 'ICR'"
