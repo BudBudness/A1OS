@@ -234,7 +234,7 @@ def _current_actor(request: Request):
             SELECT u.*, s.token AS session_token, s.expires_at AS session_expiry
             FROM auth_sessions s
             JOIN users u ON u.id = s.user_id
-            WHERE s.token = ?
+            WHERE s.token = ? AND u.active = 1
             """,
             (token,),
         ).fetchone()
@@ -2725,7 +2725,7 @@ async def websocket_endpoint(websocket: WebSocket):
             SELECT u.*, s.expires_at AS session_expiry
             FROM auth_sessions s
             JOIN users u ON u.id = s.user_id
-            WHERE s.token = ?
+            WHERE s.token = ? AND u.active = 1
             """,
             (token,),
         ).fetchone()
