@@ -386,7 +386,7 @@ def test_deactivated_user_sessions_are_rejected():
 
     with TestClient(app) as client:
         response = client.patch(
-            `/v1/users/{target_id}`,
+            f"/v1/users/{target_id}",
             headers={"Cookie": "a1os_session=fresh-admin-session"},
             json={"active": 0},
         )
