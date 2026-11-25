@@ -34,6 +34,13 @@ jobs:
           for i in $(seq 1 45); do if curl -fsS http://127.0.0.1:8787/health > /dev/null; then exit 0; fi; sleep 2; done
           cat /tmp/a1os-worker.log
           exit 1
+      - name: Verify HTTP idempotency, concurrent claims, retry exhaustion and stale recovery
+        env:
+          A1OS_QUEUE_URL: http://127.0.0.1:8787
+          A1OS_QUEUE_TOKEN: integration-test-only-token
+          A1OS_QUEUE_WORKER_DIR: ${{ github.workspace }}/cf-workers/a1os-task-queue
+          A1OS_QUEUE_LOCAL_DB: a1os-task-queue-integration
+        run: node test/http-lifecycle.integration.mjs
       - name: Verify Python DurableQueue HTTP lifecycle against isolated Worker
         working-directory: .
         env:
